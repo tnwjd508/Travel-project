@@ -1,0 +1,10 @@
+{
+  "summary": { "visitors": 482000, "stayHours": 31.8, "spending": 148000, "growth": 12.4 },
+  "monthlyVisitors": [
+    {"month":"1월","visitors":31,"previous":29},{"month":"2월","visitors":34,"previous":31},{"month":"3월","visitors":38,"previous":32},{"month":"4월","visitors":43,"previous":36},{"month":"5월","visitors":46,"previous":39},{"month":"6월","visitors":42,"previous":38},{"month":"7월","visitors":48,"previous":40},{"month":"8월","visitors":52,"previous":43},{"month":"9월","visitors":45,"previous":41},{"month":"10월","visitors":54,"previous":45},{"month":"11월","visitors":49,"previous":43},{"month":"12월","visitors":56,"previous":47}
+  ],
+  "ageVisitors": [{"age":"10대","value":18},{"age":"20대","value":72},{"age":"30대","value":61},{"age":"40대","value":48},{"age":"50대","value":38},{"age":"60+","value":26}],
+  "tourismTypes": [{"name":"문화예술","value":38,"color":"#2563EB"},{"name":"미식","value":27,"color":"#60A5FA"},{"name":"자연","value":21,"color":"#A78BFA"},{"name":"쇼핑","value":14,"color":"#CBD5E1"}],
+  "festivals": ["광주비엔날레", "충장축제", "김치축제"],
+  "attractions": ["국립아시아문화전당", "무등산", "양림역사문화마을", "대인예술시장"]
+}

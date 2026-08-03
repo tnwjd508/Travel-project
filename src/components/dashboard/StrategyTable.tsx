@@ -1,0 +1,17 @@
+import { ArrowRight, BadgeCheck, CircleDollarSign, Gauge, Star } from 'lucide-react'
+import { Card } from '@/components/ui/Card'
+import type { Policy } from '@/types/tourism'
+
+const policies: Policy[] = [
+  {id:'01',name:'야간관광 확대',effect:92,budget:'15억',difficulty:'보통',score:5,recommended:true},
+  {id:'02',name:'문화축제 개최',effect:84,budget:'22억',difficulty:'높음',score:4},
+  {id:'03',name:'관광 셔틀 운영',effect:71,budget:'12억',difficulty:'낮음',score:4},
+  {id:'04',name:'로컬마켓 연계',effect:79,budget:'8억',difficulty:'보통',score:4},
+  {id:'05',name:'문화예술 프로그램',effect:76,budget:'10억',difficulty:'보통',score:3},
+]
+
+export function StrategyTable() {
+  return <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-6 sm:px-7"><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-blue-600">Strategy Ranking</p><h3 className="mt-1 text-lg font-bold">AI 정책 우선순위</h3></div><div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold text-blue-600"><BadgeCheck size={14}/>효과·예산·실행 가능성 종합 분석</div></div>
+    <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left"><thead><tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400"><th className="px-7 py-4">정책</th><th className="px-4 py-4">예상 효과</th><th className="px-4 py-4">예산</th><th className="px-4 py-4">실행 난이도</th><th className="px-4 py-4">추천도</th><th className="px-7 py-4 text-right">상세</th></tr></thead><tbody>{policies.map(p=><tr key={p.id} className={`group border-b border-slate-50 text-sm transition last:border-0 ${p.recommended?'bg-gradient-to-r from-blue-50/90 to-transparent':'hover:bg-slate-50/70'}`}><td className="px-7 py-4"><div className="flex items-center gap-3"><span className={`grid h-8 w-8 place-items-center rounded-lg text-[10px] font-bold ${p.recommended?'bg-blue-600 text-white':'bg-slate-100 text-slate-400'}`}>{p.id}</span><div><div className="flex items-center gap-2 font-bold text-slate-800">{p.name}{p.recommended&&<span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] text-blue-600">BEST</span>}</div>{p.recommended&&<p className="mt-0.5 text-[10px] text-blue-500">광주에 가장 적합한 전략</p>}</div></div></td><td className="px-4 py-4"><div className="flex items-center gap-2"><div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-500" style={{width:`${p.effect}%`}}/></div><b className="text-xs">{p.effect}</b></div></td><td className="px-4 py-4"><span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><CircleDollarSign size={14} className="text-slate-400"/>{p.budget}</span></td><td className="px-4 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${p.difficulty==='낮음'?'bg-emerald-50 text-emerald-600':p.difficulty==='높음'?'bg-red-50 text-red-500':'bg-amber-50 text-amber-600'}`}><Gauge size={12}/>{p.difficulty}</span></td><td className="px-4 py-4"><div className="flex gap-0.5">{[1,2,3,4,5].map(x=><Star key={x} size={13} className={x<=p.score?'fill-amber-400 text-amber-400':'fill-slate-100 text-slate-100'}/>)}</div></td><td className="px-7 py-4 text-right"><button className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 transition group-hover:border-blue-200 group-hover:text-blue-600"><ArrowRight size={14}/></button></td></tr>)}</tbody></table></div>
+  </Card>
+}
