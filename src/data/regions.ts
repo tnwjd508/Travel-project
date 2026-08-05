@@ -6,7 +6,7 @@ export const regions: Region[] = [
     nameKo: '광주광역시',
     nameEn: 'Gwangju',
     description: '문화와 예술이 이어지는 관광 거점',
-    dashboardPath: '/dashboard/gwangju',
+    dashboardPath: '/dashboard/gwangju/overview',
     status: 'available',
     mapPosition: { x: 141, y: 407 },
     accentColor: '#F4C57A',

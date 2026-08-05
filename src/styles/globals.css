@@ -26,3 +26,11 @@ button { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+@media print {
+  body { background: white !important; }
+  body * { visibility: hidden; }
+  .print-report, .print-report * { visibility: visible; }
+  .print-report { position: absolute !important; inset: 0 !important; width: 100% !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  @page { size: A4; margin: 12mm; }
+}

@@ -30,12 +30,12 @@ export function BrandHero() {
       </motion.div>
 
       <motion.div variants={fadeUp} transition={{ duration: .6 }} className="mt-8 flex items-center gap-4 sm:mt-10">
-        <button onClick={() => document.getElementById('region-map')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} className="group inline-flex min-h-11 items-center gap-3 text-[11px] font-semibold uppercase tracking-[.23em] text-[#F4C57A] outline-none transition-colors hover:text-[#FFF9EE] focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70">
+        <div className="inline-flex min-h-11 items-center gap-3 text-[11px] font-semibold uppercase tracking-[.23em] text-[#F4C57A]">
           Explore Korea
-          <span className="grid h-10 w-10 place-items-center rounded-full border border-[#F4C57A]/45 transition-all duration-300 group-hover:border-[#FFD89A] group-hover:bg-[#F4C57A]/10 group-hover:shadow-[0_0_24px_rgba(244,197,122,.18)]">
-            <ArrowDownRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+          <span className="grid h-10 w-10 place-items-center rounded-full border border-[#F4C57A]/45">
+            <ArrowDownRight size={16} />
           </span>
-        </button>
+        </div>
       </motion.div>
 
       <motion.p variants={fadeUp} transition={{ duration: .7 }} className="mt-12 text-[12px] font-light tracking-[.07em] text-[#78849A] sm:mt-14">
