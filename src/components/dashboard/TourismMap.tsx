@@ -1,8 +1,37 @@
 import { useState } from 'react'
 import { MapPin, Navigation, Plus, Minus, Layers3, ArrowUpRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { geoMercator, geoPath } from 'd3-geo'
+import type { FeatureCollection, Geometry } from 'geojson'
 import { Card } from '@/components/ui/Card'
 import type { Attraction } from '@/types/tourism'
+import districtData from '@/assets/data/gwangju-districts.json'
+
+interface DistrictProperties {
+  code: string
+  name: string
+}
+
+const districts = districtData as FeatureCollection<Geometry, DistrictProperties>
+
+// RFC 7946 GeoJSON uses the opposite exterior-ring winding from d3-geo's
+// spherical polygon convention. Reverse rings only for SVG rendering while
+// keeping the stored GeoJSON standards-compliant.
+const renderedDistricts: FeatureCollection<Geometry, DistrictProperties> = {
+  ...districts,
+  features: districts.features.map((feature) => ({
+    ...feature,
+    geometry: feature.geometry.type === 'Polygon'
+      ? { ...feature.geometry, coordinates: feature.geometry.coordinates.map((ring) => [...ring].reverse()) }
+      : feature.geometry.type === 'MultiPolygon'
+        ? { ...feature.geometry, coordinates: feature.geometry.coordinates.map((polygon) => polygon.map((ring) => [...ring].reverse())) }
+        : feature.geometry,
+  })),
+}
+
+const districtProjection = geoMercator().fitExtent([[82, 42], [678, 458]], renderedDistricts)
+const districtPath = geoPath(districtProjection)
+const districtFills = ['#DBEAFE', '#E0E7FF', '#DFF7F1', '#EDE9FE', '#E2E8F0']
 
 const attractions: Attraction[] = [
   {name:'국립아시아문화전당',category:'문화예술',x:46,y:49,visitors:'12.8만',accent:'#2563EB'},
@@ -19,12 +48,25 @@ export function TourismMap() {
     </div>
     <div className="map-grid relative min-h-[430px] overflow-hidden bg-[#eef5f7]">
       <div className="absolute right-4 top-4 z-20 flex flex-col gap-2"><button className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-500 shadow-md"><Plus size={16}/></button><button className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-500 shadow-md"><Minus size={16}/></button><button className="mt-2 grid h-9 w-9 place-items-center rounded-xl bg-white text-blue-600 shadow-md"><Layers3 size={16}/></button></div>
-      <svg viewBox="0 0 760 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice">
+      <svg viewBox="0 0 760 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid meet" role="img" aria-label="광주광역시 5개 자치구 행정구역 지도">
         <g fill="none" stroke="#D9E5E9" strokeWidth="2"><path d="M0 90 C140 130 190 70 330 105 S600 110 760 45"/><path d="M-10 325 C130 285 225 360 380 300 S630 280 780 340"/><path d="M130 0 C180 130 125 215 190 500"/><path d="M535 -10 C485 110 570 200 510 510"/></g>
-        <path d="M322 70 C380 48 440 65 486 106 C525 140 557 185 548 235 C539 282 566 329 524 369 C483 408 416 433 356 416 C298 401 244 378 218 330 C192 281 207 228 229 181 C248 141 277 91 322 70Z" fill="#fff" stroke="#dbe7eb" strokeWidth="3"/>
-        <path d="M326 120 C370 103 425 112 459 144 C491 174 501 216 494 258 C486 300 501 335 466 360 C429 387 380 387 341 370 C301 352 268 323 259 283 C250 241 266 196 283 163 C293 144 306 128 326 120Z" fill="#DBEAFE" stroke="#93C5FD" strokeWidth="2"/>
-        <path d="M335 154 C370 139 416 146 443 173 C470 200 475 236 464 271 C455 301 462 326 435 344 C403 365 362 355 333 337 C304 318 282 292 282 260 C282 224 296 187 315 169 C321 163 327 158 335 154Z" fill="#EFF6FF"/>
-        <g fill="none" stroke="#bfd1d8" strokeWidth="1.5" strokeDasharray="5 5"><path d="M279 163 L466 360"/><path d="M259 283 L494 258"/><path d="M341 370 L459 144"/></g>
+        <g stroke="#FFFFFF" strokeWidth="2.2" strokeLinejoin="round">
+          {renderedDistricts.features.map((district, index) => <motion.path
+            key={district.properties.code}
+            d={districtPath(district) ?? undefined}
+            fill={districtFills[index % districtFills.length]}
+            initial={{ opacity: 0, scale: .985 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: .45, delay: index * .06 }}
+            style={{ transformOrigin: 'center' }}
+          ><title>{district.properties.name}</title></motion.path>)}
+        </g>
+        <g pointerEvents="none" textAnchor="middle" dominantBaseline="middle" fontFamily="Pretendard, sans-serif" fontSize="12" fontWeight="800" fill="#475569" stroke="#FFFFFF" strokeWidth="3" paintOrder="stroke">
+          {renderedDistricts.features.map((district) => {
+            const [x, y] = districtPath.centroid(district)
+            return <text key={`${district.properties.code}-label`} x={x} y={y}>{district.properties.name}</text>
+          })}
+        </g>
       </svg>
       <div className="absolute left-5 top-5 rounded-xl border border-white/80 bg-white/80 px-3 py-2 shadow-sm backdrop-blur"><p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Data coverage</p><p className="mt-0.5 text-xs font-bold text-slate-700">광주광역시 전역 <span className="text-blue-600">98.7%</span></p></div>
       {attractions.map(a=><motion.button key={a.name} onMouseEnter={()=>setActive(a)} whileHover={{scale:1.15}} className="absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{left:`${a.x}%`,top:`${a.y}%`}}><span className="relative grid h-9 w-9 place-items-center rounded-full border-[3px] border-white text-white shadow-lg" style={{background:a.accent}}><MapPin size={15} fill="white"/><span className="absolute inset-0 -z-10 animate-ping rounded-full opacity-20" style={{background:a.accent}}/></span></motion.button>)}
