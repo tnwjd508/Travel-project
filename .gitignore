@@ -2,3 +2,11 @@ node_modules
 dist
 *.tsbuildinfo
 .DS_Store
+.vercel
+
+# Local secrets and non-deployable workspace assets
+.env
+.env.*
+!.env.example
+map-data-input/
+outputs/
