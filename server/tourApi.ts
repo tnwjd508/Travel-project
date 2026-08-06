@@ -45,8 +45,18 @@ export function buildTourApiUrl(
 ) {
   const url = new URL(`${TOUR_API_BASE_URL}/${endpoint}`)
 
-  // 공공데이터포털의 일반 인증키(Decoding)를 URLSearchParams가 안전하게 인코딩합니다.
-  url.searchParams.set('serviceKey', serviceKey.trim())
+  // 공공데이터포털에서 제공하는 Encoding/Decoding 인증키를 모두 허용합니다.
+  // Encoding 키는 먼저 한 번 복원한 뒤 URLSearchParams가 안전하게 인코딩합니다.
+  const trimmedServiceKey = serviceKey.trim()
+  let normalizedServiceKey = trimmedServiceKey
+  if (/%[0-9A-Fa-f]{2}/.test(trimmedServiceKey)) {
+    try {
+      normalizedServiceKey = decodeURIComponent(trimmedServiceKey)
+    } catch {
+      normalizedServiceKey = trimmedServiceKey
+    }
+  }
+  url.searchParams.set('serviceKey', normalizedServiceKey)
   url.searchParams.set('MobileOS', 'WEB')
   url.searchParams.set('MobileApp', 'ONGIL')
   url.searchParams.set('_type', 'json')

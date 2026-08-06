@@ -14,7 +14,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/dashboard" element={<Navigate to="/dashboard/gwangju/overview" replace />} />
       <Route path="/dashboard/gwangju" element={<DashboardLayout />}>
-        <Route index element={<Navigate to="overview" replace />} />
+        <Route index element={<OverviewPage />} />
         <Route path="overview" element={<OverviewPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="diagnosis" element={<DiagnosisPage />} />

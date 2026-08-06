@@ -11,4 +11,8 @@ export interface Region {
   status: RegionStatus
   mapPosition: { x: number; y: number }
   accentColor: string
+  heroImage?: string
+  heroAlt?: string
+  heroKeyword?: string
+  tourApiAreaCode?: number
 }

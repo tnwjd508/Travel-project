@@ -50,7 +50,7 @@ function tourApiDevelopmentProxy(serviceKey: string): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '')
+  const env = loadEnv(mode, '.', 'TOUR_')
   return {
   plugins: [react(), tourApiDevelopmentProxy(env.TOUR_API_SERVICE_KEY ?? '')],
   resolve: { alias: { '@': '/src' } },

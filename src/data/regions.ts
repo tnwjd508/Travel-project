@@ -10,6 +10,8 @@ export const regions: Region[] = [
     status: 'available',
     mapPosition: { x: 141, y: 407 },
     accentColor: '#F4C57A',
+    heroImage: '/images/gwangju-hero.jpg',
+    heroAlt: '무등산을 배경으로 펼쳐진 광주광역시 도심 야경',
   },
   {
     id: 'seoul',
@@ -20,6 +22,10 @@ export const regions: Region[] = [
     status: 'coming-soon',
     mapPosition: { x: 132, y: 149 },
     accentColor: '#60A5FA',
+    heroImage: '/images/seoul-gyeongbokgung-hero.jpg',
+    heroAlt: '북악산을 배경으로 한 서울 경복궁의 저녁 풍경',
+    heroKeyword: '경복궁',
+    tourApiAreaCode: 1,
   },
   {
     id: 'busan',

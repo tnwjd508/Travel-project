@@ -105,6 +105,16 @@ export function getGwangjuTourismList(pageNo = 1, numOfRows = 20) {
   })
 }
 
+export function getRegionTourismHero(areaCode: number, keyword: string) {
+  return requestTourApi<TourApiItem>('searchKeyword2', {
+    areaCode,
+    keyword,
+    pageNo: 1,
+    numOfRows: 10,
+    arrange: 'C',
+  })
+}
+
 export function checkTourApiConnection() {
   return requestTourApi<TourApiItem>('areaCode2', { pageNo: 1, numOfRows: 1 })
 }

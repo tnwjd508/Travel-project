@@ -1,4 +1,4 @@
-import { BarChart3, BrainCircuit, FileText, FlaskConical, GitCompareArrows, House, type LucideIcon } from 'lucide-react'
+import { BrainCircuit, ChartNoAxesCombined, FileText, FlaskConical, GitCompareArrows, House, type LucideIcon } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 
@@ -11,7 +11,7 @@ export interface DashboardMenuItem {
 
 export const dashboardMenuItems: DashboardMenuItem[] = [
   { label: '지역 현황', path: '/dashboard/gwangju/overview', icon: House, description: '핵심 현황과 오늘의 브리핑' },
-  { label: '관광 데이터', path: '/dashboard/gwangju/analytics', icon: BarChart3, description: '방문객·소비·공간 데이터' },
+  { label: '관광 데이터', path: '/dashboard/gwangju/analytics', icon: ChartNoAxesCombined, description: '방문객·소비·공간 데이터' },
   { label: 'AI 지역 진단', path: '/dashboard/gwangju/diagnosis', icon: BrainCircuit, description: '핵심 문제와 개선 과제' },
   { label: '정책 시뮬레이션', path: '/dashboard/gwangju/simulation', icon: FlaskConical, description: '정책 조건별 효과 예측' },
   { label: '전략 비교', path: '/dashboard/gwangju/strategy', icon: GitCompareArrows, description: '정책 우선순위와 추천 전략' },
