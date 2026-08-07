@@ -1,15 +1,45 @@
-import { ArrowDownRight, ArrowUpRight, type LucideIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Line, LineChart, ResponsiveContainer } from 'recharts'
 import { useCountUp } from '@/hooks/useCountUp'
-import { Card } from '@/components/ui/Card'
+import type { KpiData } from '@/data/dashboardData'
 
-export function KpiCard({ label, value, suffix, decimals=0, change, icon: Icon, data, delay=0 }: { label:string; value:number; suffix:string; decimals?:number; change:number; icon:LucideIcon; data:number[]; delay?:number }) {
-  const count = useCountUp(value)
-  const positive = change >= 0
-  return <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay,duration:.5}} whileHover={{y:-4}}><Card className="group relative overflow-hidden p-5 hover:border-blue-100 hover:shadow-[0_18px_45px_rgba(37,99,235,.1)]">
-    <div className="flex items-start justify-between"><div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-slate-500 transition group-hover:bg-blue-50 group-hover:text-blue-600"><Icon size={19}/></div><span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${positive?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-500'}`}>{positive?<ArrowUpRight size={11}/>:<ArrowDownRight size={11}/>} {Math.abs(change)}%</span></div>
-    <p className="mt-5 text-xs font-semibold text-slate-400">{label}</p><div className="mt-1 flex items-baseline gap-1"><strong className="text-[28px] font-bold tracking-[-.04em] text-slate-950">{count.toLocaleString('ko-KR',{minimumFractionDigits:decimals,maximumFractionDigits:decimals})}</strong><span className="text-xs font-bold text-slate-500">{suffix}</span></div>
-    <div className="absolute bottom-4 right-3 h-10 w-24 opacity-55"><ResponsiveContainer><LineChart data={data.map((v,i)=>({i,v}))}><Line type="monotone" dataKey="v" stroke={positive?'#2563EB':'#EF4444'} strokeWidth={2} dot={false}/></LineChart></ResponsiveContainer></div>
-  </Card></motion.div>
+const accentClasses: Record<KpiData['accent'], { icon: string; line: string }> = {
+  violet: { icon: 'bg-violet-50 text-violet-600', line: '#7C3AED' },
+  blue: { icon: 'bg-blue-50 text-blue-600', line: '#2563EB' },
+  green: { icon: 'bg-emerald-50 text-emerald-600', line: '#16A34A' },
+  orange: { icon: 'bg-orange-50 text-orange-600', line: '#F97316' },
+}
+
+export function KpiCard({ kpi, delay = 0 }: { kpi: KpiData; delay?: number }) {
+  const count = useCountUp(kpi.value)
+  const { icon: Icon, label, suffix, decimals = 0, changeText, chartData, accent } = kpi
+  const colors = accentClasses[accent]
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: .35, ease: 'easeOut' }}
+      className="relative min-h-[172px] overflow-hidden rounded-[20px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_26px_rgba(15,23,42,.04)]"
+    >
+      <div className="flex items-center gap-3">
+        <span className={`grid h-9 w-9 place-items-center rounded-xl ${colors.icon}`}><Icon size={17} aria-hidden="true" /></span>
+        <p className="text-xs font-semibold text-slate-500">{label}</p>
+      </div>
+      <div className="mt-4 flex items-baseline gap-1">
+        <strong className="text-[27px] font-extrabold tracking-[-.045em] text-slate-950">
+          {count.toLocaleString('ko-KR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}
+        </strong>
+        <span className="text-xs font-bold text-slate-500">{suffix}</span>
+      </div>
+      <p className="mt-2 text-[10px] font-semibold text-emerald-600">{changeText}</p>
+      <div className="absolute bottom-4 right-4 h-11 w-24 opacity-70" aria-hidden="true">
+        <ResponsiveContainer>
+          <LineChart data={chartData.map((value, index) => ({ index, value }))}>
+            <Line type="monotone" dataKey="value" stroke={colors.line} strokeWidth={2.2} dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.article>
+  )
 }

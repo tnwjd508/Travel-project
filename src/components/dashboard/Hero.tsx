@@ -1,5 +1,6 @@
 import { ArrowRight, Compass, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { AiAnalysisCard, DailyBriefingPreview } from '@/components/dashboard/HeroInsights'
 import { KoreaDataMap } from '@/components/dashboard/KoreaDataMap'
 
@@ -14,7 +15,7 @@ const fadeUp = {
 }
 
 export function Hero() {
-  const startAnalysis = () => document.getElementById('simulation')?.scrollIntoView({ behavior: 'smooth' })
+  const navigate = useNavigate()
 
   return (
     <>
@@ -56,7 +57,7 @@ export function Hero() {
             <motion.button
               variants={fadeUp}
               transition={{ duration: 0.5 }}
-              onClick={startAnalysis}
+              onClick={() => navigate('/dashboard/gwangju/simulation')}
               className="group mt-6 inline-flex h-[54px] items-center gap-3 rounded-2xl bg-white px-6 text-sm font-extrabold text-slate-950 shadow-[0_14px_36px_rgba(0,0,0,.22)] transition-all duration-[250ms] hover:-translate-y-1 hover:bg-blue-50 hover:shadow-[0_20px_48px_rgba(37,99,235,.32)]"
             >
               AI 전략 분석 시작

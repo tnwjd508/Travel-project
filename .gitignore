@@ -2,3 +2,15 @@ node_modules
 dist
 *.tsbuildinfo
 .DS_Store
+
+# Local secrets. Commit only the documented example file.
+.env
+.env.*
+!.env.example
+
+# Raw GIS source files are large and are only used to generate app assets.
+map-data-input/
+
+# Local deployment metadata and generated presentation artifacts.
+.vercel/
+outputs/

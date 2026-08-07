@@ -1,34 +1,373 @@
-import { useState } from 'react'
-import { MapPin, Navigation, Plus, Minus, Layers3, ArrowUpRight } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { useEffect, useMemo, useState, type PointerEvent } from 'react'
+import { ArrowUpRight, Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Card } from '@/components/ui/Card'
+import mapDataJson from '@/assets/data/gwangju-neighborhood-map.json'
+import { useVWorldLegalDongBoundaries } from '@/hooks/useVWorldLegalDongBoundaries'
+import type { VWorldBoundaryFeature, VWorldBoundaryGeometry } from '@/services/vworld'
 import type { Attraction } from '@/types/tourism'
 
+interface Neighborhood {
+  code: string
+  name: string
+  districtCode: string
+  districtId: string
+  districtName: string
+  path: string
+  center: [number, number]
+}
+
+interface District {
+  code: string
+  id: string
+  name: string
+  color: string
+  center: [number, number]
+  neighborhoodCount: number
+}
+
+interface GwangjuMapData {
+  sourceDate: string
+  sourceCrs: string
+  viewBox: [number, number, number, number]
+  projection: {
+    longitudeScale: number
+    minX: number
+    maxY: number
+    scale: number
+    xOffset: number
+    yOffset: number
+  }
+  districts: District[]
+  neighborhoods: Neighborhood[]
+}
+
+const mapData = mapDataJson as GwangjuMapData
+
 const attractions: Attraction[] = [
-  {name:'국립아시아문화전당',category:'문화예술',x:46,y:49,visitors:'12.8만',accent:'#2563EB'},
-  {name:'무등산 국립공원',category:'자연',x:72,y:24,visitors:'9.4만',accent:'#22C55E'},
-  {name:'양림역사문화마을',category:'역사',x:34,y:66,visitors:'7.6만',accent:'#8B5CF6'},
-  {name:'대인예술시장',category:'미식·시장',x:54,y:38,visitors:'5.2만',accent:'#F59E0B'},
+  { name: '국립아시아문화전당', category: '문화예술', lng: 126.9199, lat: 35.1469, visitors: '12.8만', accent: '#2563EB' },
+  { name: '무등산 국립공원', category: '자연', lng: 126.991, lat: 35.134, visitors: '9.4만', accent: '#22C55E' },
+  { name: '양림역사문화마을', category: '역사', lng: 126.9146, lat: 35.1402, visitors: '7.6만', accent: '#8B5CF6' },
+  { name: '대인예술시장', category: '미식·시장', lng: 126.9178, lat: 35.154, visitors: '5.2만', accent: '#F59E0B' },
 ]
 
+const ZOOM_LEVELS = [1, 1.18, 1.38, 1.6]
+
+function projectCoordinate(longitude: number, latitude: number) {
+  const { longitudeScale, minX, maxY, scale, xOffset, yOffset } = mapData.projection
+  return {
+    x: xOffset + (longitude * longitudeScale - minX) * scale,
+    y: yOffset + (maxY - latitude) * scale,
+  }
+}
+
+function readFeatureProperty(feature: VWorldBoundaryFeature, propertyName: string) {
+  const entry = Object.entries(feature.properties).find(
+    ([key]) => key.toLowerCase() === propertyName.toLowerCase(),
+  )
+  return entry?.[1] == null ? '' : String(entry[1])
+}
+
+function normalizePosition([first, second]: [number, number]) {
+  // GeoJSON은 경도,위도 순서지만 일부 WFS 변환기는 EPSG:4326 축 순서를 유지합니다.
+  return first > 90 ? [first, second] as const : [second, first] as const
+}
+
+function geometryToSvg(geometry: VWorldBoundaryGeometry) {
+  const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates
+  const points: Array<{ x: number; y: number }> = []
+
+  const path = polygons.map((polygon) => polygon.map((ring) => {
+    const commands = ring.map((position, index) => {
+      const [longitude, latitude] = normalizePosition(position)
+      const point = projectCoordinate(longitude, latitude)
+      points.push(point)
+      return `${index === 0 ? 'M' : 'L'}${point.x.toFixed(2)},${point.y.toFixed(2)}`
+    })
+    return `${commands.join('')}Z`
+  }).join('')).join('')
+
+  if (!points.length) return null
+  const xs = points.map((point) => point.x)
+  const ys = points.map((point) => point.y)
+  return {
+    path,
+    center: [
+      (Math.min(...xs) + Math.max(...xs)) / 2,
+      (Math.min(...ys) + Math.max(...ys)) / 2,
+    ] as [number, number],
+  }
+}
+
+function toVWorldNeighborhoods(features: VWorldBoundaryFeature[]) {
+  return features.flatMap<Neighborhood>((feature) => {
+    if (!feature.geometry || !['Polygon', 'MultiPolygon'].includes(feature.geometry.type)) return []
+
+    const fullName = readFeatureProperty(feature, 'full_nm')
+    const district = mapData.districts.find(({ name }) => fullName.split(/\s+/).includes(name))
+    if (!district) return []
+
+    const geometry = geometryToSvg(feature.geometry)
+    const code = readFeatureProperty(feature, 'emd_cd')
+    const name = readFeatureProperty(feature, 'emd_kor_nm')
+    if (!geometry || !code || !name) return []
+
+    return [{
+      code,
+      name,
+      districtCode: district.code,
+      districtId: district.id,
+      districtName: district.name,
+      path: geometry.path,
+      center: geometry.center,
+    }]
+  }).sort((left, right) => left.code.localeCompare(right.code))
+}
+
 export function TourismMap() {
-  const [active,setActive]=useState<Attraction|null>(attractions[0])
-  return <Card className="grid min-h-[470px] overflow-hidden lg:grid-cols-[320px_1fr]">
-    <div className="z-10 border-b border-slate-100 bg-white/90 p-6 backdrop-blur lg:border-b-0 lg:border-r sm:p-7"><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-blue-600"><Navigation size={14}/>Tourism Map</div><h3 className="mt-1 text-xl font-bold tracking-tight">광주의 매력을<br/>데이터로 탐색하세요</h3><p className="mt-3 text-xs leading-5 text-slate-400">주요 관광지의 방문 흐름과 잠재력을<br className="hidden lg:block"/> 한눈에 확인합니다.</p>
-      <div className="mt-6 space-y-2">{attractions.map(a=><button key={a.name} onMouseEnter={()=>setActive(a)} onClick={()=>setActive(a)} className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${active?.name===a.name?'border-blue-200 bg-blue-50 shadow-sm':'border-transparent bg-slate-50 hover:border-slate-200'}`}><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{background:a.accent,boxShadow:`0 0 0 4px ${a.accent}18`}}/><span className="min-w-0 flex-1"><b className="block truncate text-xs text-slate-700">{a.name}</b><span className="text-[10px] text-slate-400">{a.category}</span></span><b className="text-[10px] text-slate-500">{a.visitors}</b></button>)}</div>
-    </div>
-    <div className="map-grid relative min-h-[430px] overflow-hidden bg-[#eef5f7]">
-      <div className="absolute right-4 top-4 z-20 flex flex-col gap-2"><button className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-500 shadow-md"><Plus size={16}/></button><button className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-500 shadow-md"><Minus size={16}/></button><button className="mt-2 grid h-9 w-9 place-items-center rounded-xl bg-white text-blue-600 shadow-md"><Layers3 size={16}/></button></div>
-      <svg viewBox="0 0 760 500" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice">
-        <g fill="none" stroke="#D9E5E9" strokeWidth="2"><path d="M0 90 C140 130 190 70 330 105 S600 110 760 45"/><path d="M-10 325 C130 285 225 360 380 300 S630 280 780 340"/><path d="M130 0 C180 130 125 215 190 500"/><path d="M535 -10 C485 110 570 200 510 510"/></g>
-        <path d="M322 70 C380 48 440 65 486 106 C525 140 557 185 548 235 C539 282 566 329 524 369 C483 408 416 433 356 416 C298 401 244 378 218 330 C192 281 207 228 229 181 C248 141 277 91 322 70Z" fill="#fff" stroke="#dbe7eb" strokeWidth="3"/>
-        <path d="M326 120 C370 103 425 112 459 144 C491 174 501 216 494 258 C486 300 501 335 466 360 C429 387 380 387 341 370 C301 352 268 323 259 283 C250 241 266 196 283 163 C293 144 306 128 326 120Z" fill="#DBEAFE" stroke="#93C5FD" strokeWidth="2"/>
-        <path d="M335 154 C370 139 416 146 443 173 C470 200 475 236 464 271 C455 301 462 326 435 344 C403 365 362 355 333 337 C304 318 282 292 282 260 C282 224 296 187 315 169 C321 163 327 158 335 154Z" fill="#EFF6FF"/>
-        <g fill="none" stroke="#bfd1d8" strokeWidth="1.5" strokeDasharray="5 5"><path d="M279 163 L466 360"/><path d="M259 283 L494 258"/><path d="M341 370 L459 144"/></g>
-      </svg>
-      <div className="absolute left-5 top-5 rounded-xl border border-white/80 bg-white/80 px-3 py-2 shadow-sm backdrop-blur"><p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Data coverage</p><p className="mt-0.5 text-xs font-bold text-slate-700">광주광역시 전역 <span className="text-blue-600">98.7%</span></p></div>
-      {attractions.map(a=><motion.button key={a.name} onMouseEnter={()=>setActive(a)} whileHover={{scale:1.15}} className="absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{left:`${a.x}%`,top:`${a.y}%`}}><span className="relative grid h-9 w-9 place-items-center rounded-full border-[3px] border-white text-white shadow-lg" style={{background:a.accent}}><MapPin size={15} fill="white"/><span className="absolute inset-0 -z-10 animate-ping rounded-full opacity-20" style={{background:a.accent}}/></span></motion.button>)}
-      {active&&<motion.div key={active.name} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="absolute bottom-5 left-5 z-20 min-w-[230px] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur"><div className="flex items-start justify-between gap-4"><div><span className="text-[9px] font-bold uppercase tracking-wider" style={{color:active.accent}}>{active.category}</span><h4 className="mt-1 text-sm font-bold text-slate-800">{active.name}</h4><p className="mt-1 text-[10px] text-slate-400">월 방문객 <b className="text-slate-600">{active.visitors}</b> · 성장 잠재력 높음</p></div><button className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><ArrowUpRight size={14}/></button></div></motion.div>}
-    </div>
-  </Card>
+  const [activeAttraction, setActiveAttraction] = useState<Attraction>(attractions[0])
+  const [activeDistrictCode, setActiveDistrictCode] = useState<string>('all')
+  const [hoveredNeighborhood, setHoveredNeighborhood] = useState<Neighborhood | null>(null)
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<Neighborhood | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 50, y: 50 })
+  const [zoomIndex, setZoomIndex] = useState(0)
+  const [showNeighborhoods, setShowNeighborhoods] = useState(true)
+
+  const { features, status: vworldStatus, errorMessage, retry } = useVWorldLegalDongBoundaries()
+  const vworldNeighborhoods = useMemo(() => toVWorldNeighborhoods(features), [features])
+  const hasVWorldBoundaries = vworldStatus === 'ready' && vworldNeighborhoods.length > 0
+  const neighborhoods = hasVWorldBoundaries ? vworldNeighborhoods : mapData.neighborhoods
+  const districts = useMemo(() => mapData.districts.map((district) => ({
+    ...district,
+    neighborhoodCount: neighborhoods.filter(({ districtCode }) => districtCode === district.code).length,
+  })), [neighborhoods])
+
+  const districtByCode = useMemo(
+    () => new Map(districts.map((district) => [district.code, district])),
+    [districts],
+  )
+  const zoom = ZOOM_LEVELS[zoomIndex]
+  const selectedArea = selectedNeighborhood ?? hoveredNeighborhood
+  const boundaryKind = hasVWorldBoundaries ? '법정동' : '행정동'
+  const sourceDate = hasVWorldBoundaries ? '2026. 07. 06.' : '2025. 06. 30.'
+
+  useEffect(() => {
+    setHoveredNeighborhood(null)
+    setSelectedNeighborhood(null)
+  }, [hasVWorldBoundaries])
+
+  const updateTooltip = (event: PointerEvent<SVGPathElement>) => {
+    const bounds = event.currentTarget.ownerSVGElement?.getBoundingClientRect()
+    if (!bounds) return
+    setTooltipPosition({
+      x: ((event.clientX - bounds.left) / bounds.width) * 100,
+      y: ((event.clientY - bounds.top) / bounds.height) * 100,
+    })
+  }
+
+  const selectDistrict = (code: string) => {
+    setActiveDistrictCode(code)
+    setSelectedNeighborhood(null)
+  }
+
+  return (
+    <Card className="grid min-h-[560px] overflow-hidden lg:grid-cols-[330px_1fr]">
+      <aside className="z-10 border-b border-slate-100 bg-white/95 p-6 backdrop-blur lg:border-b-0 lg:border-r sm:p-7">
+        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-blue-600">
+          <Navigation size={14} /> Tourism Map
+        </div>
+        <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900">광주를 {neighborhoods.length}개 {boundaryKind}으로<br />세밀하게 탐색하세요</h3>
+        <p className="mt-3 text-xs leading-5 text-slate-400">자치구를 선택하고 지도 위 {boundaryKind}에<br className="hidden lg:block" /> 마우스를 올려 지역 경계를 확인할 수 있습니다.</p>
+
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Administrative areas</span>
+            <span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-bold text-blue-600">5개 구 · {neighborhoods.length}개 동</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => selectDistrict('all')}
+              className={`rounded-xl border px-2 py-2 text-[10px] font-bold transition ${activeDistrictCode === 'all' ? 'border-slate-900 bg-slate-900 text-white shadow-md' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
+            >
+              전체 {neighborhoods.length}
+            </button>
+            {districts.map((district) => (
+              <button
+                key={district.code}
+                type="button"
+                onClick={() => selectDistrict(district.code)}
+                className={`flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-[10px] font-bold transition ${activeDistrictCode === district.code ? 'border-transparent text-white shadow-md' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}
+                style={activeDistrictCode === district.code ? { backgroundColor: district.color } : undefined}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: district.color }} />
+                {district.name} {district.neighborhoodCount}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-slate-100 pt-4">
+          <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
+          <div className="mt-2 space-y-1.5">
+            {attractions.map((attraction) => (
+              <button
+                key={attraction.name}
+                type="button"
+                onMouseEnter={() => setActiveAttraction(attraction)}
+                onFocus={() => setActiveAttraction(attraction)}
+                onClick={() => setActiveAttraction(attraction)}
+                className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${activeAttraction.name === attraction.name ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-transparent bg-slate-50 hover:border-slate-200'}`}
+              >
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
+                <span className="min-w-0 flex-1">
+                  <b className="block truncate text-xs text-slate-700">{attraction.name}</b>
+                  <span className="text-[10px] text-slate-400">{attraction.category}</span>
+                </span>
+                <b className="text-[10px] text-slate-500">{attraction.visitors}</b>
+              </button>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      <div className="map-grid relative min-h-[500px] overflow-hidden bg-[#edf5f7]">
+        <div className="absolute left-5 top-5 z-20 max-w-[310px] rounded-xl border border-white/80 bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Administrative coverage</p>
+            {vworldStatus === 'loading' && <LoaderCircle size={12} className="animate-spin text-blue-500" aria-label="VWorld 연결 중" />}
+            {vworldStatus === 'error' && <button type="button" onClick={retry} className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600" aria-label="VWorld 경계 다시 불러오기"><RefreshCw size={11} /> 재시도</button>}
+          </div>
+          <p className="mt-0.5 text-xs font-bold text-slate-700">{sourceDate} 기준 <span className="text-blue-600">{neighborhoods.length}개 {boundaryKind}</span></p>
+          <p className={`mt-1 text-[9px] font-semibold ${hasVWorldBoundaries ? 'text-emerald-600' : vworldStatus === 'loading' ? 'text-blue-500' : 'text-amber-600'}`}>
+            {hasVWorldBoundaries ? 'VWorld WFS 실시간 경계' : vworldStatus === 'loading' ? 'VWorld 경계 연결 중 · 정적 지도 표시' : errorMessage || '정적 경계 데이터 표시'}
+          </p>
+        </div>
+
+        <div className="absolute right-4 top-4 z-30 flex flex-col gap-2">
+          <button type="button" aria-label="지도 확대" onClick={() => setZoomIndex((value) => Math.min(value + 1, ZOOM_LEVELS.length - 1))} disabled={zoomIndex === ZOOM_LEVELS.length - 1} className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-500 shadow-md transition hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"><Plus size={16} /></button>
+          <button type="button" aria-label="지도 축소" onClick={() => setZoomIndex((value) => Math.max(value - 1, 0))} disabled={zoomIndex === 0} className="grid h-9 w-9 place-items-center rounded-xl bg-white text-slate-500 shadow-md transition hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40"><Minus size={16} /></button>
+          <button type="button" aria-label={`${boundaryKind} 경계 표시 전환`} aria-pressed={showNeighborhoods} onClick={() => setShowNeighborhoods((value) => !value)} className={`mt-2 grid h-9 w-9 place-items-center rounded-xl shadow-md transition ${showNeighborhoods ? 'bg-blue-600 text-white' : 'bg-white text-slate-500'}`}><Layers3 size={16} /></button>
+        </div>
+
+        <svg viewBox={mapData.viewBox.join(' ')} className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid meet" role="img" aria-label={`광주 지역 ${neighborhoods.length}개 ${boundaryKind} 지도`}>
+          <defs>
+            <filter id="mapShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#64748B" floodOpacity=".18" />
+            </filter>
+            {districts.map((district) => (
+              <linearGradient key={district.code} id={`district-${district.code}`} x1="0" y1="0" x2="1" y2="1">
+                <stop stopColor={district.color} stopOpacity=".78" />
+                <stop offset="1" stopColor={district.color} stopOpacity=".48" />
+              </linearGradient>
+            ))}
+          </defs>
+
+          <g transform={`translate(450 280) scale(${zoom}) translate(-450 -280)`} className="transition-transform duration-500 ease-out" filter="url(#mapShadow)">
+            {neighborhoods.map((neighborhood) => {
+              const district = districtByCode.get(neighborhood.districtCode)
+              const selected = selectedNeighborhood?.code === neighborhood.code
+              const hovered = hoveredNeighborhood?.code === neighborhood.code
+              const districtActive = activeDistrictCode === 'all' || activeDistrictCode === neighborhood.districtCode
+              return (
+                <motion.path
+                  key={neighborhood.code}
+                  d={neighborhood.path}
+                  fill={`url(#district-${neighborhood.districtCode})`}
+                  fillRule="evenodd"
+                  stroke={showNeighborhoods ? '#F8FAFC' : district?.color}
+                  strokeWidth={selected ? 2.4 : showNeighborhoods ? 0.75 : 0.35}
+                  vectorEffect="non-scaling-stroke"
+                  initial={{ opacity: 0, pathLength: 0 }}
+                  animate={{ opacity: districtActive ? selected || hovered ? 1 : .88 : .16, pathLength: 1 }}
+                  transition={{ pathLength: { duration: .55 }, opacity: { duration: .2 } }}
+                  onPointerEnter={() => setHoveredNeighborhood(neighborhood)}
+                  onPointerMove={updateTooltip}
+                  onPointerLeave={() => setHoveredNeighborhood(null)}
+                  onClick={() => {
+                    setSelectedNeighborhood(neighborhood)
+                    setActiveDistrictCode(neighborhood.districtCode)
+                  }}
+                  className="cursor-pointer outline-none transition-[filter] duration-150 hover:brightness-110 focus:brightness-110"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${neighborhood.districtName} ${neighborhood.name} 선택`}
+                />
+              )
+            })}
+
+            {districts.map((district) => {
+              const visible = activeDistrictCode === 'all' || activeDistrictCode === district.code
+              return (
+                <g key={district.code} transform={`translate(${district.center[0]} ${district.center[1]})`} opacity={visible ? 1 : .18} className="pointer-events-none transition-opacity">
+                  <rect x="-28" y="-12" width="56" height="24" rx="12" fill="#0F172A" fillOpacity=".78" stroke="white" strokeOpacity=".65" />
+                  <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize="10" fontWeight="800">{district.name}</text>
+                </g>
+              )
+            })}
+
+            {attractions.map((attraction) => {
+              const point = projectCoordinate(attraction.lng, attraction.lat)
+              const active = activeAttraction.name === attraction.name
+              return (
+                <motion.g
+                  key={attraction.name}
+                  transform={`translate(${point.x} ${point.y})`}
+                  onMouseEnter={() => setActiveAttraction(attraction)}
+                  onClick={() => setActiveAttraction(attraction)}
+                  className="cursor-pointer"
+                  animate={{ scale: active ? 1.16 : 1 }}
+                >
+                  {active && <circle r="18" fill={attraction.accent} opacity=".16"><animate attributeName="r" values="11;22" dur="1.8s" repeatCount="indefinite" /><animate attributeName="opacity" values=".32;0" dur="1.8s" repeatCount="indefinite" /></circle>}
+                  <circle r="10" fill={attraction.accent} stroke="white" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+                  <path d="M0 -4.3C-2.6-4.3-4.5-2.5-4.5 0c0 3.3 4.5 7.4 4.5 7.4S4.5 3.3 4.5 0C4.5-2.5 2.6-4.3 0-4.3Z" fill="white" transform="scale(.62)" />
+                </motion.g>
+              )
+            })}
+          </g>
+        </svg>
+
+        <AnimatePresence>
+          {hoveredNeighborhood && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-[115%] rounded-xl border border-white bg-slate-950/90 px-3 py-2 text-white shadow-xl backdrop-blur"
+              style={{ left: `${tooltipPosition.x}%`, top: `${tooltipPosition.y}%` }}
+            >
+              <p className="text-[9px] font-bold text-blue-300">{hoveredNeighborhood.districtName}</p>
+              <p className="text-xs font-extrabold">{hoveredNeighborhood.name}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.div layout className="absolute bottom-5 left-5 z-20 min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/92 p-4 shadow-xl backdrop-blur">
+          {selectedArea ? (
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600">Selected {boundaryKind}</span>
+                <h4 className="mt-1 text-sm font-bold text-slate-800">{selectedArea.districtName} · {selectedArea.name}</h4>
+                <p className="mt-1 text-[10px] text-slate-400">{boundaryKind} 코드 <b className="text-slate-600">{selectedArea.code}</b></p>
+              </div>
+              <button type="button" aria-label={`선택한 ${boundaryKind} 상세 보기`} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><ArrowUpRight size={14} /></button>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: activeAttraction.accent }}>{activeAttraction.category}</span>
+                <h4 className="mt-1 text-sm font-bold text-slate-800">{activeAttraction.name}</h4>
+                <p className="mt-1 text-[10px] text-slate-400">월 방문객 <b className="text-slate-600">{activeAttraction.visitors}</b> · 지도 좌표 연동</p>
+              </div>
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><MapPin size={14} /></span>
+            </div>
+          )}
+        </motion.div>
+
+        <div className="absolute bottom-5 right-5 z-20 hidden rounded-full border border-white/80 bg-white/85 px-3 py-1.5 text-[9px] font-bold text-slate-500 shadow-sm backdrop-blur sm:block">
+          색상: 자치구 · 경계: {boundaryKind} · {Math.round(zoom * 100)}%
+        </div>
+      </div>
+    </Card>
+  )
 }
