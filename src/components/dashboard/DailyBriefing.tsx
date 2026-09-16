@@ -1,7 +1,8 @@
-import { ArrowRight, Check, Quote, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { briefingSignals, type BriefingSignal } from '@/data/dashboardData'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { OngoingFestivals } from '@/components/dashboard/OngoingFestivals'
 
 const signalTone: Record<BriefingSignal['tone'], string> = {
   blue: 'bg-blue-50 text-blue-600',
@@ -42,12 +43,8 @@ export function DailyBriefing() {
           </div>
         </div>
 
-        <div className="relative border-y border-slate-100 py-6 lg:border-x lg:border-y-0 lg:px-7 lg:py-0">
-          <Quote size={42} className="absolute right-2 top-2 text-slate-100 lg:right-5 lg:top-0" fill="currentColor" aria-hidden="true" />
-          <h3 className="text-xs font-bold text-slate-900">AI 한줄 요약</h3>
-          <blockquote className="relative mt-5 max-w-sm text-[14px] font-semibold leading-7 tracking-[-.02em] text-slate-700">
-            “{district.nameKo}는 2030 관광객 감소와<br />야간 체류 부족이 주요 문제이며,<br />{district.tourismType} 콘텐츠 확대가 가장<br />효과적인 해결책으로 분석됩니다.”
-          </blockquote>
+        <div className="border-y border-slate-100 py-6 lg:border-x lg:border-y-0 lg:px-7 lg:py-0">
+          <OngoingFestivals />
         </div>
 
         <div className="lg:pl-7">
@@ -62,6 +59,10 @@ export function DailyBriefing() {
             자세히 보기 <ArrowRight size={13} aria-hidden="true" />
           </Link>
         </div>
+      </div>
+      <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-100 pt-5 text-xs leading-6 sm:text-sm">
+        <h3 className="shrink-0 font-bold text-slate-900">AI 한줄 요약</h3>
+        <p className="font-medium text-slate-700">{district.nameKo}는 2030 관광객 감소와 야간 체류 부족이 주요 문제이며, {district.tourismType} 콘텐츠 확대가 효과적인 해결책으로 분석됩니다.</p>
       </div>
     </section>
   )
