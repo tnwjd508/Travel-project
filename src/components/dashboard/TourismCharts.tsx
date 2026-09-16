@@ -3,6 +3,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Rad
 import { BarChart3, MoreHorizontal, TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import data from '@/assets/data/gwangju-tourism.json'
+import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 
 const tabs = ['관광객 추이', '방문객 연령', '관광 유형'] as const
 type Tab = typeof tabs[number]
@@ -11,8 +12,9 @@ const tooltipStyle = { border: '1px solid #e2e8f0', borderRadius: 12, boxShadow:
 
 export function TourismCharts() {
   const [tab,setTab] = useState<Tab>('관광객 추이')
+  const district = useActiveDistrict()
   return <Card className="h-full overflow-hidden p-6 sm:p-7">
-    <div className="flex flex-wrap items-center justify-between gap-4"><div><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-blue-600"><BarChart3 size={14}/>Tourism Data</div><h3 className="mt-1 text-lg font-bold tracking-tight">광주 관광 데이터</h3></div><button className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-400"><MoreHorizontal size={17}/></button></div>
+    <div className="flex flex-wrap items-center justify-between gap-4"><div><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-blue-600"><BarChart3 size={14}/>Tourism Data</div><h3 className="mt-1 text-lg font-bold tracking-tight">{district.nameKo} 관광 데이터</h3></div><button className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-400"><MoreHorizontal size={17}/></button></div>
     <div className="mt-5 flex w-fit gap-1 rounded-xl bg-slate-100 p-1">{tabs.map(t=><button key={t} onClick={()=>setTab(t)} className={`rounded-lg px-3 py-2 text-[11px] font-bold transition ${tab===t?'bg-white text-slate-900 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>{t}</button>)}</div>
     <div className="mt-5 h-[228px]">
       {tab==='관광객 추이' && <ResponsiveContainer><AreaChart data={data.monthlyVisitors} margin={{top:8,right:2,left:-28,bottom:0}}><defs><linearGradient id="visitorGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563EB" stopOpacity={.24}/><stop offset="100%" stopColor="#2563EB" stopOpacity={0}/></linearGradient></defs><CartesianGrid vertical={false} stroke="#EEF2F7"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize:10,fill:'#94A3B8'}}/><YAxis axisLine={false} tickLine={false} tick={{fontSize:10,fill:'#94A3B8'}}/><Tooltip contentStyle={tooltipStyle} formatter={(v:number)=>[`${v}만 명`,'관광객']}/><Area type="monotone" dataKey="previous" stroke="#CBD5E1" fill="transparent" strokeWidth={2} strokeDasharray="4 5"/><Area type="monotone" dataKey="visitors" stroke="#2563EB" strokeWidth={2.5} fill="url(#visitorGradient)" activeDot={{r:5,fill:'#2563EB',stroke:'#fff',strokeWidth:3}}/></AreaChart></ResponsiveContainer>}
