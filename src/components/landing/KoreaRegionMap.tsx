@@ -30,7 +30,7 @@ export function KoreaRegionMap({ regions, selectedId, onSelect }: KoreaRegionMap
         </motion.div>
       </div>
 
-      <svg viewBox={southKoreaMap.viewBox} className="absolute inset-0 h-full w-full overflow-visible drop-shadow-[0_28px_48px_rgba(0,0,0,.38)]" aria-hidden="true">
+      <svg viewBox={southKoreaMap.viewBox} className="absolute inset-0 h-full w-full overflow-visible drop-shadow-[0_28px_48px_rgba(0,0,0,.38)]" role="img" aria-label="대한민국 시도 지역 선택 지도">
         <defs>
           <linearGradient id="landingMapFill" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#1A2942" stopOpacity=".87" /><stop offset=".52" stopColor="#101D34" stopOpacity=".95" /><stop offset="1" stopColor="#0B1629" /></linearGradient>
           <linearGradient id="landingMapSelected" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#725B36" /><stop offset=".55" stopColor="#3C3850" /><stop offset="1" stopColor="#1D3150" /></linearGradient>
@@ -40,6 +40,8 @@ export function KoreaRegionMap({ regions, selectedId, onSelect }: KoreaRegionMap
           {mapLocations.map((location, index) => {
             const isSelected = location.id === selectedId
             const isSelectable = selectableIds.has(location.id as RegionId)
+            const region = regionById.get(location.id as RegionId)
+            const selectLocation = () => { if (region) onSelect(region) }
             return (
               <motion.path
                 key={location.id}
@@ -48,6 +50,18 @@ export function KoreaRegionMap({ regions, selectedId, onSelect }: KoreaRegionMap
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: isSelected ? 1 : isSelectable ? .9 : .72, pathLength: 1 }}
                 transition={{ pathLength: { duration: .85, delay: .42 + index * .025 }, opacity: { duration: .3 } }}
+                tabIndex={isSelectable ? 0 : -1}
+                role={isSelectable ? 'button' : undefined}
+                aria-label={region ? `${region.nameKo} 지도 선택${region.status === 'coming-soon' ? ', 서비스 준비 중' : ''}` : undefined}
+                aria-pressed={isSelectable ? isSelected : undefined}
+                onClick={isSelectable ? selectLocation : undefined}
+                onKeyDown={isSelectable ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    selectLocation()
+                  }
+                } : undefined}
+                className={isSelectable ? 'cursor-pointer outline-none transition-[filter] hover:brightness-125 focus-visible:[filter:drop-shadow(0_0_7px_rgba(244,197,122,.9))]' : undefined}
               />
             )
           })}

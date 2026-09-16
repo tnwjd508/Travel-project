@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/Button'
 import { SelectField } from '@/components/ui/SelectField'
 import { policyLabels, policyOptions, type PolicyDuration, type PolicyId } from '@/data/policies'
 import { useTourismStrategyStore } from '@/stores/useTourismStrategyStore'
+import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 
 const durations: PolicyDuration[] = ['3개월', '6개월', '1년']
 
 export function Simulation() {
+  const district = useActiveDistrict()
   const [loading, setLoading] = useState(false)
   const timer = useRef<number | null>(null)
   const {
@@ -59,7 +61,7 @@ export function Simulation() {
         <AnimatePresence mode="wait">{!simulationResult ? <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex h-full min-h-[430px] flex-col items-center justify-center text-center"><div className="relative grid h-24 w-24 place-items-center rounded-[32px] bg-slate-50 text-slate-300"><Bot size={42}/><span className="absolute -right-1 -top-1 grid h-8 w-8 place-items-center rounded-full bg-blue-600 text-white shadow-lg"><Sparkles size={14}/></span></div><h3 className="mt-6 text-xl font-bold text-slate-800">시뮬레이션 결과가 여기에 표시됩니다</h3><p className="mt-2 max-w-xs text-sm leading-6 text-slate-400">정책과 예산, 기간을 선택하면<br/>AI가 가장 현실적인 성과를 예측합니다.</p></motion.div> : <motion.div key="result" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5 }}>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#22c55e]"/>Simulation Complete</div><h3 className="mt-1.5 text-2xl font-bold tracking-tight">예상 정책 효과</h3><p className="mt-1 text-xs text-slate-400">{policyLabels[selectedPolicy]} · {budget}억 원 · {duration}</p></div><div className="rounded-xl bg-emerald-50 px-3 py-2 text-right"><p className="text-[9px] font-bold text-emerald-600">지역경제 효과</p><p className="text-sm font-extrabold text-emerald-700">{simulationResult.economicImpact}</p></div></div>
           <div className="mt-6 grid grid-cols-2 gap-3">{metrics.map((metric, index) => <motion.div key={metric.label} initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * .08 }} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"><div className={`grid h-8 w-8 place-items-center rounded-lg ${metric.color}`}><metric.icon size={15}/></div><p className="mt-4 text-[11px] font-medium text-slate-400">{metric.label}</p><p className={`mt-0.5 text-2xl font-bold tracking-tight ${metric.value.startsWith('-') ? 'text-emerald-600' : 'text-slate-950'}`}>{metric.value}</p></motion.div>)}</div>
-          <div className="mt-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-800 p-5 text-white"><div className="flex items-center gap-2 text-xs font-bold text-blue-300"><Bot size={15}/>ON:GIL AI 추천 이유</div><p className="mt-3 text-[13px] leading-6 text-slate-300">광주의 강점인 문화예술 자원은 야간 체류로 연결될 때 소비 효과가 가장 큽니다. 2030 세대의 선호가 높은 미디어아트와 로컬마켓을 결합하면, 도심 혼잡을 분산하면서 체류시간과 재방문 의향을 함께 높일 수 있어요.</p></div>
+          <div className="mt-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-800 p-5 text-white"><div className="flex items-center gap-2 text-xs font-bold text-blue-300"><Bot size={15}/>ON:GIL AI 추천 이유</div><p className="mt-3 text-[13px] leading-6 text-slate-300">{district.nameKo}의 강점인 {district.tourismType} 자원은 체류 콘텐츠로 연결될 때 소비 효과가 가장 큽니다. 2030 세대의 선호가 높은 로컬 경험과 야간 프로그램을 결합하면, 혼잡을 분산하면서 체류시간과 재방문 의향을 함께 높일 수 있어요.</p></div>
         </motion.div>}</AnimatePresence>
       </Card>
     </div>

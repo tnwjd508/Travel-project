@@ -1,6 +1,7 @@
 import { ArrowRight, Check, Quote, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { briefingSignals, type BriefingSignal } from '@/data/dashboardData'
+import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 
 const signalTone: Record<BriefingSignal['tone'], string> = {
   blue: 'bg-blue-50 text-blue-600',
@@ -15,6 +16,7 @@ const effects = [
 ]
 
 export function DailyBriefing() {
+  const district = useActiveDistrict()
   return (
     <section className="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:p-7" aria-labelledby="briefing-title">
       <header className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-5">
@@ -44,7 +46,7 @@ export function DailyBriefing() {
           <Quote size={42} className="absolute right-2 top-2 text-slate-100 lg:right-5 lg:top-0" fill="currentColor" aria-hidden="true" />
           <h3 className="text-xs font-bold text-slate-900">AI 한줄 요약</h3>
           <blockquote className="relative mt-5 max-w-sm text-[14px] font-semibold leading-7 tracking-[-.02em] text-slate-700">
-            “광주는 2030 관광객 감소와<br />야간 체류 부족이 주요 문제이며,<br />야간 관광 콘텐츠 확대가 가장<br />효과적인 해결책으로 분석됩니다.”
+            “{district.nameKo}는 2030 관광객 감소와<br />야간 체류 부족이 주요 문제이며,<br />{district.tourismType} 콘텐츠 확대가 가장<br />효과적인 해결책으로 분석됩니다.”
           </blockquote>
         </div>
 
@@ -56,7 +58,7 @@ export function DailyBriefing() {
               {effects.map(([value, label]) => <div key={label}><strong className="block text-base font-extrabold tracking-[-.03em] text-orange-600">{value}</strong><span className="mt-1 block text-[9px] font-medium text-slate-500">{label}</span></div>)}
             </div>
           </div>
-          <Link to="/dashboard/gwangju/diagnosis" className="mt-4 ml-auto flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-2 text-[11px] font-bold text-blue-600 outline-none transition hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-500">
+          <Link to={`/dashboard/gwangju/${district.slug}/diagnosis`} className="mt-4 ml-auto flex min-h-11 w-fit items-center gap-1.5 rounded-lg px-2 text-[11px] font-bold text-blue-600 outline-none transition hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-500">
             자세히 보기 <ArrowRight size={13} aria-hidden="true" />
           </Link>
         </div>

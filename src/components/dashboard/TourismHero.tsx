@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowRight, Sparkles } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
 import { regions } from '@/data/regions'
 import { getRegionTourismHero } from '@/services/tourApi'
+import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 
 const defaultHeroImage = '/images/gwangju-acc-hero.jpg'
 const defaultHeroAlt = '국립아시아문화전당과 광주 도심의 저녁 풍경'
 
 export function TourismHero() {
-  const location = useLocation()
-  const regionId = location.pathname.split('/')[2]
-  const region = useMemo(
-    () => regions.find((item) => item.id === regionId) ?? regions[0],
-    [regionId],
-  )
+  const region = regions[0]
+  const district = useActiveDistrict()
   const fallbackHeroImage = region.heroImage ?? defaultHeroImage
   const fallbackHeroAlt = region.heroAlt ?? defaultHeroAlt
   const [heroImage, setHeroImage] = useState(fallbackHeroImage)
@@ -77,10 +73,10 @@ export function TourismHero() {
       <div className="relative z-10 flex min-h-[440px] max-w-[720px] flex-col justify-end px-6 py-7 sm:min-h-[380px] sm:justify-center sm:px-9 lg:min-h-[340px] lg:px-12">
         <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50/90 px-3 py-1.5 text-[10px] font-semibold text-blue-700">
           <Sparkles size={13} aria-hidden="true" />
-          AI가 분석한 {region.nameKo} 관광 현황
+          AI가 분석한 광주광역시 {district.nameKo} 관광 현황
         </div>
         <h1 id="overview-title" className="mt-5 text-[32px] font-bold leading-[1.18] tracking-[-.045em] text-slate-950 sm:text-[39px] lg:text-[42px]">
-          {region.nameKo}의 관광 미래를<br />
+          {district.nameKo}의 관광 미래를<br />
           <span className="text-blue-600">AI</span>가 함께 설계합니다.
         </h1>
         <p className="mt-4 text-sm font-medium leading-6 text-slate-600 sm:text-[15px]">
