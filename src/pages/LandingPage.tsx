@@ -86,6 +86,7 @@ export function LandingPage() {
         <BrandHero />
 
         <section className="relative z-20 flex min-w-0 flex-col items-center lg:pl-4" aria-labelledby="region-map-title">
+          <button type="button" onClick={() => navigate('/regions')} className="mb-4 min-h-11 self-end rounded-full border border-white/20 px-4 text-xs font-semibold text-[#F4C57A] hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#F4C57A]">전국 시군구 브리핑 보기</button>
           <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .6, delay: .58 }} className="mb-2 flex w-full max-w-[600px] items-center justify-between gap-4 px-2">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[.22em] text-[#78849A]">{mapMode === 'korea' ? 'Select your region' : 'Select Gwangju district'}</p>

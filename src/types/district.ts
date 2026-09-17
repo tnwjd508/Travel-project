@@ -1,4 +1,5 @@
-export type DistrictSlug = 'donggu' | 'seogu' | 'namgu' | 'bukgu' | 'gwangsangu'
+export type { DistrictId as DistrictSlug } from '../data/tourismRegions.js'
+import type { DistrictId as DistrictSlug } from '../data/tourismRegions.js'
 export interface DistrictMeta {
   baseYm: string
   source: '출처: ⓒ한국관광공사'

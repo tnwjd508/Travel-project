@@ -4,12 +4,17 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "sync:regions": "tsx scripts/sync_region_catalogue.ts",
     "test": "tsc -p tsconfig.server-test.json && node --test tests/*.test.mjs",
+    "test:briefing": "tsx --test server/briefing/briefing.test.ts",
+    "check:briefing": "tsx scripts/check_monthly_briefing.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@langchain/core": "^1.2.11",
+    "@langchain/langgraph": "^1.4.15",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slider": "^1.2.3",
     "@svg-maps/south-korea": "^2.0.0",
@@ -23,6 +28,7 @@
     "react-router-dom": "7.18.2",
     "recharts": "^2.15.0",
     "tailwind-merge": "^2.6.0",
+    "zod": "^4.6.5",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -34,6 +40,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.13",
     "typescript": "~5.7.2",
     "vite": "^6.0.5"
   }

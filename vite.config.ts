@@ -3,11 +3,38 @@ import react from '@vitejs/plugin-react'
 import { isTourApiEndpoint, requestTourApi } from './server/tourApi'
 import { CACHE_CONTROL, getProxyDistrict, requestDistrictLegalDongs } from './server/vworld'
 import { handleDistrictHttp } from './server/districtHttp'
+import { handleRegions } from './server/regions'
+import { createBriefingService, type BriefingEnvironment } from './server/briefing/service'
+
+function monthlyBriefingDevelopmentProxy(environment: BriefingEnvironment): Plugin {
+  const service = createBriefingService(environment)
+  return {
+    name: 'ongil-monthly-briefing-development-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/monthly-briefing', async (request, response) => {
+        const query = new URL(request.url ?? '/', 'http://localhost').searchParams
+        const result = await service(request.method, query)
+        response.statusCode = result.status
+        response.setHeader('Content-Type', 'application/json; charset=utf-8')
+        response.setHeader('Cache-Control', 'no-store')
+        if (result.status === 405) response.setHeader('Allow', 'GET')
+        if (result.status === 429) response.setHeader('Retry-After', '30')
+        response.end(JSON.stringify(result.body))
+      })
+    },
+  }
+}
 
 function districtDevelopmentProxy(env: Record<string, string | undefined>): Plugin {
   return {
     name: 'ongil-district-development-proxy',
     configureServer(server) {
+      server.middlewares.use('/api/regions', (request, response) => {
+        const result = handleRegions(request.method)
+        response.statusCode = result.status
+        for (const [key, value] of Object.entries(result.headers)) response.setHeader(key, value)
+        response.end(JSON.stringify(result.body))
+      })
       server.middlewares.use('/api/district', async (request, response) => {
         const url = new URL(request.url ?? '/', 'http://localhost')
         const result = await handleDistrictHttp({ method: request.method, resource: url.pathname.slice(1), params: url.searchParams }, env)
@@ -115,11 +142,12 @@ function vworldDevelopmentProxy(apiKey: string, domain: string): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = { ...loadEnv(mode, '.', ['TOUR_', 'VWORLD_']), ...Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(TOUR_|VWORLD_)/.test(key))) }
+  const env = { ...loadEnv(mode, '.', ['TOUR_', 'VWORLD_', 'GEMINI_']), ...Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(TOUR_|VWORLD_|GEMINI_)/.test(key))) }
   return {
     plugins: [
       react(),
       districtDevelopmentProxy(env),
+      monthlyBriefingDevelopmentProxy(env),
       tourApiDevelopmentProxy(env.TOUR_API_SERVICE_KEY ?? ''),
       vworldDevelopmentProxy(env.VWORLD_API_KEY ?? '', env.VWORLD_DOMAIN ?? ''),
     ],
