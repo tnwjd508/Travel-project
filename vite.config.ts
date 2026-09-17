@@ -2,6 +2,22 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { isTourApiEndpoint, requestTourApi } from './server/tourApi'
 import { CACHE_CONTROL, getProxyDistrict, requestDistrictLegalDongs } from './server/vworld'
+import { handleDistrictHttp } from './server/districtHttp'
+
+function districtDevelopmentProxy(env: Record<string, string | undefined>): Plugin {
+  return {
+    name: 'ongil-district-development-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/district', async (request, response) => {
+        const url = new URL(request.url ?? '/', 'http://localhost')
+        const result = await handleDistrictHttp({ method: request.method, resource: url.pathname.slice(1), params: url.searchParams }, env)
+        response.statusCode = result.status
+        for (const [key, value] of Object.entries(result.headers)) response.setHeader(key, value)
+        response.end(JSON.stringify(result.body))
+      })
+    },
+  }
+}
 
 function tourApiDevelopmentProxy(serviceKey: string): Plugin {
   return {
@@ -99,10 +115,11 @@ function vworldDevelopmentProxy(apiKey: string, domain: string): Plugin {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', ['TOUR_', 'VWORLD_'])
+  const env = { ...loadEnv(mode, '.', ['TOUR_', 'VWORLD_']), ...Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(TOUR_|VWORLD_)/.test(key))) }
   return {
     plugins: [
       react(),
+      districtDevelopmentProxy(env),
       tourApiDevelopmentProxy(env.TOUR_API_SERVICE_KEY ?? ''),
       vworldDevelopmentProxy(env.VWORLD_API_KEY ?? '', env.VWORLD_DOMAIN ?? ''),
     ],
