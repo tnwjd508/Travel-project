@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.test-build/
+tests/
+.git/
+.vercel/
+.env
+.env.*
+map-data-input/
+outputs/
+*.tsbuildinfo
+*.pptx
