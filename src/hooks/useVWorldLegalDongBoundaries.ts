@@ -1,71 +1,83 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  getVWorldLegalDongBoundaries,
-  isVWorldConfigured,
-  VWorldApiError,
-  type VWorldBoundaryFeature,
-} from '@/services/vworld'
-
-// 광주 기존 5개 자치구를 포함하는 범위입니다. EPSG:4326 WFS 1.1 축 순서에 맞췄습니다.
-const GWANGJU_BBOX: [number, number, number, number] = [34.95, 126.55, 35.32, 127.12]
+import type { GwangjuDistrict } from '@/data/gwangjuDistricts'
+import { normalizeBoundaryFeatures } from '@/data/gwangjuNeighborhoods'
+import { getDistrictLegalDongBoundaries, VWorldApiError } from '@/services/vworld'
+import type { NeighborhoodFeature } from '@/types/boundary'
 
 export type VWorldBoundaryStatus = 'disabled' | 'loading' | 'ready' | 'error'
 
+// 자치구별로 한 번만 받아 두고 화면을 오갈 때 재사용한다. VWorld 는 일일 호출 한도가 있다.
+const cachedFeatures = new Map<string, NeighborhoodFeature[]>()
+const inflightRequests = new Map<string, Promise<NeighborhoodFeature[]>>()
+
+function loadDistrictBoundaries(slug: string) {
+  const cached = cachedFeatures.get(slug)
+  if (cached) return Promise.resolve(cached)
+
+  let inflight = inflightRequests.get(slug)
+  if (!inflight) {
+    inflight = getDistrictLegalDongBoundaries(slug)
+      .then((collection) => {
+        if (collection.features.length === 0) {
+          throw new VWorldApiError('조회 범위에서 법정동 경계를 찾지 못했습니다.', 'EMPTY_RESULT')
+        }
+        const features = normalizeBoundaryFeatures(collection.features)
+        cachedFeatures.set(slug, features)
+        return features
+      })
+      .finally(() => {
+        inflightRequests.delete(slug)
+      })
+    inflightRequests.set(slug, inflight)
+  }
+  return inflight
+}
+
 function getFriendlyError(error: unknown) {
   if (error instanceof VWorldApiError) {
-    if (error.code === 'INCORRECT_KEY') return '인증키 또는 등록 URL이 현재 주소와 일치하지 않습니다.'
+    if (error.code === 'MISSING_KEY') return 'VWorld 인증키가 서버에 설정되지 않았습니다.'
+    if (error.code === 'INCORRECT_KEY') return 'VWorld 인증키 또는 등록 URL이 올바르지 않습니다.'
     if (error.code === 'OVER_REQUEST_LIMIT') return 'VWorld 일일 호출 한도를 초과했습니다.'
     return error.message
   }
-  if (error instanceof DOMException && error.name === 'AbortError') return ''
   if (error instanceof TypeError) {
-    return '브라우저 요청이 차단됐습니다. VWorld 등록 URL과 현재 주소를 확인하세요.'
+    return '네트워크 오류로 VWorld 경계를 불러오지 못했습니다.'
   }
   return 'VWorld 경계 데이터를 불러오지 못했습니다.'
 }
 
-export function useVWorldLegalDongBoundaries() {
-  const [features, setFeatures] = useState<VWorldBoundaryFeature[]>([])
-  const [status, setStatus] = useState<VWorldBoundaryStatus>(
-    isVWorldConfigured() ? 'loading' : 'disabled',
-  )
+export function useVWorldLegalDongBoundaries(district: GwangjuDistrict) {
+  const [features, setFeatures] = useState<NeighborhoodFeature[]>(() => cachedFeatures.get(district.slug) ?? [])
+  const [status, setStatus] = useState<VWorldBoundaryStatus>(() => (cachedFeatures.has(district.slug) ? 'ready' : 'loading'))
   const [errorMessage, setErrorMessage] = useState('')
   const [requestVersion, setRequestVersion] = useState(0)
 
   const retry = useCallback(() => setRequestVersion((value) => value + 1), [])
 
   useEffect(() => {
-    if (!isVWorldConfigured()) {
-      setStatus('disabled')
-      setErrorMessage('VWorld 환경변수가 없어 정적 경계를 사용합니다.')
-      return
-    }
-
-    const controller = new AbortController()
-    setStatus('loading')
+    let cancelled = false
+    const cached = cachedFeatures.get(district.slug)
+    setFeatures(cached ?? [])
+    setStatus(cached ? 'ready' : 'loading')
     setErrorMessage('')
 
-    getVWorldLegalDongBoundaries({
-      bbox: GWANGJU_BBOX,
-      maxFeatures: 500,
-      signal: controller.signal,
-    })
-      .then((collection) => {
-        if (collection.features.length === 0) {
-          throw new VWorldApiError('조회 범위에서 읍면동 경계를 찾지 못했습니다.', 'EMPTY_RESULT')
-        }
-        setFeatures(collection.features)
+    loadDistrictBoundaries(district.slug)
+      .then((loaded) => {
+        if (cancelled) return
+        setFeatures(loaded)
         setStatus('ready')
       })
       .catch((error: unknown) => {
-        if (controller.signal.aborted) return
+        if (cancelled) return
         setFeatures([])
-        setStatus('error')
+        setStatus(error instanceof VWorldApiError && error.code === 'MISSING_KEY' ? 'disabled' : 'error')
         setErrorMessage(getFriendlyError(error))
       })
 
-    return () => controller.abort()
-  }, [requestVersion])
+    return () => {
+      cancelled = true
+    }
+  }, [district.slug, requestVersion])
 
   return { features, status, errorMessage, retry }
 }
