@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 from .core import ApiError, Cache, meta, numeric
+from .regions import BY_ID, require_district, region_codes
 
 DISTRICTS = {
     'donggu': ('동구', '12210', '29110', '210'),
@@ -17,14 +18,6 @@ DISTRICTS = {
     'gwangsangu': ('광산구', '12330', '29200', '330'),
 }
 TTL = dict(summary=21600, visitors=86400, indices=86400, contents=3600, festivals=3600, related=86400, rank=86400, diagnosis=21600)
-
-
-def region_codes(district, ym, service):
-    _, current, legacy, content = DISTRICTS[district]
-    if service == 'KorService2':
-        return '12', content
-    old = ym < ('202608' if service == 'AreaTarResDemService' else '202607')
-    return ('29', legacy) if old else ('12', current)
 
 
 def shift_month(ym, offset):
@@ -78,15 +71,15 @@ def parse_query(resource, pairs, env):
         'rank': {'district', 'metric', 'baseYm'}, 'diagnosis': {'district', 'baseYm', 'visitorYm'},
     }[resource]
     params = dict(pairs)
-    if len(params) != len(pairs) or set(params) - allowed:
+    if len(params) != len(pairs) or set(params) - (allowed | {'regionId'}):
         raise ApiError(400, 'INVALID_PARAMETER', '알 수 없거나 중복된 파라미터입니다.')
     index_ym = env.get('TOUR_API_INDEX_BASE_YM') or '202608'
     visitor_ym = env.get('TOUR_API_VISITOR_BASE_YM') or '202607'
     if not all(valid_month(v) for v in (index_ym, visitor_ym)):
         raise ApiError(503, 'INVALID_CONFIG', '기준월 환경변수를 확인하세요.')
-    district = params.get('district', 'donggu')
-    if district not in DISTRICTS and not (resource == 'summary' and district == 'all'):
-        raise ApiError(400, 'UNKNOWN_DISTRICT', '지원하지 않는 광주 자치구입니다.')
+    district = params.get('district', '' if 'regionId' in params else 'donggu')
+    if not (resource == 'summary' and district == 'all' and 'regionId' not in params):
+        require_district(district, params.get('regionId'))
     maximum = visitor_ym if resource == 'visitors' else index_ym
     ym = params.get('baseYm', maximum)
     visitor = params.get('visitorYm', min(ym, visitor_ym))
@@ -177,10 +170,24 @@ class DistrictService:
         await self.client.cache.close()
 
     async def visitor_month(self, district, ym):
+        canonical = require_district(district)['id']
+        region_codes(district, ym, 'DataLabService')  # Reject incomparable pre-split periods before fetching.
         async def load():
             rows = await self.client.all('DataLabService/locgoRegnVisitrDDList', dict(startYmd=ym + '01', endYmd=ym + str(month_days(ym))), 0, 30000)
-            return {slug: sum_visitors(rows, slug, ym) for slug in DISTRICTS}
-        return (await self.month_cache.get(ym, 86400, load))[district]
+            grouped = {}
+            for row in rows:
+                grouped.setdefault(str(row.get('signguCode')), []).append(row)
+            result = {}
+            for code in BY_ID:
+                try:
+                    source_code = region_codes(code, ym, 'DataLabService')[1]
+                except ApiError as error:
+                    if error.code == 'UNSUPPORTED_REGION_PERIOD':
+                        continue
+                    raise
+                result[code] = sum_visitors(grouped.get(source_code, []), code, ym)
+            return result
+        return (await self.month_cache.get(ym, 86400, load))[canonical]
 
     async def index(self, district, ym, code):
         operation, field, _ = definition(code)

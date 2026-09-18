@@ -1,6 +1,7 @@
 import type { AllSummaryResponse, ContentsResponse, DistrictMeta, FestivalsResponse, IndicesResponse, RankResponse, RelatedResponse, SummaryResponse, VisitorsResponse } from '../src/types/district.js'
 import { ApiError, KntoClient, MemoCache, sourceFetchedAt } from './knto.js'
 import { DISTRICTS, isDistrict, type DistrictSlug } from './regionCodes.js'
+import { requireTourismDistrict } from '../src/data/tourismRegions.js'
 import { changePct, monthDays, shiftMonth, visitorMonth } from './aggregate/visitors.js'
 import { DIAGNOSTIC_CODES, getIndex, getIndices, indexDefinition } from './aggregate/indices.js'
 import { getContents, getFestivals } from './aggregate/contents.js'
@@ -26,9 +27,14 @@ export function parseDistrictQuery(resource: string, params: URLSearchParams, co
     summary: ['district', 'baseYm', 'visitorYm'], visitors: ['district', 'baseYm', 'months'], indices: ['district', 'baseYm'],
     contents: ['district', 'contentTypeId'], festivals: ['district', 'from'], related: ['district', 'baseYm'], rank: ['district', 'metric', 'baseYm'], diagnosis: ['district', 'baseYm', 'visitorYm'],
   }
-  for (const key of params.keys()) if (!permitted[resource as Resource].includes(key) || params.getAll(key).length !== 1) throw new ApiError(400, 'INVALID_PARAMETER', '알 수 없거나 중복된 파라미터입니다.')
-  const district = params.get('district') ?? 'donggu'
-  if (!isDistrict(district) && !(district === 'all' && resource === 'summary')) throw new ApiError(400, 'UNKNOWN_DISTRICT', '지원하지 않는 광주 자치구입니다.')
+  for (const key of params.keys()) if ((!permitted[resource as Resource].includes(key) && key !== 'regionId') || params.getAll(key).length !== 1) throw new ApiError(400, 'INVALID_PARAMETER', '알 수 없거나 중복된 파라미터입니다.')
+  const district = params.get('district') ?? (params.has('regionId') ? '' : 'donggu')
+  if (!isDistrict(district) && !(district === 'all' && resource === 'summary' && !params.has('regionId'))) throw new ApiError(400, 'UNKNOWN_DISTRICT', '지원하는 시군구 코드를 선택해 주세요.')
+  if (district !== 'all') {
+    try { requireTourismDistrict(district, params.get('regionId')) } catch (error) {
+      throw new ApiError(400, 'REGION_MISMATCH', error instanceof Error ? error.message : '지역 선택을 확인해 주세요.')
+    }
+  }
   const baseYm = params.get('baseYm') ?? (resource === 'visitors' ? config.visitorBaseYm : config.indexBaseYm)
   const visitorYm = params.get('visitorYm') ?? (baseYm < config.visitorBaseYm ? baseYm : config.visitorBaseYm)
   for (const [value, maximum] of [[baseYm, resource === 'visitors' ? config.visitorBaseYm : config.indexBaseYm], [visitorYm, config.visitorBaseYm]]) if (!validMonth(value) || value < '201901' || value > maximum) throw new ApiError(400, 'INVALID_MONTH', '기준월은 YYYYMM 형식의 확인된 데이터 범위여야 합니다.')

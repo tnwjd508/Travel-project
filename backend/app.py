@@ -14,6 +14,7 @@ from starlette.exceptions import HTTPException
 
 from .core import ApiError, Budget, Freshness, KntoClient, budget, meta, trace
 from .district import TTL, parse_query
+from .regions import CATALOGUE
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -24,16 +25,19 @@ def create_app(settings=None, transport=None):
     @asynccontextmanager
     async def lifespan(app):
         from .district import DistrictService
+        from .briefing import BriefingWorker
         async with httpx.AsyncClient(transport=transport, follow_redirects=False, timeout=12) as http:
             app.state.http = http
             app.state.service = DistrictService(KntoClient(env.get('TOUR_API_SERVICE_KEY', ''), http))
+            app.state.briefing = BriefingWorker(env)
             try:
                 yield
             finally:
+                await app.state.briefing.close()
                 await app.state.service.close()
 
     app = FastAPI(title='ON:GIL 관광 데이터 API', version='2.0.0', lifespan=lifespan,
-        description='광주 5개 자치구 실데이터 API. 지수는 시간·금액·인원 단위가 아닙니다.')
+        description='전국 관광 실데이터 API와 광주 대시보드. 지수는 시간·금액·인원 단위가 아닙니다.')
 
     @app.middleware('http')
     async def request_context(request, call_next):
@@ -80,10 +84,22 @@ def create_app(settings=None, transport=None):
     async def health():
         return {'status': 'ok', 'backend': 'fastapi', 'version': '2.0.0', 'tourApiConfigured': bool(env.get('TOUR_API_SERVICE_KEY', '').strip())}
 
-    @app.get('/api/district/{resource}', tags=['자치구'], description='summary, visitors, indices, contents, festivals, related, rank, diagnosis. 공통 district는 donggu/seogu/namgu/bukgu/gwangsangu. summary만 all 허용.')
+    @app.get('/api/regions', tags=['지역 목록'])
+    async def regions():
+        return JSONResponse(CATALOGUE, headers={'Cache-Control': 'no-cache'})
+
+    @app.get('/api/monthly-briefing', tags=['월간 브리핑'], description='팀원의 LangGraph/Gemini 서비스를 동일한 코드로 실행합니다. 최대 250초 대기, AI 미설정·실패 시 수집 근거를 유지합니다.')
+    async def monthly_briefing(request: Request, district: str = '', month: str | None = None, regionId: str | None = None):
+        result = await app.state.briefing.request(request.method, list(request.query_params.multi_items()))
+        headers = {'Cache-Control': 'no-store'}
+        if result['status'] == 429:
+            headers['Retry-After'] = '30'
+        return JSONResponse(result['body'], status_code=result['status'], headers=headers)
+
+    @app.get('/api/district/{resource}', tags=['자치구'], description='summary, visitors, indices, contents, festivals, related, rank, diagnosis. district는 /api/regions의 시군구 ID 또는 기존 광주 영문 별칭. summary의 all은 광주 5개 구만 의미합니다.')
     async def district_api(request: Request, resource: str, district: str = 'donggu', baseYm: str | None = None,
         visitorYm: str | None = None, months: int | None = None, metric: str | None = None,
-        contentTypeId: str | None = None, from_date: str | None = Query(None, alias='from')):
+        contentTypeId: str | None = None, from_date: str | None = Query(None, alias='from'), regionId: str | None = None):
         query = parse_query(resource, list(request.query_params.multi_items()), env)
         request.state.base_ym = query['baseYm']
         if not env.get('TOUR_API_SERVICE_KEY', '').strip():

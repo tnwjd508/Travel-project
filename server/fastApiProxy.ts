@@ -1,7 +1,7 @@
 export interface ApiRequest { method?: string; query: Record<string, string | string[] | undefined> }
 export interface ApiResponse { status(code: number): ApiResponse; setHeader(name: string, value: string): void; json(body: unknown): void }
 
-export async function proxyFastApi(path: string, request: ApiRequest, response: ApiResponse, omit: string[] = []) {
+export async function proxyFastApi(path: string, request: ApiRequest, response: ApiResponse, omit: string[] = [], timeoutMs = 30000) {
   response.setHeader('Cache-Control', 'no-store')
   response.setHeader('X-Content-Type-Options', 'nosniff')
   if (request.method !== 'GET') {
@@ -19,8 +19,9 @@ export async function proxyFastApi(path: string, request: ApiRequest, response: 
     }
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (process.env.FASTAPI_PROXY_TOKEN) headers['X-Ongil-Proxy-Token'] = process.env.FASTAPI_PROXY_TOKEN
-    const upstream = await fetch(url, { headers, signal: AbortSignal.timeout(30000), redirect: 'error' })
+    const upstream = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs), redirect: 'error' })
     const body: unknown = await upstream.json()
+    if (upstream.status === 429) response.setHeader('Retry-After', upstream.headers.get('retry-after') ?? '30')
     if (upstream.ok) response.setHeader('Cache-Control', upstream.headers.get('cache-control') ?? 'no-store')
     return response.status(upstream.status).json(body)
   } catch {

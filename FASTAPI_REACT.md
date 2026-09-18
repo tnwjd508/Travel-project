@@ -2,6 +2,8 @@
 
 ## 반영한 저장소 상태
 
+**2026-09-18 통합:** 팀원 PR #7 `work-from-main`의 `888a93b`를 로컬 `JSBbranch`에 병합했다. 전국 화면과 LangGraph 코드를 보존하면서 FastAPI에 전국 코드 지원과 월간 브리핑 워커 연결을 추가했다. 현재 변경·검증·운영 한계는 [PR #7 통합 기록](docs/팀원_PR7_FastAPI_통합_기록.md)을 참고한다. 아래 2026-09-17 항목은 최초 구현 기록이다.
+
 2026-09-17 `tnwjd508/Travel-project`를 확인했다. 기본 브랜치는 `master`(`935173d`, PR #5 병합), `main`은 `e425980`(PR #6 병합)이었다. 작업 브랜치 `JSBbranch`의 `8531956`에서 `origin/main`까지 fast-forward로 최신 변경을 반영한 뒤 이 작업을 적용했다. 진행 중 축제 UI를 보존하고 데이터 경로를 새 API로 연결했다. 원격 push와 운영 배포는 수행하지 않았다.
 
 ## 구조와 구현 범위
@@ -14,12 +16,13 @@
 
 - `backend/app.py`: FastAPI 진입점, lifespan HTTPX 연결 풀, 오류 처리, Swagger, 정적 React 서빙.
 - `backend/core.py`: 외부 API 허용 목록, 키 보호, 동시 호출 6개, 요청당 25초/80회, operation별 UTC 일일 900회, TTL 캐시와 동일 요청 합치기.
-- `backend/district.py`: 광주 5개 구 코드 전환, 완월 검증, 8개 리소스 집계. `backend/diagnosis.py`: 검토용 draft-1 규칙.
+- `backend/district.py`: 전국 지역 코드·완월 검증·8개 리소스 집계. 광주 `all` 호환 범위는 5개 구다. `backend/diagnosis.py`: 검토용 draft-1 규칙.
+- `backend/briefing.py` → `server/briefing/bridge.ts`: 팀원의 LangGraph 월간 서비스를 상주 Node 워커로 실행한다. 같은 서비스 인스턴스의 캐시·동시 실행 제한을 유지한다. `tsx`는 운영 의존성이다.
 - `src/services/districtApi.ts`, `src/hooks/useDistrictResource.ts`: 타입 계약, 구 변경 시 이전 데이터 제거, 취소·로딩·오류·재시도·빈 데이터 처리.
-- 개요 KPI, 방문 추이, 연령 지수, 콘텐츠 구성, 지도 관광지 좌표, 연관 관광지, 진단, 순위, 보고서를 API와 연결했다. 진행 중 축제는 한국 시간 현재 날짜로 걸러낸다.
+- 개요 KPI, 방문 추이, 연령 지수, 콘텐츠 구성, 지도 관광지 좌표, 연관 관광지, 진단, 순위, 보고서를 API와 연결했다. 현재 개요는 팀원의 월간 브리핑과 최근 종료/예정 축제를 사용한다. 이전 진행 중 축제 컴포넌트는 파일로 보존했다.
 - 보고서 생성 시 조회한 데이터의 복사본을 고정한다. 화면을 벗어나면 스냅샷은 해제된다. DB 저장 기능은 포함하지 않는다.
 - 정책 시뮬레이션과 전략 비교의 기존 가정값은 시나리오 예시임을 화면에 명시했다. 학습된 AI 예측·검증된 정책 인과효과가 아니다.
-- 기존 `server/aggregate`, `server/district.ts` 등 TypeScript 집계 코드는 계약 비교 및 회귀 테스트용으로 보존했다. 기본 데이터 엔진은 FastAPI이며, `api/*.ts`는 분리 배포용 전달 어댑터다.
+- 기존 `server/aggregate`, `server/district.ts` 등 TypeScript 집계 코드는 계약 비교 및 회귀 테스트용으로 보존했다. 기본 API 엔진은 FastAPI이며, `api/*.ts`는 분리 배포용 전달 어댑터다(공개 지역 목록은 팀원 TS 함수 유지). LangGraph 수집·생성 로직은 TS 워커를 실제로 사용한다.
 
 ## 설치와 실행
 
@@ -57,6 +60,7 @@ macOS/Linux에서는 `.venv/Scripts/python.exe` 대신 `.venv/bin/python`을 사
 | 서버 환경변수 | 용도 |
 | --- | --- |
 | `TOUR_API_SERVICE_KEY` | 관광공사 API 인증키, FastAPI에만 설정 |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | 월간 브리핑 AI 생성용. FastAPI에만 설정. 키 미설정/생성 실패 시 실제 수집 근거를 유지 |
 | `TOUR_API_INDEX_BASE_YM` | 지수 최대/기본 기준월, 기본 `202608` |
 | `TOUR_API_VISITOR_BASE_YM` | 방문자 최대/기본 기준월, 기본 `202607` |
 | `VWORLD_API_KEY`, `VWORLD_DOMAIN` | 선택적 VWorld 경계 조회. 미설정 시 포함된 2025-06-30 정적 경계 사용 |
@@ -72,6 +76,7 @@ macOS/Linux에서는 `.venv/Scripts/python.exe` 대신 `.venv/bin/python`을 사
 ```powershell
 & .venv/Scripts/python.exe -m pytest backend/tests -q
 npm test
+npm run test:briefing
 npm run build
 # FastAPI가 실행 중일 때, 실제 외부 API 호출량을 소비하는 검사
 node scripts/smoke-district.mjs --base-url http://localhost:5173 --full-history
@@ -91,4 +96,4 @@ node scripts/smoke-district.mjs --base-url http://localhost:5173 --full-history
 
 Vercel 분리 배포는 먼저 FastAPI 서버를 배포해야 한다. Vercel에 `FASTAPI_BASE_URL=https://실제-FastAPI-주소`, 양쪽 서버에 충분히 긴 동일한 `FASTAPI_PROXY_TOKEN`을 설정한다. Vercel 어댑터가 헤더에 토큰을 넣고 FastAPI가 `/api/*`를 검증한다(`/api/health` 제외). 토큰은 브라우저에 전달하지 않는다. 로컬 통합 실행이나 FastAPI 단독 공개 서빙에서는 이 토큰을 비워 둔다. 분리 배포 토큰이 활성화된 origin의 Swagger 호출도 서버 인증이 필요하다.
 
-캐시·일일 예산은 **프로세스 단위 메모리**이며 재시작하면 초기화된다. 다중 worker/replica 배포 전 Redis 등 공유 예산·캐시 및 ingress 요청 제한이 필요하다. 프록시 토큰은 origin 우회 방지용이며 사용자별 rate limit을 대체하지 않는다. 사용자 로그인, 운영 DB, 자동 월 수집 스케줄러, 운영 배포는 이 변경에 포함되지 않는다.
+캐시·일일 예산은 **프로세스 단위 메모리**이며 재시작하면 초기화된다. Python 데이터 엔진과 Node 브리핑 워커 예산은 별개로, 공급자 전체 쿼터를 합산하지 않는다. 다중 worker/replica 배포 전 Redis 등 공유 예산·캐시 및 ingress 요청 제한이 필요하다. 프록시 토큰은 origin 우회 방지용이며 사용자별 rate limit을 대체하지 않는다. 사용자 로그인, 운영 DB, 자동 월 수집 스케줄러, 운영 배포는 이 변경에 포함되지 않는다.

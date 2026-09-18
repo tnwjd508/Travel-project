@@ -7,6 +7,10 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        '/api/monthly-briefing': {
+          target: process.env.FASTAPI_BASE_URL || env.FASTAPI_BASE_URL || 'http://127.0.0.1:8000',
+          changeOrigin: true, timeout: 300000, proxyTimeout: 300000,
+        },
         '/api': {
           target: process.env.FASTAPI_BASE_URL || env.FASTAPI_BASE_URL || 'http://127.0.0.1:8000',
           changeOrigin: true,

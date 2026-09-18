@@ -1,5 +1,6 @@
 import { ApiError, KntoClient, MemoCache, numeric, type Row } from '../knto.js'
-import { DISTRICTS, regionCodes, type DistrictSlug } from '../regionCodes.js'
+import { regionCodes, type DistrictSlug } from '../regionCodes.js'
+import { tourismDistricts } from '../../src/data/tourismRegions.js'
 import type { VisitorMonth } from '../../src/types/district.js'
 
 export function shiftMonth(ym: string, offset: number): string {
@@ -33,12 +34,25 @@ export function sumVisitorRows(rows: Row[], district: DistrictSlug, ym: string):
 }
 const monthCache = new MemoCache(60)
 export async function visitorMonth(client: KntoClient, district: DistrictSlug, ym: string) {
+  const code = regionCodes(district, ym, 'DataLabService').district
   const all = await monthCache.get(`${client.scope}:${ym}`, 86400, async () => {
-    // Keep only five district aggregates in memory, not nationwide daily records.
+    // 전국 원본은 코드별로 묶어 한 번만 합산하고, 작은 월별 집계만 캐시합니다.
     const rows = await client.all('DataLabService/locgoRegnVisitrDDList', { startYmd: `${ym}01`, endYmd: `${ym}${monthDays(ym)}` }, 0, 30000)
-    return Object.fromEntries(Object.keys(DISTRICTS).map(slug => [slug, sumVisitorRows(rows, slug as DistrictSlug, ym)]))
+    const grouped = new Map<string, Row[]>()
+    for (const row of rows) {
+      const key = String(row.signguCode)
+      if (!grouped.has(key)) grouped.set(key, [])
+      grouped.get(key)!.push(row)
+    }
+    const result: Record<string, VisitorMonth> = {}
+    for (const item of tourismDistricts) {
+      let mapped: string
+      try { mapped = regionCodes(item.id, ym, 'DataLabService').district } catch { continue }
+      result[mapped] = sumVisitorRows(grouped.get(mapped) ?? [], item.id, ym)
+    }
+    return result
   })
-  return all[district]
+  return all[code]
 }
 export function changePct(current: number | null, previous: number | null): number | null {
   return current === null || previous === null || previous === 0 ? null : Math.round((current - previous) / previous * 10000) / 100
