@@ -1,3 +1,5 @@
+import { MetricGuide } from './MetricGuide'
+import { briefingMetrics } from '@/data/tourismMetrics'
 import { useEffect, useState } from 'react'
 import { CalendarDays, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
@@ -118,6 +120,7 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
         </div></div>
       </div>
 
+      <MetricGuide metrics={briefingMetrics} month={data.month}/>
       <details className="mt-6 border-t border-slate-100 pt-4">
         <summary className="cursor-pointer py-2 text-xs font-bold text-slate-700">수집 근거와 API 상태 보기 ({data.evidence.length}개 근거)</summary>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">{data.sources.map((source) => <div key={source.id} className="rounded-xl border border-slate-100 p-3 text-xs"><p className="font-semibold text-slate-800">{source.label} · {statusLabels[source.status]} · {source.count}행</p>{source.note && <p className="mt-1 leading-5 text-slate-500">{source.note}</p>}</div>)}</div>

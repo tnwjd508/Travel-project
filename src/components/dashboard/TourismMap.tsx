@@ -12,6 +12,7 @@ import type { NeighborhoodFeature } from '@/types/boundary'
 import type { Attraction } from '@/types/tourism'
 import { toD3FeatureCollection } from '@/utils/geoRendering'
 import { useDistrictResource } from '@/hooks/useDistrictResource'
+import { contentCategoryName } from '@/data/contentCategories'
 import { DataNotice, SourceNote } from './DataNotice'
 
 interface DistrictProperties {
@@ -34,7 +35,7 @@ const neighborhoodFills = ['#BFDBFE', '#C7D2FE', '#BAE6FD', '#DDD6FE', '#CCFBF1'
 export function TourismMap() {
   const district = useActiveDistrict()
   const contentState = useDistrictResource('contents', { district: district.slug })
-  const attractions = useMemo<Attraction[]>(() => (contentState.data?.items ?? []).filter(item => item.lng !== null && item.lat !== null).map(item => ({ id: item.contentId, name: item.title, category: `분류 ${item.category}`, lng: item.lng!, lat: item.lat!, visitors: '', accent: '#2563EB' })), [contentState.data])
+  const attractions = useMemo<Attraction[]>(() => (contentState.data?.items ?? []).filter(item => item.lng !== null && item.lat !== null).map(item => ({ id: item.contentId, name: item.title, category: contentCategoryName(item.category), lng: item.lng!, lat: item.lat!, visitors: '', accent: '#2563EB' })), [contentState.data])
   const { neighborhoods, source, status, errorMessage, retry } = useDistrictNeighborhoods(district)
 
   const [hovered, setHovered] = useState<NeighborhoodFeature | null>(null)

@@ -79,8 +79,8 @@ export function DailyBriefingPreview() {
             <h2 id="daily-briefing-title" className="mt-1 text-lg font-extrabold tracking-[-.035em] text-slate-950">오늘의 AI 브리핑</h2>
           </div>
           <div className="ml-auto text-right lg:ml-2">
-            <p className="text-[10px] font-bold text-slate-400">관광 활성화 지수</p>
-            <p className="mt-0.5 text-2xl font-black tracking-[-.05em] text-slate-950">74<span className="ml-0.5 text-xs font-bold text-slate-400">점</span></p>
+            <p className="text-[10px] font-bold text-slate-400">관광 활성화 지수 · 예시</p>
+            <p className="mt-0.5 text-2xl font-black tracking-[-.05em] text-slate-950">74<span className="ml-0.5 text-xs font-bold text-slate-400">지수</span></p><p className="mt-1 text-[10px] text-slate-500">화면 예시값 · 산출 기준 없음</p>
           </div>
         </div>
 

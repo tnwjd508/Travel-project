@@ -1,3 +1,4 @@
+import { MetricGuide } from './MetricGuide'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 import { useDistrictResource } from '@/hooks/useDistrictResource'
 import { DataNotice, SourceNote, formatValue } from './DataNotice'
@@ -22,7 +23,7 @@ export function KpiGrid() {
         {kpis.map(kpi => <article key={kpi.label} className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm"><h3 className="text-xs font-semibold text-slate-500">{kpi.label}</h3><p className="mt-4 text-2xl font-extrabold tracking-tight text-slate-950">{formatValue(kpi.value, kpi.decimals)}</p><p className="mt-1 text-xs text-slate-500">{kpi.unit}</p><p className="mt-3 text-[11px] leading-5 text-slate-500">{kpi.note}</p></article>)}
       </div>
       <DataNotice state={state}/>
-      {summary && <SourceNote data={summary}/>}
+      {summary && <><MetricGuide metrics={['stay', 'spend', 'demand']} month={summary.baseYm}/><SourceNote data={summary}/></>}
     </section>
   )
 }
