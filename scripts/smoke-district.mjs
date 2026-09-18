@@ -1,23 +1,10 @@
-// Run after npm test. Credentials are held in memory and never written to disk.
-import { readFile } from 'node:fs/promises'
+// Run against an already running FastAPI server or the React development proxy.
 import assert from 'node:assert/strict'
-import { createServer } from 'vite'
-
-const keyFileIndex = process.argv.indexOf('--key-file')
-if (!process.env.TOUR_API_SERVICE_KEY && keyFileIndex >= 0) {
-  const text = await readFile(process.argv[keyFileIndex + 1], 'utf8')
-  const match = text.match(/(?:TOUR_API_SERVICE_KEY\s*=|인증키\s*:)\s*([A-Za-z0-9%+/=_-]+)/)
-  if (!match) throw new Error('인증키 파일 형식을 확인하세요. 값은 출력하지 않습니다.')
-  process.env.TOUR_API_SERVICE_KEY = match[1]
-}
-if (!process.env.TOUR_API_SERVICE_KEY) throw new Error('TOUR_API_SERVICE_KEY 또는 --key-file 경로가 필요합니다.')
-const server = await createServer({ server: { host: '127.0.0.1', port: 0, open: false } })
-await server.listen()
-const address = server.httpServer.address()
-const base = `http://127.0.0.1:${address.port}`
+const baseIndex = process.argv.indexOf('--base-url')
+const base = baseIndex >= 0 ? process.argv[baseIndex + 1] : 'http://127.0.0.1:8000'
 let failures = 0
 const historyMonths = process.argv.includes('--full-history') ? 12 : 2
-try {
+{
   const cases = [
     ['summary', 'district=donggu'], ['contents', 'district=donggu'],
     ['festivals', 'district=donggu&from=20260901'], ['visitors', `district=donggu&months=${historyMonths}`],
@@ -48,4 +35,4 @@ try {
     assert.equal((await fetch(base + path)).status, expected)
   }
   assert.equal(failures, 0, `${failures}개 API 검증 실패`)
-} finally { await server.close() }
+}

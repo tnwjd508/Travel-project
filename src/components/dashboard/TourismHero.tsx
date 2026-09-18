@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { regions } from '@/data/regions'
 import { getRegionTourismHero } from '@/services/tourApi'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { useDistrictResource } from '@/hooks/useDistrictResource'
 
 const defaultHeroImage = '/images/gwangju-acc-hero.jpg'
 const defaultHeroAlt = '국립아시아문화전당과 광주 도심의 저녁 풍경'
@@ -10,6 +11,7 @@ const defaultHeroAlt = '국립아시아문화전당과 광주 도심의 저녁 �
 export function TourismHero() {
   const region = regions[0]
   const district = useActiveDistrict()
+  const summary = useDistrictResource('summary', { district: district.slug })
   const fallbackHeroImage = region.heroImage ?? defaultHeroImage
   const fallbackHeroAlt = region.heroAlt ?? defaultHeroAlt
   const [heroImage, setHeroImage] = useState(fallbackHeroImage)
@@ -55,7 +57,7 @@ export function TourismHero() {
           WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.35) 22%, black 52%, black 100%)',
           maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.35) 22%, black 52%, black 100%)',
         }}
-        fetchPriority="high"
+        loading="eager"
         onError={() => {
           if (heroImage !== fallbackHeroImage) {
             setHeroImage(fallbackHeroImage)
@@ -67,7 +69,7 @@ export function TourismHero() {
       <div className="absolute inset-0 bg-gradient-to-t from-white/55 via-transparent to-white/10 sm:from-transparent" />
 
       <div className="absolute right-4 top-4 z-10 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-[10px] font-semibold text-slate-600 shadow-sm backdrop-blur-md sm:right-6 sm:top-6">
-        데이터 업데이트 : 2025.11.23
+        {summary.data ? `데이터 기준월 : ${summary.data.baseYm}` : summary.status === 'error' ? '데이터 연결 확인 필요' : '데이터 확인 중'}
       </div>
 
       <div className="relative z-10 flex min-h-[440px] max-w-[720px] flex-col justify-end px-6 py-7 sm:min-h-[380px] sm:justify-center sm:px-9 lg:min-h-[340px] lg:px-12">

@@ -1,50 +1,37 @@
 import { useState } from 'react'
-import { CheckCircle2, FileText, Printer, Sparkles } from 'lucide-react'
+import { FileText, Printer } from 'lucide-react'
 import { DashboardPageFrame } from '@/components/dashboard/DashboardPageFrame'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
-import { policyLabels } from '@/data/policies'
-import { useTourismStrategyStore } from '@/stores/useTourismStrategyStore'
+import { DataNotice, SourceNote, formatValue } from '@/components/dashboard/DataNotice'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { useDistrictResource } from '@/hooks/useDistrictResource'
+import type { SummaryResponse, DiagnosisResponse } from '@/types/district'
 
-const issues = ['2030 관광객 감소', '야간 관광 콘텐츠 부족', '핵심 관광지 방문 집중', '숨은 관광지 저인지']
-const priorities = ['야간 문화예술 콘텐츠 확장', '로컬마켓과 도심 관광 동선 연결', '2030 맞춤형 디지털 캠페인']
-
+interface Snapshot { summary: SummaryResponse; diagnosis: DiagnosisResponse; createdAt: string }
 export function ReportPage() {
   const district = useActiveDistrict()
-  const { recommendedStrategy, budget, duration, simulationResult } = useTourismStrategyStore()
-  const [generatedAt, setGeneratedAt] = useState<string | null>(null)
-  const analysisDate = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'long' }).format(new Date())
-  const reportKpis = [
-    ['월 관광객', `${district.metrics.visitors.toLocaleString('ko-KR')}명`, '+8.7%'],
-    ['평균 체류시간', `${district.metrics.stayTime.toFixed(1)}시간`, '+5.2%'],
-    ['관광 소비', `${district.metrics.spending.toLocaleString('ko-KR')}억원`, '+11.4%'],
-    ['관광 성장지수', `${district.metrics.growthIndex}점`, '+3.1%'],
-  ]
-
-  return <DashboardPageFrame eyebrow="AI Strategy Report" title="분석 결과를 하나의 보고서로 정리합니다" description="지역 현황과 핵심 문제, 추천 정책 및 예상 효과를 정책 보고서 형태로 확인하세요." icon={FileText}>
-    <div className="mb-5 flex flex-wrap justify-end gap-2 print:hidden">
-      <Button onClick={() => setGeneratedAt(new Date().toISOString())} className="border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"><Sparkles size={15}/>보고서 생성</Button>
-      <Button onClick={() => window.print()} disabled={!generatedAt} className="bg-slate-950 text-white hover:bg-blue-600"><Printer size={15}/>인쇄·PDF 저장</Button>
-    </div>
-
-    <Card className="print-report overflow-hidden bg-white p-6 sm:p-9 lg:p-12">
-      <header className="flex flex-col justify-between gap-5 border-b border-slate-200 pb-7 sm:flex-row sm:items-start"><div><div className="flex items-center gap-2 text-xs font-extrabold tracking-[-.03em] text-slate-950">ON<span className="text-blue-600">:</span>GIL <span className="font-medium text-slate-300">/</span> AI REPORT</div><h2 className="mt-5 text-3xl font-extrabold tracking-[-.05em] text-slate-950">광주광역시 {district.nameKo} 관광전략 분석 보고서</h2><p className="mt-2 text-sm text-slate-400">AI 기반 지역 관광 활성화 정책 의사결정 지원</p></div><dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-xs"><dt className="text-slate-400">분석 지역</dt><dd className="font-bold text-slate-700">광주광역시 {district.nameKo}</dd><dt className="text-slate-400">분석 날짜</dt><dd className="font-bold text-slate-700">{analysisDate}</dd><dt className="text-slate-400">보고서 상태</dt><dd className={`font-bold ${generatedAt ? 'text-emerald-600' : 'text-amber-600'}`}>{generatedAt ? '생성 완료' : '미리보기'}</dd></dl></header>
-
-      <section className="grid gap-4 border-b border-slate-100 py-7 sm:grid-cols-4">{reportKpis.map(([label, value, change]) => <div key={label} className="rounded-2xl bg-slate-50 p-4"><p className="text-[10px] font-bold text-slate-400">{label}</p><p className="mt-2 text-xl font-extrabold tracking-tight text-slate-900">{value}</p><p className="mt-1 text-[10px] font-bold text-emerald-600">{change}</p></div>)}</section>
-
-      <div className="grid gap-8 py-8 lg:grid-cols-2">
-        <section><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-blue-600">01 · Diagnosis</p><h3 className="mt-2 text-lg font-bold text-slate-900">핵심 문제</h3><div className="mt-4 space-y-2">{issues.map((issue, index) => <div key={issue} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5"><span className="grid h-6 w-6 place-items-center rounded-lg bg-red-50 text-[9px] font-bold text-red-500">{index + 1}</span><span className="text-xs font-semibold text-slate-600">{issue}</span></div>)}</div></section>
-        <section><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-blue-600">02 · Recommendation</p><h3 className="mt-2 text-lg font-bold text-slate-900">추천 정책</h3><div className="mt-4 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-800 p-5 text-white"><div className="flex items-center gap-2 text-xs font-bold text-blue-300"><Sparkles size={14}/>최우선 추천 전략</div><p className="mt-3 text-xl font-extrabold">{policyLabels[recommendedStrategy]}</p><p className="mt-2 text-xs leading-6 text-slate-400">예산 {budget}억 원 · 시행 기간 {duration}<br/>문화예술 자원을 야간 체류와 지역 소비로 연결하는 전략입니다.</p></div></section>
-      </div>
-
-      <section className="border-t border-slate-100 py-8"><div className="flex items-end justify-between"><div><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-blue-600">03 · Expected Impact</p><h3 className="mt-2 text-lg font-bold text-slate-900">예상 정책 효과</h3></div>{!simulationResult && <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-bold text-amber-600">시뮬레이션 실행 전 기본 예측</span>}</div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[
-        ['관광객', `+${simulationResult?.visitorChange ?? 15}%`], ['관광 소비', `+${simulationResult?.spendingChange ?? 18}%`], ['체류시간', `+${simulationResult?.stayChange ?? 11}%`], ['혼잡도', `${simulationResult?.congestionChange ?? -8}%`],
-      ].map(([label, value]) => <div key={label} className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-center"><p className="text-[10px] font-bold text-slate-400">{label}</p><p className="mt-1 text-2xl font-extrabold text-blue-700">{value}</p></div>)}</div></section>
-
-      <section className="grid gap-6 border-t border-slate-100 py-8 lg:grid-cols-[.8fr_1.2fr]"><div><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-blue-600">04 · Priority</p><h3 className="mt-2 text-lg font-bold text-slate-900">실행 우선순위</h3><ol className="mt-4 space-y-3">{priorities.map((priority, index) => <li key={priority} className="flex items-center gap-3 text-xs font-semibold text-slate-600"><CheckCircle2 size={15} className="text-emerald-500"/><span className="text-slate-300">0{index + 1}</span>{priority}</li>)}</ol></div><div className="rounded-2xl border border-slate-100 bg-slate-50 p-5"><div className="flex items-center gap-2 text-xs font-bold text-blue-600"><Sparkles size={14}/>ON:GIL AI 종합 의견</div><p className="mt-3 text-[13px] leading-7 text-slate-600">{district.nameKo}는 {district.tourismType} 자원의 경쟁력이 높지만 체류와 주변 상권 소비로 연결되는 동선이 부족합니다. 핵심 관광자원을 로컬마켓과 이동 서비스로 연결하면 방문 집중을 분산하면서 체류시간과 관광 소비를 함께 높일 수 있습니다.</p></div></section>
-
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 text-[9px] text-slate-400"><span>한국관광공사 Tourism Data Lab 연계 · ON:GIL AI 분석</span><span>{generatedAt ? `생성 ID · ${new Date(generatedAt).getTime()}` : '보고서 생성 버튼을 눌러 결과를 확정하세요.'}</span></footer>
-    </Card>
+  const summaryState = useDistrictResource('summary', { district: district.slug })
+  const diagnosisState = useDistrictResource('diagnosis', { district: district.slug })
+  const [saved, setSaved] = useState<Snapshot | null>(null)
+  const snapshot = saved?.summary.district === district.slug ? saved : null
+  const summary = snapshot?.summary ?? summaryState.data
+  const diagnosis = snapshot?.diagnosis ?? diagnosisState.data
+  function generate() {
+    if (summaryState.data && diagnosisState.data) setSaved(structuredClone({ summary: summaryState.data, diagnosis: diagnosisState.data, createdAt: new Date().toISOString() }))
+  }
+  const rows = summary ? [
+    ['일별 방문 추정치 월 합계', formatValue(summary.visitors.total), summary.visitors.month],
+    ['관광체류강도 지수', formatValue(summary.stay.ix21, 2), summary.baseYm],
+    ['관광소비강도 지수', formatValue(summary.spend.ix22, 2), summary.baseYm],
+    ['관광서비스수요 지수', formatValue(summary.demand.ix11, 2), summary.baseYm],
+  ] : []
+  return <DashboardPageFrame eyebrow="Tourism Report" title={`${district.nameKo} 관광 데이터 보고서`} description="조회한 실데이터와 진단 근거를 스냅샷으로 확정합니다. 생성 이후 재조회 결과로 바뀌지 않습니다." icon={FileText}>
+    <div className="mb-5 flex flex-wrap justify-end gap-2 print:hidden"><button onClick={generate} disabled={!summaryState.data || !diagnosisState.data} className="min-h-11 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white disabled:opacity-50">{snapshot ? '현재 조회값으로 다시 생성' : '보고서 생성'}</button><button onClick={() => window.print()} disabled={!snapshot} className="flex min-h-11 items-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-bold text-white disabled:opacity-50"><Printer size={14}/>인쇄·PDF 저장</button></div>
+    {!snapshot && <div className="mb-4 space-y-3"><DataNotice state={summaryState}/><DataNotice state={diagnosisState}/></div>}
+    <article className="print-report rounded-[24px] border border-slate-200 bg-white p-6 sm:p-9"><header className="border-b border-slate-200 pb-6"><p className="text-xs font-bold text-blue-600">ON:GIL · 관광 데이터 보고서</p><h2 className="mt-3 text-2xl font-extrabold">광주 {district.nameKo}</h2><p className="mt-2 text-xs text-slate-500">{snapshot ? `생성 시각: ${new Date(snapshot.createdAt).toLocaleString('ko-KR')}` : '미리보기 · 보고서 생성 전'}</p></header>
+      <section className="grid gap-3 py-6 sm:grid-cols-2 xl:grid-cols-4">{rows.map(([label,value,month]) => <div key={label} className="rounded-xl bg-slate-50 p-4"><h3 className="text-xs text-slate-500">{label}</h3><p className="mt-2 text-xl font-bold">{value}</p><p className="mt-2 text-[11px] text-slate-500">기준월 {month}</p></div>)}</section>
+      {summary && <SourceNote data={summary}/>}
+      {diagnosis && <><section className="mt-6 border-t border-slate-100 pt-6"><h3 className="text-lg font-bold">규칙 기반 점검 결과</h3><p className="mt-2 text-xs text-slate-500">{diagnosis.model.description}</p><div className="mt-4 space-y-3">{diagnosis.issues.map(issue => <div key={issue.id} className="rounded-xl border border-slate-100 p-4"><p className="text-sm font-bold">{issue.label} · {issue.status === 'attention' ? '검토 필요' : issue.status === 'normal' ? '정상 범위' : '자료 부족'}</p><p className="mt-2 text-xs text-slate-500">{issue.evidence}</p></div>)}</div></section><section className="mt-6"><h3 className="text-lg font-bold">우선 검토 과제</h3><ol className="mt-4 list-inside list-decimal space-y-3 text-sm">{diagnosis.priorities.map(item => <li key={item.issueId}>{item.title}<p className="mt-1 text-xs text-slate-500">{item.evidence}</p></li>)}</ol>{!diagnosis.priorities.length && <p className="mt-3 text-sm text-slate-500">현재 규칙에서 도출된 과제가 없습니다.</p>}<SourceNote data={diagnosis}/></section></>}
+      <footer className="mt-8 border-t border-slate-200 pt-4 text-xs leading-6 text-slate-500">방문자는 일별 추정치 합계입니다. 지수는 시간·금액·인원으로 해석하지 않습니다. 자체 진단은 검토용이며 정책 효과를 예측하지 않습니다.</footer>
+    </article>
   </DashboardPageFrame>
 }

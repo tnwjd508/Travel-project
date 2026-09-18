@@ -1,15 +1,12 @@
-import { handleDistrictHttp } from '../../server/districtHttp.js'
+import { proxyFastApi } from '../../server/fastApiProxy.js'
 
 interface ApiRequest { method?: string; query: Record<string, string | string[] | undefined> }
 interface ApiResponse { status(code: number): ApiResponse; setHeader(name: string, value: string): void; json(body: unknown): void }
 export default async function handler(request: ApiRequest, response: ApiResponse) {
-  const params = new URLSearchParams()
-  for (const [key, value] of Object.entries(request.query)) {
-    if (key === 'resource' || value === undefined) continue
-    for (const item of Array.isArray(value) ? value : [value]) params.append(key, item)
-  }
   const resource = typeof request.query.resource === 'string' ? request.query.resource : ''
-  const result = await handleDistrictHttp({ method: request.method, resource, params }, process.env)
-  for (const [key, value] of Object.entries(result.headers)) response.setHeader(key, value)
-  response.status(result.status).json(result.body)
+  if (request.method === 'GET' && Object.values(request.query).some(Array.isArray)) {
+    response.setHeader('Cache-Control', 'no-store')
+    return response.status(400).json({ code: 'INVALID_PARAMETER', message: '중복된 파라미터입니다.' })
+  }
+  return proxyFastApi(`/api/district/${encodeURIComponent(resource)}`, request, response, ['resource'])
 }

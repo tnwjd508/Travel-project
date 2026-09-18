@@ -2,7 +2,7 @@
 
 광주광역시 관광 데이터를 바탕으로 지역 현황을 탐색하고, 정책 시뮬레이션부터 전략 비교와 보고서 출력까지 이어지는 **AI 지역 관광전략 프론트엔드**입니다.
 
-이 프로젝트는 프런트엔드와 Vercel 서버리스 백엔드를 포함합니다. 광주 8개 데이터 API의 실행·응답 계약·실데이터 검증은 [백엔드 인수 문서](BACKEND_API.md)를 참고하세요.
+이 프로젝트는 **React 프런트엔드와 FastAPI 백엔드**를 포함합니다. 최신 `origin/main`의 진행 중 축제 기능까지 반영했습니다. 설치·실행·현재 진행 상황은 [FastAPI + React 인수 문서](FASTAPI_REACT.md), 8개 API 응답 계약은 [백엔드 API 문서](BACKEND_API.md)를 참고하세요.
 
 ## 현재 구현 상태
 
@@ -13,9 +13,10 @@
 | 광주 행정동 지도 | 구현 완료 | 5개 자치구·96개 행정동 경계, hover/선택, 구 필터, 확대·축소, 경계 레이어 전환 |
 | 정책 시뮬레이션 상태 | 구현 완료 | 정책·예산·기간 선택 및 결과를 브라우저에 유지 |
 | 보고서 | 구현 완료 | 분석 결과 확정, 인쇄 및 PDF 저장용 레이아웃 |
-| TourAPI 프록시 | 구현 완료 | 로컬 Vite 프록시와 Vercel Serverless Function 제공, 인증키 서버 보관 |
+| TourAPI 프록시 | 구현 완료 | Vite/Vercel → FastAPI → 관광공사, 인증키 FastAPI 서버 보관 |
 | 광주 데이터 API | 구현 완료 | 요약·방문자·49개 지수·콘텐츠·축제·연관관광지·전국 순위·검토용 자체 진단 |
-| 실데이터 전면 연동 | 진행 중 | 일부 화면의 KPI·진단·추천 결과와 대표 관광지는 현재 샘플 데이터 사용 |
+| 실데이터 연동 | 구현 완료 | 개요 KPI·방문 차트·지수·콘텐츠·지도 좌표·축제·진단·순위·보고서 연결 |
+| 정책 효과 모델 | 예시 단계 | 정책 시뮬레이션·전략 비교는 가정값이며 화면에 명시 |
 | 타 지역 대시보드 | 준비 중 | 현재 실제 진입 가능한 대시보드는 광주광역시만 제공 |
 
 ## 주요 기능
@@ -50,13 +51,14 @@
 
 1. 관광 KPI와 공간 분포 확인
 2. AI 진단 화면에서 핵심 문제와 우선 과제 확인
-3. 정책·예산·시행 기간을 조절해 예상 효과 시뮬레이션
-4. 전략별 기대효과, 예산, 난이도 비교
-5. 선택 결과를 정책 보고서로 정리하고 인쇄 또는 PDF 저장
+3. 정책·예산·시행 기간을 조절해 가정에 따른 시나리오 탐색
+4. 전략별 예시 효과, 예산, 난이도 비교
+5. 실데이터와 진단 근거를 보고서 스냅샷으로 확정하고 인쇄 또는 PDF 저장
 
 ## 기술 스택
 
 - React 18
+- FastAPI / Python / HTTPX / Uvicorn
 - TypeScript 5.7
 - Vite 6
 - React Router
@@ -71,20 +73,21 @@
 
 ### 요구 사항
 
-- Node.js 18 이상
+- Node.js 22 이상 권장
 - npm
 - TourAPI 연동 시 공공데이터포털 일반 인증키(Decoding)
-- 행정동 지도 원본을 다시 생성할 때만 Python 3 필요
+- Python 3.12 이상 (FastAPI 서버 실행)
 
 ### 설치 및 실행
 
-```bash
+```powershell
+python -m venv .venv
+& .venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt
 npm ci
-cp .env.example .env.local
-npm run dev
+npm run dev -- --key-file 'C:/Users/subin/OneDrive/바탕 화면/env.txt'
 ```
 
-Windows PowerShell에서는 환경 파일을 다음처럼 복사할 수 있습니다.
+인증키 파일 대신 서버 환경 파일을 사용할 경우 다음처럼 복사한 후 실제 값을 설정하고 `npm run dev`를 실행합니다. 실제 키는 공유 폴더에 복사하지 않는 방식을 권장합니다.
 
 ```powershell
 Copy-Item .env.example .env.local
@@ -118,9 +121,12 @@ http://localhost:5173/api/tourism?endpoint=areaCode2&numOfRows=1&pageNo=1
 
 | 명령어 | 설명 |
 | --- | --- |
-| `npm run dev` | Vite 개발 서버 실행 |
+| `npm run dev` | FastAPI + Vite 통합 실행 |
+| `npm run dev:web` | 별도로 실행 중인 FastAPI에 연결할 Vite만 실행 |
 | `npm run build` | TypeScript 검사 후 프로덕션 빌드 |
-| `npm run preview` | 프로덕션 빌드 로컬 미리보기 |
+| `npm run preview` | 정적 빌드만 미리보기. API 통합 확인은 FastAPI 정적 서빙 사용 |
+| `npm test` | 기존 TypeScript 계약 회귀 테스트 |
+| `.venv/Scripts/python.exe -m pytest backend/tests -q` | FastAPI 테스트 |
 
 ## 화면 경로
 
@@ -138,12 +144,13 @@ http://localhost:5173/api/tourism?endpoint=areaCode2&numOfRows=1&pageNo=1
 
 ```text
 frontend-co/
+├─ backend/                     # FastAPI 집계·진단·HTTPX·테스트
 ├─ api/
-│  └─ tourism.ts                 # Vercel용 TourAPI 프록시
+│  └─ tourism.ts                 # Vercel → FastAPI 전달 어댑터
 ├─ scripts/
 │  └─ generate_gwangju_map.py    # Shapefile → 행정동 SVG 데이터 변환
 ├─ server/
-│  └─ tourApi.ts                 # TourAPI 요청 검증 및 공통 호출 로직
+│  └─ fastApiProxy.ts            # Vercel 서버 간 프록시 (기존 TS 집계도 보존)
 ├─ src/
 │  ├─ assets/data/               # 샘플 관광 데이터와 행정동 지도 데이터
 │  ├─ components/
@@ -199,6 +206,7 @@ python scripts/generate_gwangju_map.py
 React UI
    ↓ /api/tourism
 로컬 Vite 프록시 또는 Vercel Function
+   ↓ FastAPI 서버 (외부 API 허용 목록·캐시·호출 한도)
    ↓ serviceKey 추가
 한국관광공사 KorService2
 ```
@@ -209,15 +217,16 @@ React UI
 
 - `src/assets/data/gwangju-tourism.json`의 관광 지표는 현재 화면 구성과 시뮬레이션 흐름을 검증하기 위한 샘플 데이터입니다.
 - 정책 시뮬레이션 결과는 `localStorage`의 `ongil-tourism-strategy` 키에 저장됩니다.
-- 행정동 지도 위 대표 관광지와 방문객 수는 현재 UI 시연용 값입니다.
-- 실서비스 전환 시 KPI, 진단 근거, 정책 효과 계산 결과를 실제 수집·분석 API와 연결해야 합니다.
+- 행정동 지도 위 관광지는 관광공사 콘텐츠 좌표를 사용합니다. 관광지별 방문객 수는 제공되지 않아 표시하지 않습니다.
+- KPI·진단 근거는 실제 API를 사용합니다. 자체 진단은 검토용 draft-1이며 학습된 예측 모델이 아닙니다.
 
 ## 배포
 
-Vercel 배포 시 프로젝트 설정에 다음 환경 변수를 등록합니다.
+Vercel 분리 배포는 별도 FastAPI 서버가 필요합니다. Vercel에 다음 환경 변수를 등록하고, FastAPI에는 관광공사 인증키와 같은 `FASTAPI_PROXY_TOKEN`을 설정합니다.
 
 ```text
-TOUR_API_SERVICE_KEY
+FASTAPI_BASE_URL
+FASTAPI_PROXY_TOKEN
 ```
 
-Production, Preview, Development 환경에 필요한 값을 설정하고 재배포해야 합니다. 인증키가 포함된 `.env.local`은 Git에 커밋하지 않습니다.
+Production, Preview, Development 환경에 필요한 값을 설정하고 재배포해야 합니다. 인증키가 포함된 `.env.local`은 Git에 커밋하지 않습니다. FastAPI 단독 서빙과 운영 한계는 [FASTAPI_REACT.md](FASTAPI_REACT.md)를 참고하세요.

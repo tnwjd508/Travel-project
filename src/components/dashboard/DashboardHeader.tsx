@@ -18,7 +18,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
           <p className="hidden text-[10px] font-medium text-slate-400 sm:block">AI 지역 관광전략 수립 플랫폼</p>
         </button>
 
-        <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 md:flex"><CalendarDays size={15} className="text-slate-400" aria-hidden="true" />2026. 08. 05.</div>
+        <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 md:flex"><CalendarDays size={15} className="text-slate-400" aria-hidden="true" />{new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}</div>
         <span className="mx-2 hidden h-5 w-px bg-slate-200 md:block" />
         <button type="button" onClick={() => navigate('/regions/gwangju')} className="hidden min-h-11 items-center gap-2 rounded-xl px-2.5 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex" aria-label="광주 자치구 선택 화면으로 이동"><span className="h-2 w-2 rounded-full bg-blue-600" />광주광역시 {district.nameKo}<ChevronDown size={13} className="text-slate-400" /></button>
 

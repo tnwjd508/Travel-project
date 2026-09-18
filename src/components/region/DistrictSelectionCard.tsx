@@ -1,8 +1,12 @@
 import { ArrowRight, BarChart3, Landmark, MapPinned } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { GwangjuDistrict } from '@/data/gwangjuDistricts'
+import { useDistrictResource } from '@/hooks/useDistrictResource'
+import { DataNotice, SourceNote, formatValue } from '@/components/dashboard/DataNotice'
 
 export function DistrictSelectionCard({ district, onConfirm }: { district: GwangjuDistrict; onConfirm: () => void }) {
+  const summary = useDistrictResource('summary', { district: district.slug })
+  const contents = useDistrictResource('contents', { district: district.slug, contentTypeId: '12' })
   return (
     <motion.article
       key={district.slug}
@@ -21,9 +25,12 @@ export function DistrictSelectionCard({ district, onConfirm }: { district: Gwang
 
       <dl className="mt-5 grid grid-cols-2 gap-2.5">
         <div className="rounded-xl bg-slate-50 p-3"><dt className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400"><Landmark size={12} />관광 유형</dt><dd className="mt-1.5 text-xs font-bold text-slate-800">{district.tourismType}</dd></div>
-        <div className="rounded-xl bg-slate-50 p-3"><dt className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400"><BarChart3 size={12} />관광 활성화 지수</dt><dd className="mt-1.5 text-sm font-extrabold text-blue-600">{district.score}점</dd></div>
-        <div className="col-span-2 rounded-xl bg-slate-50 p-3"><dt className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400"><MapPinned size={12} />주요 관광자원</dt><dd className="mt-1.5 text-sm font-extrabold text-slate-800">{district.attractionCount}개</dd></div>
+        <div className="rounded-xl bg-slate-50 p-3"><dt className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400"><BarChart3 size={12} />관광서비스수요 지수</dt><dd className="mt-1.5 text-sm font-extrabold text-blue-600">{formatValue(summary.data?.demand.ix11, 2)}</dd></div>
+        <div className="col-span-2 rounded-xl bg-slate-50 p-3"><dt className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400"><MapPinned size={12} />등록 관광지 콘텐츠</dt><dd className="mt-1.5 text-sm font-extrabold text-slate-800">{contents.data ? `${contents.data.totalCount}개` : '확인 중'}</dd></div>
       </dl>
+      <DataNotice state={summary}/><DataNotice state={contents}/>
+      {summary.data && <SourceNote data={summary.data}/>}
+      {contents.data && <p className="mt-2 text-[10px] text-slate-500">관광지 목록: {contents.data.source} · 현재 조회 목록</p>}
 
       <button
         type="button"
