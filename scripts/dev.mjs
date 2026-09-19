@@ -2,7 +2,9 @@ import { existsSync } from 'node:fs'
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 
-const python = process.env.PYTHON_EXECUTABLE || resolve(process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python')
+// 문서 기준은 루트 .venv이며, backend/.venv에 만든 환경도 찾는다.
+const venvPython = (dir) => resolve(dir, process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
+const python = process.env.PYTHON_EXECUTABLE || ['.venv', 'backend/.venv'].map(venvPython).find((path) => existsSync(path)) || venvPython('.venv')
 if (!existsSync(python)) {
   console.error('Python 가상환경이 필요합니다. FASTAPI_REACT.md의 설치 명령을 실행하세요.')
   process.exit(1)
