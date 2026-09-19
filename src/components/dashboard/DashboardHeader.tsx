@@ -1,12 +1,12 @@
 import { Bell, CalendarDays, ChevronDown, Menu, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
 export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const navigate = useNavigate()
   const [searchOpen, setSearchOpen] = useState(false)
-  const district = useActiveDistrict()
+  const district = useDashboardRegion()
 
   return (
     <header className="sticky top-0 z-40 h-[72px] border-b border-slate-200 bg-white">
@@ -20,7 +20,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
         <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 md:flex"><CalendarDays size={15} className="text-slate-400" aria-hidden="true" />{new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}</div>
         <span className="mx-2 hidden h-5 w-px bg-slate-200 md:block" />
-        <button type="button" onClick={() => navigate('/regions/gwangju')} className="hidden min-h-11 items-center gap-2 rounded-xl px-2.5 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex" aria-label="광주 자치구 선택 화면으로 이동"><span className="h-2 w-2 rounded-full bg-blue-600" />광주광역시 {district.nameKo}<ChevronDown size={13} className="text-slate-400" /></button>
+        <button type="button" onClick={() => navigate(district.selectionPath)} className="hidden min-h-11 items-center gap-2 rounded-xl px-2.5 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex" aria-label={`${district.regionName} 시군구 선택 화면으로 이동`}><span className="h-2 w-2 rounded-full bg-blue-600" />{district.regionName} {district.nameKo}<ChevronDown size={13} className="text-slate-400" /></button>
 
         <div className={`hidden h-11 items-center rounded-xl border border-transparent bg-slate-50 transition-all sm:flex ${searchOpen ? 'w-52 px-3' : 'w-11 justify-center'}`}>
           <button type="button" onClick={() => setSearchOpen((open) => !open)} className="grid h-9 w-9 shrink-0 place-items-center text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={searchOpen ? '데이터 검색 닫기' : '데이터 검색 열기'}>{searchOpen ? <X size={16} /> : <Search size={17} />}</button>
@@ -30,7 +30,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
         <div className="hidden items-center gap-2.5 border-l border-slate-200 pl-4 xl:flex">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-[10px] font-bold text-white">{district.nameKo}</div>
-          <div className="leading-tight"><p className="text-xs font-bold text-slate-800">정책 담당자</p><p className="mt-0.5 text-[10px] text-slate-400">광주관광공사</p></div>
+          <div className="leading-tight"><p className="text-xs font-bold text-slate-800">정책 담당자</p><p className="mt-0.5 text-[10px] text-slate-400">{district.regionName}</p></div>
         </div>
       </div>
     </header>

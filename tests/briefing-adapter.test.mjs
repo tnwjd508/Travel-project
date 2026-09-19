@@ -17,7 +17,7 @@ test('briefing worker enforces request/daily budgets, resets by UTC day and reje
   assert.equal(calls, 3)
 })
 
-test('Vercel monthly adapter forwards token, query and retry headers to FastAPI', async () => {
+test('Vercel 월간 브리핑이 GET·POST와 대기 헤더를 FastAPI에 전달한다', async () => {
   const oldFetch = globalThis.fetch
   const oldOrigin = process.env.FASTAPI_BASE_URL
   const oldToken = process.env.FASTAPI_PROXY_TOKEN
@@ -30,6 +30,8 @@ test('Vercel monthly adapter forwards token, query and retry headers to FastAPI'
       assert.equal(url.searchParams.get('district'), '11110')
       assert.equal(options.headers['X-Ongil-Proxy-Token'], 'test-token')
       assert.equal(options.redirect, 'error')
+      if (options.method === 'POST') return Response.json({ state: 'generating' }, {status:202,headers:{'Retry-After':'5'}})
+      assert.equal(options.method, 'GET')
       return Response.json({message:'busy'}, {status:429,headers:{'Retry-After':'30'}})
     }
     let status, body
@@ -38,6 +40,10 @@ test('Vercel monthly adapter forwards token, query and retry headers to FastAPI'
     await handler({method:'GET',query:{regionId:'seoul',district:'11110'}},response)
     assert.equal(status,429); assert.equal(body.message,'busy'); assert.equal(headers['Retry-After'],'30')
     assert.equal(headers['Cache-Control'],'no-store')
+    await handler({method:'POST',query:{regionId:'seoul',district:'11110'}},response)
+    assert.equal(status,202); assert.equal(body.state,'generating'); assert.equal(headers['Retry-After'],'5')
+    await handler({method:'DELETE',query:{}},response)
+    assert.equal(status,405); assert.equal(headers.Allow,'GET, POST')
   } finally {
     globalThis.fetch = oldFetch
     if (oldOrigin === undefined) delete process.env.FASTAPI_BASE_URL; else process.env.FASTAPI_BASE_URL = oldOrigin

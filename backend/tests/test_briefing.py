@@ -16,33 +16,49 @@ def test_monthly_http_preserves_validation_and_missing_key_status():
         assert client.get('/api/monthly-briefing?district=donggu&district=seogu').status_code == 400
         assert client.app.state.briefing.process is process
         result = client.post('/api/monthly-briefing?district=donggu')
-        assert result.status_code == 405 and result.headers['allow'] == 'GET'
+        assert result.status_code == 503 and result.json()['code'] == 'DB_NOT_CONFIGURED'
+        rejected = client.delete('/api/monthly-briefing?district=donggu')
+        assert rejected.status_code == 405 and rejected.headers['allow'] == 'GET, POST'
     assert process.returncode is not None
 
 
-def test_persistent_worker_runs_original_graph_and_reuses_region_cache():
+def test_persistent_worker_reads_database_and_does_not_generate_on_get():
     node = shutil.which('node')
     command = [node, '--import', 'tsx', '--import', './backend/tests/fixtures/mock_briefing_fetch.mjs', 'server/briefing/bridge.ts']
     async def run():
-        worker = BriefingWorker({'TOUR_API_SERVICE_KEY':'fixture-secret'}, command)
+        worker = BriefingWorker({'TOUR_API_SERVICE_KEY':'fixture-secret', 'SUPABASE_URL': 'https://database.example', 'SUPABASE_SECRET_KEY': 'sb_secret_fixture'}, command)
         try:
             query = [('regionId','seoul'),('district','11110')]
             first, second = await asyncio.gather(worker.request('GET',query),worker.request('GET',query))
             process = worker.process
-            assert first['status'] == second['status'] == 200
+            assert first['status'] == second['status'] == 202
             assert first['body'] == second['body']
-            assert first['body']['aiStatus'] == 'unavailable'
-            assert len(first['body']['sources']) == 10 and first['body']['evidence']
+            assert first['body']['state'] == 'generating'
             cached = await worker.request('GET',query)
             assert cached['body'] == first['body'] and worker.process is process
             busan = await worker.request('GET',[('regionId','busan'),('district','26110')])
-            assert busan['body']['district'] == '26110'
+            assert busan['status'] == 404 and busan['body']['state'] == 'missing'
+            assert (await worker.request('POST', query))['status'] == 202
+            missing = await worker.request('POST', [('regionId','busan'),('district','26110')])
+            assert missing['status'] == 503 and missing['body']['code'] == 'AI_NOT_CONFIGURED'
             assert 'fixture-secret' not in str(first)
             assert not worker.pending
         finally:
             await worker.close()
         assert process.returncode is not None
     asyncio.run(run())
+
+
+def test_monthly_http_forwards_post_and_polling_headers():
+    with TestClient(create_app({})) as client:
+        calls = []
+        async def request(method, query):
+            calls.append((method, query))
+            return {'status': 202, 'body': {'state': 'generating'}}
+        client.app.state.briefing.request = request
+        response = client.post('/api/monthly-briefing?regionId=seoul&district=11110')
+        assert response.status_code == 202 and response.headers['retry-after'] == '5'
+        assert calls == [('POST', [('regionId', 'seoul'), ('district', '11110')])]
 
 
 def test_worker_crash_is_redacted_and_next_request_can_restart():

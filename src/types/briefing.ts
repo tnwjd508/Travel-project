@@ -40,6 +40,7 @@ export interface BriefingFestival {
 }
 
 export interface MonthlyBriefingData {
+  storage?: { savedAt: string }
   district: string
   districtName: string
   month: string
@@ -52,4 +53,12 @@ export interface MonthlyBriefingData {
   festivals: { recent: BriefingFestival[]; upcoming: BriefingFestival[] }
   steps: { sourceId: string; status: 'merged' | 'skipped' | 'failed' }[]
   warnings: string[]
+}
+
+export interface BriefingStatusResponse {
+  state: 'missing' | 'generating' | 'busy' | 'failed' | 'interrupted' | 'error'
+  code: string
+  message: string
+  retryAfter?: number
+  snapshot?: MonthlyBriefingData
 }

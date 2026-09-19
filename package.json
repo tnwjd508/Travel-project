@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "check:briefing:db": "tsx scripts/check_briefing_db.ts",
+    "sync:region-maps": "tsx scripts/generate_region_maps.ts",
     "sync:regions": "tsx scripts/sync_region_catalogue.ts && npm run export:regions",
     "test": "tsx scripts/export_regions.ts --check && tsc -p tsconfig.server-test.json && node --test tests/*.test.mjs",
     "test:briefing": "tsx --test server/briefing/briefing.test.ts",
@@ -35,6 +37,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/d3-geo": "^3.1.0",
     "@types/node": "^26.1.2",
     "@types/react": "^18.3.18",
