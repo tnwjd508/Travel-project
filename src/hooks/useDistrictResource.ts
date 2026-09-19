@@ -1,8 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { districtRequest, type DistrictResource, type DistrictResources } from '@/services/districtApi'
+import { useParams } from 'react-router-dom'
 
 export function useDistrictResource<R extends DistrictResource>(resource: R, params: Record<string, string | number | undefined>, enabled = true) {
-  const query = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string | number] => entry[1] !== undefined).sort().map(([key, value]) => [key, String(value)])).toString()
+  const { regionId = 'gwangju' } = useParams()
+  // 이름이 같은 구도 정확히 구분하도록 시도와 시군구 코드를 함께 전달합니다.
+  const scopedParams: Record<string, string | number | undefined> = { regionId, ...params }
+  const query = new URLSearchParams(Object.entries(scopedParams).filter((entry): entry is [string, string | number] => entry[1] !== undefined).sort().map(([key, value]) => [key, String(value)])).toString()
   const key = `${resource}?${query}`
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<{ key: string; status: 'loading' | 'live' | 'error'; data: DistrictResources[R] | null; error: string }>({ key, status: 'loading', data: null, error: '' })
@@ -18,6 +22,6 @@ export function useDistrictResource<R extends DistrictResource>(resource: R, par
     })
     return () => controller.abort()
   }, [resource, query, key, attempt, enabled])
-  // Prevent even one render of the previous district's data after URL changes.
+  // 지역을 바꾸는 순간에도 이전 지역 데이터가 표시되지 않도록 요청 키를 비교합니다.
   return { ...(state.key === key && enabled ? state : { key, status: 'loading' as const, data: null, error: '' }), retry }
 }

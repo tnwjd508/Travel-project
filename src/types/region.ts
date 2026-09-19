@@ -1,4 +1,4 @@
-export type RegionId = 'gwangju' | 'seoul' | 'busan' | 'daegu' | 'incheon' | 'jeju'
+export type RegionId = string
 
 export type RegionStatus = 'available' | 'coming-soon'
 

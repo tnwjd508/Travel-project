@@ -4,9 +4,10 @@ export interface ApiResponse { status(code: number): ApiResponse; setHeader(name
 export async function proxyFastApi(path: string, request: ApiRequest, response: ApiResponse, omit: string[] = [], timeoutMs = 30000) {
   response.setHeader('Cache-Control', 'no-store')
   response.setHeader('X-Content-Type-Options', 'nosniff')
-  if (request.method !== 'GET') {
-    response.setHeader('Allow', 'GET')
-    return response.status(405).json({ code: 'METHOD_NOT_ALLOWED', message: 'GET 요청만 지원합니다.' })
+  const allowed = path === '/api/monthly-briefing' ? ['GET', 'POST'] : ['GET']
+  if (!allowed.includes(request.method ?? '')) {
+    response.setHeader('Allow', allowed.join(', '))
+    return response.status(405).json({ code: 'METHOD_NOT_ALLOWED', message: `${allowed.join(', ')} 요청만 지원합니다.` })
   }
   const origin = process.env.FASTAPI_BASE_URL
   if (!origin) return response.status(503).json({ code: 'MISSING_BACKEND', message: 'FASTAPI_BASE_URL 환경변수가 필요합니다.' })
@@ -19,9 +20,10 @@ export async function proxyFastApi(path: string, request: ApiRequest, response: 
     }
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (process.env.FASTAPI_PROXY_TOKEN) headers['X-Ongil-Proxy-Token'] = process.env.FASTAPI_PROXY_TOKEN
-    const upstream = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs), redirect: 'error' })
+    const upstream = await fetch(url, { method: request.method, headers, signal: AbortSignal.timeout(timeoutMs), redirect: 'error' })
     const body: unknown = await upstream.json()
     if (upstream.status === 429) response.setHeader('Retry-After', upstream.headers.get('retry-after') ?? '30')
+    if (upstream.status === 202) response.setHeader('Retry-After', upstream.headers.get('retry-after') ?? '5')
     if (upstream.ok) response.setHeader('Cache-Control', upstream.headers.get('cache-control') ?? 'no-store')
     return response.status(upstream.status).json(body)
   } catch {

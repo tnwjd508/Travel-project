@@ -1,0 +1,89 @@
+/* 개인 테마는 대시보드와 그 팝업에만 적용합니다. 메인 지도 디자인은 유지합니다. */
+.dashboard-shell, .dashboard-theme-portal {
+  --settings-surface: #fff;
+  --settings-raised: #f8fafc;
+  --settings-text: #0f172a;
+  --settings-muted: #64748b;
+  --settings-border: #e2e8f0;
+  --settings-accent: #2563eb;
+  --settings-selected: #eff6ff;
+  color-scheme: light;
+}
+
+.settings-dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid var(--settings-border);
+  border-radius: 24px;
+  background: var(--settings-surface);
+  color: var(--settings-text);
+  box-shadow: 0 24px 80px #02061740;
+}
+.settings-dialog::backdrop { background: #02061799; backdrop-filter: blur(5px); }
+.settings-eyebrow { color: var(--settings-accent); font-size: 11px; font-weight: 700; letter-spacing: .05em; }
+.settings-description, .theme-option-description { color: var(--settings-muted); }
+.settings-close { display: grid; place-items: center; min-width: 44px; min-height: 44px; border-radius: 12px; color: var(--settings-muted); }
+.settings-close:hover { background: var(--settings-raised); color: var(--settings-text); }
+.settings-close:focus-visible { outline: 2px solid var(--settings-accent); outline-offset: 2px; }
+.settings-footer { border-color: var(--settings-border); }
+.theme-option { display: flex; align-items: center; gap: 14px; min-height: 80px; padding: 14px; border: 1px solid var(--settings-border); border-radius: 16px; cursor: pointer; background: var(--settings-surface); }
+.theme-option:hover { background: var(--settings-raised); }
+.theme-option:has(input:checked) { border-color: var(--settings-accent); background: var(--settings-selected); }
+.theme-option:has(input:focus-visible) { outline: 2px solid var(--settings-accent); outline-offset: 3px; }
+.theme-option-icon { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: var(--settings-raised); color: var(--settings-muted); }
+.theme-option:has(input:checked) .theme-option-icon { color: var(--settings-accent); }
+.theme-option-check { display: grid; place-items: center; flex-shrink: 0; width: 20px; height: 20px; border: 1px solid var(--settings-border); border-radius: 50%; }
+.theme-option:has(input:checked) .theme-option-check { border-color: #2563eb; background: #2563eb; color: white; }
+@media (max-width: 480px) { .settings-dialog { padding: 22px; } }
+
+/* 기존 카드·레이아웃은 그대로 두고 공통 색상만 한곳에서 바꿉니다. 인쇄는 일반 테마를 씁니다. */
+@media screen {
+  html[data-theme='dark'] :is(.dashboard-shell, .dashboard-theme-portal) {
+    --settings-surface: #111c2e;
+    --settings-raised: #1b2940;
+    --settings-text: #edf2fa;
+    --settings-muted: #a5b4ca;
+    --settings-border: #2c3c54;
+    --settings-accent: #82b1ff;
+    --settings-selected: #1b3050;
+    color-scheme: dark;
+    background-color: #0b1220;
+    color: #edf2fa;
+  }
+  html[data-theme='dark'] .dashboard-theme-portal { background-color: #111c2e; border-color: #2c3c54; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.bg-white, .bg-white\/80, .bg-white\/85, .bg-white\/90) { background-color: #111c2e; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.bg-slate-50, .bg-slate-50\/70, .bg-slate-50\/80, .bg-slate-100, .bg-slate-200, .bg-\[\#eef5f7\]) { background-color: #1b2940; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.bg-blue-50, .bg-blue-50\/50, .bg-blue-50\/60, .bg-blue-50\/70, .bg-blue-50\/90, .bg-blue-100, .bg-blue-100\/50) { background-color: #1b3050; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.text-slate-950, .text-slate-900, .text-slate-800, .text-slate-700) { color: #edf2fa; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.text-slate-600, .text-slate-500, .text-slate-400) { color: #a5b4ca; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.text-blue-500, .text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900) { color: #82b1ff; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.border-slate-50, .border-slate-100, .border-slate-200, .border-slate-200\/70, .border-slate-200\/80, .border-slate-200\/90, .border-white\/70, .border-white\/80) { border-color: #2c3c54; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.border-blue-100, .border-blue-200) { border-color: #304d77; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.bg-amber-50, .bg-amber-50\/70, .bg-orange-50) { background-color: #352a1c; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900, .text-orange-600) { color: #f5c276; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.border-amber-200, .border-amber-300) { border-color: #76542b; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) .bg-emerald-50 { background-color: #14352f; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.text-emerald-600, .text-emerald-700) { color: #6eddb7; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) .bg-red-50 { background-color: #3d2430; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) .text-red-500 { color: #fca5a5; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) .bg-violet-50 { background-color: #2b2548; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.text-violet-500, .text-violet-600, .text-violet-700) { color: #c4b5fd; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.hover\:bg-slate-50, .hover\:bg-slate-50\/70, .hover\:bg-slate-100, .hover\:bg-white):hover { background-color: #24354c; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) .hover\:bg-blue-50:hover { background-color: #243c60; }
+  html[data-theme='dark'] :where(.dashboard-shell, .dashboard-theme-portal) :is(.hover\:text-slate-700, .hover\:text-slate-800, .hover\:text-slate-900):hover { color: #fff; }
+  html[data-theme='dark'] .dashboard-theme-portal [data-highlighted] { background-color: #243c60; color: #bfdbfe; }
+  html[data-theme='dark'] .dashboard-shell .from-blue-50\/90 { --tw-gradient-from: #1b3050 var(--tw-gradient-from-position); --tw-gradient-to: #1b305000 var(--tw-gradient-to-position); }
+  html[data-theme='dark'] .dashboard-shell .tourism-hero > .bg-gradient-to-r { background-image: linear-gradient(to right, #111c2e 0%, #111c2eed 45%, #111c2e15 100%); }
+  html[data-theme='dark'] .dashboard-shell .tourism-hero > .bg-gradient-to-t { background-image: linear-gradient(to top, #111c2e66, transparent); }
+  html[data-theme='dark'] .dashboard-shell .card-surface::before { opacity: .15; }
+  html[data-theme='dark'] .dashboard-shell :is(.recharts-cartesian-axis-tick-value, .recharts-polar-angle-axis-tick-value) { fill: #a5b4ca; }
+  html[data-theme='dark'] .dashboard-shell :is(.recharts-cartesian-grid line, .recharts-polar-grid-angle line, .recharts-polar-grid-concentric path) { stroke: #2c3c54; }
+  /* Recharts가 인라인으로 지정하는 툴팁 배경을 테마에 맞춥니다. */
+  html[data-theme='dark'] .dashboard-shell .recharts-default-tooltip { background-color: #111c2e !important; border-color: #2c3c54 !important; color: #edf2fa; }
+  html[data-theme='dark'] .dashboard-shell .recharts-tooltip-item { color: #c8dafa !important; }
+  html[data-theme='dark'] .dashboard-shell ::-webkit-scrollbar-thumb { background-color: #475b78; border-color: #111c2e; }
+}
+@media print { .settings-dialog { display: none; } }
