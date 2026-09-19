@@ -19,3 +19,6 @@ map-data-input/
 # Local deployment metadata and generated presentation artifacts.
 .vercel/
 outputs/
+
+# 축제 효과 분석 원본 데이터(방문자 일별 CSV 등). scripts/festival-effect/README.md 참고.
+scripts/festival-effect/data/
