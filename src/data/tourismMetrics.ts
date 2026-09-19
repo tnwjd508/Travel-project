@@ -23,7 +23,7 @@ export const briefingMetrics: MetricKey[] = ['demand', 'culture', 'stay', 'spend
 export const diagnosisCriteria: Record<string, string> = {
   youth: '20대·30대 지수 합계의 전월 대비 변화율 = (당월 합계 − 전월 합계) ÷ 전월 합계 × 100. −5% 미만이면 검토 대상입니다.',
   stay: '숙박 비중 지수가 80 미만이면 검토 대상입니다. 서비스의 임시 점검 기준입니다.',
-  concentration: '상위 3개 허브의 연관 건수 ÷ 전체 허브 연관 건수 × 100. 60% 초과이면 검토 대상입니다.',
+  concentration: '상위 3개 허브의 연관 건수 ÷ 전체 허브 연관 건수 × 100. 60% 초과이면 검토 대상입니다. 연관 관광지가 4곳 미만이면 비중이 항상 높게 나오므로 판정하지 않습니다.',
   spend: '관광소비강도 지수가 80 미만이면 검토 대상입니다. 서비스의 임시 점검 기준입니다.',
 }
 export const issueStatusLabels = { attention: '검토 필요', normal: '검토 기준 미해당', unknown: '자료 부족' } as const

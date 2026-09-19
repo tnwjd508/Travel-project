@@ -90,3 +90,17 @@ test('normal indicators produce no improvement priorities', () => {
   assert.equal(result.priorities.length, 0)
   assert.ok(result.issues.every(issue => issue.status === 'normal'))
 })
+
+test('fewer than four related hubs leaves concentration unjudged instead of 100% attention', () => {
+  const meta = { district: 'gwangsangu', baseYm: '202608', source: '출처: ⓒ한국관광공사', fetchedAt: '2026-09-17T00:00:00.000Z', warnings: [] }
+  const groups = Object.fromEntries(Object.entries(INDEX_GROUPS).map(([group, definition]) => [group, Object.fromEntries(definition.codes.map(code => [code, 100]))]))
+  const summary = { ...meta, age: { momPct: 0 }, stay: { ix2102: 100 }, spend: { ix22: 100 } }
+  const hub = share => ({ tAtsCd: String(share), name: 'hub', relatedCount: 1, share })
+  const few = diagnose(summary, { ...meta, groups }, { ...meta, hubs: [hub(50), hub(30), hub(20)], top3Share: 100 })
+  const concentration = few.issues.find(issue => issue.id === 'concentration')
+  assert.equal(concentration.status, 'unknown')
+  assert.equal(concentration.value, 100)
+  assert.equal(few.priorities.length, 0)
+  const enough = diagnose(summary, { ...meta, groups }, { ...meta, hubs: [hub(40), hub(20), hub(10), hub(30)], top3Share: 90 })
+  assert.equal(enough.issues.find(issue => issue.id === 'concentration').status, 'attention')
+})
