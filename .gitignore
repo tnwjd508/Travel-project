@@ -19,3 +19,6 @@ map-data-input/
 # Local deployment metadata and generated presentation artifacts.
 .vercel/
 outputs/
+
+# Local Supabase CLI cache; not application schema.
+supabase/.temp/

@@ -234,3 +234,6 @@ FASTAPI_PROXY_TOKEN
 ```
 
 Production, Preview, Development 환경에 필요한 값을 설정하고 재배포해야 합니다. 인증키가 포함된 `.env.local`은 Git에 커밋하지 않습니다. FastAPI 단독 서빙과 운영 한계는 [FASTAPI_REACT.md](FASTAPI_REACT.md)를 참고하세요.
+# Supabase 공동 저장
+
+현재 권고 구조는 [2026-09-20 데이터베이스 재설계](docs/supabase-database-design.md)를 참고하세요. 월간 브리핑·기관별 시나리오에 과거 축제 근거 버전과 검토 스냅샷을 연결합니다. [이전 통합 기록](docs/supabase-integrated-design.md)은 로컬 구현 이력이며, 새로운 검토 API와 원격 DB 적용은 아직 완료되지 않았습니다.

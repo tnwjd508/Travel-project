@@ -3,15 +3,19 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', ['FASTAPI_'])
+  const token = process.env.FASTAPI_PROXY_TOKEN || env.FASTAPI_PROXY_TOKEN
+  const proxyHeaders = token ? { 'X-Ongil-Proxy-Token': token } : undefined
   return {
     plugins: [react()],
     server: {
       proxy: {
         '/api/monthly-briefing': {
+          headers: proxyHeaders,
           target: process.env.FASTAPI_BASE_URL || env.FASTAPI_BASE_URL || 'http://127.0.0.1:8000',
           changeOrigin: true, timeout: 300000, proxyTimeout: 300000,
         },
         '/api': {
+          headers: proxyHeaders,
           target: process.env.FASTAPI_BASE_URL || env.FASTAPI_BASE_URL || 'http://127.0.0.1:8000',
           changeOrigin: true,
           timeout: 30000,

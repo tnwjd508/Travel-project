@@ -150,31 +150,68 @@ test('Gemini REST 요청은 헤더로 키를 보내고 구조화 응답을 검�
     assert.equal((init?.headers as Record<string, string>)['x-goog-api-key'], 'test-gemini-secret')
     assert.doesNotMatch(String(init?.body), /test-gemini-secret/)
     const body = JSON.parse(String(init?.body))
-    assert.equal(body.generationConfig.responseFormat.text.mimeType, 'application/json')
+    assert.equal(body.generationConfig.responseFormat.text.mimeType, 'APPLICATION_JSON')
     return { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(diagnosis(['a:1'])) }] } }] }
   }))
   const result = await merge({ context, previous: null, current: source('a'), evidence: [fact('a')], sources: [] }, signal())
   assert.equal(result.findings.length, 1)
 })
 
-test('서비스는 요청 조건과 키를 검증하고 동일 요청을 합치며 캐시를 만료한다', async () => {
+test('Gemini 형식·권한·한도 오류는 재시도하지 않고 비밀값 없는 사유를 남긴다', async () => {
+  for (const status of [400, 403, 404, 429]) {
+    let calls = 0
+    const fetcher: typeof fetch = async () => {
+      calls++
+      return Response.json({ error: { message: 'test-gemini-secret 민감한 외부 오류 원문' } }, { status })
+    }
+    const result = await runBriefing(context, { serviceKey: 'unused', dependencies: {
+      collect: async () => [source('a'), source('b')], merge: geminiMerger('test-gemini-secret', 'gemini-3.8-flash', fetcher),
+    } })
+    assert.equal(calls, 1)
+    assert.equal(result.aiStatus, 'unavailable')
+    assert.match(result.warnings[0], new RegExp(`HTTP ${status}`))
+    assert.doesNotMatch(JSON.stringify(result), /test-gemini-secret|민감한 외부 오류 원문/)
+    assert.equal(result.evidence.length, 2)
+    assert.deepEqual(result.steps.map(step => step.status), ['failed', 'skipped'])
+  }
+})
+
+test('Gemini의 일시적인 503 오류는 한 번 재시도해 정상 진단을 복구한다', async () => {
+  let calls = 0
+  const fetcher: typeof fetch = async () => {
+    if (++calls === 1) return Response.json({}, { status: 503 })
+    return Response.json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(diagnosis(['a:1'])) }] } }] })
+  }
+  const merge = geminiMerger('secret', 'gemini-3.8-flash', fetcher)
+  const result = await merge({ context, previous: null, current: source('a'), evidence: [fact('a')], sources: [] }, signal())
+  assert.equal(calls, 2)
+  assert.equal(result.summary, diagnosis(['a:1']).summary)
+})
+
+test('Gemini가 계속 혼잡하면 두 번 호출 후 중단한다', async () => {
+  let calls = 0
+  const merge = geminiMerger('secret', 'gemini-3.8-flash', async () => { calls++; return Response.json({}, { status: 503 }) })
+  await assert.rejects(merge({ context, previous: null, current: source('a'), evidence: [fact('a')], sources: [] }, signal()), /HTTP 503/)
+  assert.equal(calls, 2)
+})
+
+test('시간 초과와 응답 검증 실패를 구별하고 원문 오류를 노출하지 않는다', async () => {
+  for (const [error, expected] of [[new DOMException('secret', 'TimeoutError'), /대기 시간/], [new Error('secret'), /근거 검증/]] as const) {
+    const result = await runBriefing(context, { serviceKey: 'unused', dependencies: {
+      collect: async () => [source('a')], merge: async () => { throw error },
+    } })
+    assert.match(result.warnings[0], expected)
+    assert.doesNotMatch(JSON.stringify(result), /secret/)
+  }
+})
+
+test('DB 미설정이면 생성하지 않고 요청 조건부터 검증한다', async () => {
   let runs = 0
-  let time = 0
+  const service = createBriefingService({}, async () => { runs++; throw new Error('실행되면 안 됨') })
   const query = new URLSearchParams({ district: 'donggu' })
-  const service = createBriefingService({ TOUR_API_SERVICE_KEY: 'secret' }, async (ctx) => {
-    runs++
-    await new Promise((resolve) => setTimeout(resolve, 10))
-    return { district: ctx.district, aiStatus: 'ready', sources: [{ status: 'ready' }] } as MonthlyBriefingData
-  }, () => time)
-  assert.equal((await service('POST', query)).status, 405)
+  assert.equal((await service('DELETE', query)).status, 405)
   assert.equal((await service('GET', new URLSearchParams({ district: 'bad' }))).status, 400)
-  const results = await Promise.all([service('GET', query), service('GET', query)])
-  assert.equal(runs, 1)
-  assert.equal(results[0].status, 200)
-  await service('GET', query)
-  assert.equal(runs, 1)
-  time = 3_600_001
-  await service('GET', query)
-  assert.equal(runs, 2)
-  assert.equal((await createBriefingService({})('GET', query)).status, 503)
+  assert.equal((await service('GET', query)).status, 503)
+  assert.equal((await service('POST', query)).status, 503)
+  assert.equal(runs, 0)
 })

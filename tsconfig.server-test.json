@@ -4,5 +4,5 @@
     "module": "NodeNext", "moduleResolution": "NodeNext", "strict": true,
     "skipLibCheck": true, "outDir": ".test-build", "rootDir": "."
   },
-  "include": ["server/**/*.ts", "api/**/*.ts", "src/types/district.ts"]
+  "include": ["server/**/*.ts", "api/**/*.ts", "src/types/district.ts", "src/lib/monthlyBriefingClient.ts"]
 }
