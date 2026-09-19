@@ -1,0 +1,282 @@
+{
+ "version": 1,
+ "generatedAt": "2026-09-19T12:40:32+00:00",
+ "outcome": "외지인 일별 방문 추정치 (한국관광공사 DataLab)",
+ "method": "축제 기간 방문을 같은 시군구의 2~4주 전 같은 요일과 비교하고, 같은 시도에서 축제가 없던 시군구의 변화를 뺀 값(이중차분). 95% 구간은 부트스트랩 2,000회.",
+ "data": {
+  "visitorsFrom": "20180101",
+  "visitorsTo": "20260820",
+  "festivalsUsed": 936,
+  "sources": [
+   "관광공사",
+   "표준데이터"
+  ],
+  "maxDays": 7,
+  "festivalStart": {
+   "first": "20180504",
+   "median": "20251109",
+   "last": "20260815"
+  }
+ },
+ "outside": {
+  "all": {
+   "n": 892,
+   "meanPct": 5.4,
+   "medianPct": 3.1,
+   "ci95Pct": [
+    4.5,
+    6.4
+   ],
+   "sharePositive": 0.64
+  },
+  "short": {
+   "n": 749,
+   "meanPct": 4.3,
+   "medianPct": 2.8,
+   "ci95Pct": [
+    3.4,
+    5.3
+   ],
+   "sharePositive": 0.63
+  },
+  "long": {
+   "n": 143,
+   "meanPct": 11.2,
+   "medianPct": 7.0,
+   "ci95Pct": [
+    8.2,
+    14.4
+   ],
+   "sharePositive": 0.69
+  },
+  "night": {
+   "n": 41,
+   "meanPct": 1.7,
+   "medianPct": 1.1,
+   "ci95Pct": [
+    -0.8,
+    4.3
+   ],
+   "sharePositive": 0.59
+  },
+  "metroGu": {
+   "n": 271,
+   "meanPct": 1.7,
+   "medianPct": 1.9,
+   "ci95Pct": [
+    0.7,
+    2.6
+   ],
+   "sharePositive": 0.65
+  },
+  "placebo": {
+   "n": 4409,
+   "meanPct": 0.0,
+   "medianPct": 0.1,
+   "ci95Pct": [
+    -0.3,
+    0.3
+   ],
+   "sharePositive": 0.51
+  }
+ },
+ "total": {
+  "all": {
+   "n": 892,
+   "meanPct": 3.2,
+   "medianPct": 1.8,
+   "ci95Pct": [
+    2.6,
+    3.8
+   ],
+   "sharePositive": 0.66
+  },
+  "short": {
+   "n": 749,
+   "meanPct": 2.7,
+   "medianPct": 1.6,
+   "ci95Pct": [
+    2.1,
+    3.3
+   ],
+   "sharePositive": 0.66
+  },
+  "long": {
+   "n": 143,
+   "meanPct": 5.9,
+   "medianPct": 3.3,
+   "ci95Pct": [
+    4.1,
+    7.8
+   ],
+   "sharePositive": 0.69
+  },
+  "night": {
+   "n": 41,
+   "meanPct": 0.6,
+   "medianPct": 0.3,
+   "ci95Pct": [
+    -0.8,
+    2.0
+   ],
+   "sharePositive": 0.56
+  },
+  "metroGu": {
+   "n": 271,
+   "meanPct": 1.0,
+   "medianPct": 1.2,
+   "ci95Pct": [
+    0.3,
+    1.6
+   ],
+   "sharePositive": 0.64
+  },
+  "placebo": {
+   "n": 4398,
+   "meanPct": -0.1,
+   "medianPct": 0.0,
+   "ci95Pct": [
+    -0.3,
+    0.1
+   ],
+   "sharePositive": 0.5
+  }
+ },
+ "gwangju": [
+  {
+   "title": "사운드파크페스티벌",
+   "code": "12240",
+   "start": "20240927",
+   "days": 1,
+   "source": "관광공사",
+   "effectPct": -2.3,
+   "district": "서구"
+  },
+  {
+   "title": "2025 비엔날레 문화콘서트1",
+   "code": "12300",
+   "start": "20250612",
+   "days": 2,
+   "source": "표준데이터",
+   "effectPct": 2.8,
+   "district": "북구"
+  },
+  {
+   "title": "2025 비엔날레 문화콘서트2",
+   "code": "12300",
+   "start": "20250814",
+   "days": 3,
+   "source": "표준데이터",
+   "effectPct": -21.7,
+   "district": "북구"
+  },
+  {
+   "title": "2025 비엔날레 문화콘서트3",
+   "code": "12300",
+   "start": "20250823",
+   "days": 1,
+   "source": "표준데이터",
+   "effectPct": 23.7,
+   "district": "북구"
+  },
+  {
+   "title": "2025 비엔날레 문화콘서트4",
+   "code": "12300",
+   "start": "20250906",
+   "days": 1,
+   "source": "표준데이터",
+   "effectPct": 11.3,
+   "district": "북구"
+  },
+  {
+   "title": "2025 비엔날레 문화콘서트5",
+   "code": "12300",
+   "start": "20250920",
+   "days": 1,
+   "source": "표준데이터",
+   "effectPct": 2.6,
+   "district": "북구"
+  },
+  {
+   "title": "광주여성영화제",
+   "code": "12210",
+   "start": "20251106",
+   "days": 5,
+   "source": "관광공사",
+   "effectPct": -7.2,
+   "district": "동구"
+  },
+  {
+   "title": "동명커피산책",
+   "code": "12210",
+   "start": "20251108",
+   "days": 1,
+   "source": "관광공사",
+   "effectPct": -17.1,
+   "district": "동구"
+  },
+  {
+   "title": "고싸움놀이축제",
+   "code": "12270",
+   "start": "20260228",
+   "days": 3,
+   "source": "관광공사",
+   "effectPct": -11.6,
+   "district": "남구"
+  },
+  {
+   "title": "양동통맥축제",
+   "code": "12240",
+   "start": "20260423",
+   "days": 3,
+   "source": "표준데이터",
+   "effectPct": -1.1,
+   "district": "서구"
+  },
+  {
+   "title": "광주 국가유산야행",
+   "code": "12210",
+   "start": "20260424",
+   "days": 2,
+   "source": "관광공사",
+   "effectPct": 1.1,
+   "district": "동구"
+  },
+  {
+   "title": "어린이 도자축제",
+   "code": "12300",
+   "start": "20260502",
+   "days": 4,
+   "source": "관광공사",
+   "effectPct": -6.6,
+   "district": "북구"
+  },
+  {
+   "title": "광주스트릿컬처페스타",
+   "code": "12210",
+   "start": "20260604",
+   "days": 4,
+   "source": "표준데이터",
+   "effectPct": 0.1,
+   "district": "동구"
+  },
+  {
+   "title": "동구 무등산인문축제 [무등생각]",
+   "code": "12210",
+   "start": "20260613",
+   "days": 2,
+   "source": "관광공사",
+   "effectPct": 1.4,
+   "district": "동구"
+  },
+  {
+   "title": "사직단오제",
+   "code": "12270",
+   "start": "20260620",
+   "days": 1,
+   "source": "표준데이터",
+   "effectPct": 28.0,
+   "district": "남구"
+  }
+ ]
+}

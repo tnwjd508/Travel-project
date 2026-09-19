@@ -5,6 +5,8 @@ export const DIAGNOSIS_MODEL = {
   description: '정책 검토용 자체 규칙입니다. 인과 추정·방문자 예측·공식 관광 활성화 지수가 아닙니다.',
 }
 const THRESHOLDS = { index: 80, youthChangePct: -5, relatedSharePct: 60 }
+// 상위 3개 비중은 연관 관광지가 3곳 이하이면 항상 100%가 되므로 4곳 이상일 때만 판정한다.
+const MIN_HUBS_FOR_CONCENTRATION = 4
 const mean = (values: (number | null)[]) => values.some(value => value === null) ? null : values.reduce<number>((sum, value) => sum + value!, 0) / values.length
 export function diagnose(summary: SummaryResponse, indices: IndicesResponse, related: RelatedResponse): DiagnosisResponse {
   const inputs = [
@@ -13,9 +15,17 @@ export function diagnose(summary: SummaryResponse, indices: IndicesResponse, rel
     { id: 'concentration', label: '상위 3개 관광지 연관 건수 비중', value: related.top3Share, unit: 'percent' as const, attention: (v: number) => v > THRESHOLDS.relatedSharePct, task: '연관 관광지 네트워크와 코스 다양화 검토' },
     { id: 'spend', label: '관광소비강도 지수', value: summary.spend.ix22, unit: 'index' as const, attention: (v: number) => v < THRESHOLDS.index, task: '관광·상권 소비 연결 프로그램 검토' },
   ]
-  const issues: DiagnosisResponse['issues'] = inputs.map(input => ({ id: input.id, label: input.label, value: input.value, unit: input.unit,
-    status: input.value === null ? 'unknown' : input.attention(input.value) ? 'attention' : 'normal',
-    evidence: input.value === null ? `${input.label}: 데이터 부족` : `${input.label}: ${input.value.toFixed(2)}${input.unit === 'percent' ? '%' : ' (지수)'}; 기준월 ${summary.baseYm}` }))
+  const hubCount = related.hubs?.length
+  const tooFewHubs = hubCount !== undefined && hubCount < MIN_HUBS_FOR_CONCENTRATION
+  const issues: DiagnosisResponse['issues'] = inputs.map(input => {
+    if (input.id === 'concentration' && input.value !== null && tooFewHubs) {
+      return { id: input.id, label: input.label, value: input.value, unit: input.unit, status: 'unknown' as const,
+        evidence: `${input.label}: 연관 관광지 ${hubCount}곳으로 판정 불가 (4곳 이상 필요); 기준월 ${summary.baseYm}` }
+    }
+    return { id: input.id, label: input.label, value: input.value, unit: input.unit,
+      status: input.value === null ? 'unknown' : input.attention(input.value) ? 'attention' : 'normal',
+      evidence: input.value === null ? `${input.label}: 데이터 부족` : `${input.label}: ${input.value.toFixed(2)}${input.unit === 'percent' ? '%' : ' (지수)'}; 기준월 ${summary.baseYm}` }
+  })
   const priorities = issues.filter(issue => issue.status === 'attention').slice(0, 3).map(issue => ({ issueId: issue.id, title: inputs.find(input => input.id === issue.id)!.task, evidence: issue.evidence }))
   const g = indices.groups
   const radar = [

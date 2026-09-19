@@ -1,5 +1,7 @@
 # ON:GIL · FastAPI + React 실행 및 인수
 
+2026-09-20 최신 로컬 통합 상태와 후속 작업은 [FastAPI 구현 방향](docs/fastapi-implementation-plan.md)을 우선 참조한다. 아래에는 초기 통합 당시의 구현 범위·검증 기록이 포함돼 있다.
+
 ## 반영한 저장소 상태
 
 **2026-09-18 통합:** 팀원 PR #7 `work-from-main`의 `888a93b`를 로컬 `JSBbranch`에 병합했다. 전국 화면과 LangGraph 코드를 보존하면서 FastAPI에 전국 코드 지원과 월간 브리핑 워커 연결을 추가했다. 현재 변경·검증·운영 한계는 [PR #7 통합 기록](docs/팀원_PR7_FastAPI_통합_기록.md)을 참고한다. 아래 2026-09-17 항목은 최초 구현 기록이다.

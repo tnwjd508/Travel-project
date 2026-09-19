@@ -13,9 +13,6 @@ export const policyLabels = Object.fromEntries(
   policyOptions.map((policy) => [policy.value, policy.label]),
 ) as Record<PolicyId, string>
 
-// 효과 예측 모델이 아직 없으므로 수치 예측 대신 모델 상태를 명시한다.
-export const SIMULATION_MODEL_STATUS = 'model_not_connected' as const
-
 // 정책이 개선을 겨냥하는 진단 지표(backend/diagnosis.py의 issue id).
 // 기획 단계의 연결 가정이며, 효과 크기를 뜻하지 않는다.
 export const policyTargets: Record<PolicyId, { issueIds: string[]; rationale: string }> = {

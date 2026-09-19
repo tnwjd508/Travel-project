@@ -5,6 +5,7 @@ Run against an isolated Vite server with --url. Uses an isolated headless Edge p
 import argparse
 import base64
 import json
+import re
 import time
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -63,7 +64,8 @@ def main():
                 return respond({'message': '저장 응답 확인 실패. 다시 시도하세요.'}, 503)
             return respond(stored[keys[key]])
         if path == '/api/scenarios':
-            return respond({'items': [row for row in stored.values() if row['organization_id'] == query['organizationId'][0]], 'nextCursor': None})
+            return respond({'items': [row for row in stored.values() if row['organization_id'] == query['organizationId'][0]
+                and row['district_id'] == query.get('district', [row['district_id']])[0]], 'nextCursor': None})
         if path.startswith('/api/scenarios/'):
             row = stored.get(path.split('/')[-1])
             return respond(row) if row and row['organization_id'] == query['organizationId'][0] else respond({'message':'없음'},404)
@@ -130,8 +132,35 @@ def main():
             Path('outputs').mkdir(exist_ok=True)
             page.screenshot(path='outputs/scenario-library-mobile.png',full_page=True)
             assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+            page.set_viewport_size({'width':1440,'height':1000})
+            page.goto(args.url + '/dashboard/seoul/11110/simulation')
+            page.wait_for_load_state('networkidle')
+            page.get_by_role('combobox').first.click()
+            page.get_by_role('option', name='문화축제 개최', exact=True).click()
+            page.get_by_role('button', name='정책 시나리오 검토', exact=True).click()
+            expect(page.get_by_text('+1.7%', exact=True)).to_be_visible()
+            for code in ['11710', '11740']:
+                page.goto(args.url + f'/dashboard/seoul/{code}/simulation')
+                page.wait_for_load_state('networkidle')
+                page.get_by_role('button', name='정책 시나리오 검토', exact=True).click()
+                expect(page.get_by_text('+1.7%', exact=True)).to_be_visible()
+            page.get_by_role('button', name='설정', exact=True).click()
+            expect(page.get_by_role('dialog')).to_be_visible()
+            page.get_by_text('다크', exact=True).click()
+            expect(page.locator('html')).to_have_attribute('data-theme','dark')
+            page.get_by_role('button', name='설정 닫기', exact=True).click()
+            page.goto(args.url + '/dashboard/busan/26710/simulation')
+            page.wait_for_load_state('networkidle')
+            page.get_by_role('button', name='정책 시나리오 검토', exact=True).click()
+            expect(page.get_by_text('지역 근거 없음', exact=True)).to_be_visible()
+            expect(page.get_by_text('+1.7%', exact=True)).to_have_count(0)
+            expect(page.locator('html')).to_have_attribute('data-theme','dark')
+            for label, section in [('관광 데이터','analytics'),('AI 지역 진단','diagnosis'),('전략 비교','strategy'),('AI 보고서','report')]:
+                page.get_by_role('link',name=label,exact=True).click()
+                expect(page).to_have_url(re.compile('/dashboard/busan/26710/' + section + '$'))
+                expect(page.get_by_role('main')).to_be_visible()
             assert not errors, errors
-            print('PASS: login, save/retry key, canonical units, stored briefing, reload GET, organization switch, history, logout, viewer, mobile')
+            print('PASS: login, save/retry key, units, briefing, reload, org/history, logout/viewer, mobile, national scenarios, evidence scope, theme, navigation')
         finally:
             browser.close()
 

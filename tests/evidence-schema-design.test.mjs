@@ -30,7 +30,7 @@ test('2026-09-20 evidence schema: real checked-in artifact, shared evidence, pri
   }
   async function makeScenario(policy = 'festival', district = '12210', budget = 1500000000, duration = 6) {
     return rpc('scenario_save',{p_organization_id:org,p_user_id:user,p_idempotency_key:randomUUID(),p_request_sha256:'a'.repeat(64),
-      p_region_id:district==='11110'?'seoul':'jeonnam-gwangju',p_district_id:district,p_district_name:'시험 지역',p_catalogue_version:'test',
+      p_region_id:district.startsWith('11')?'seoul':'jeonnam-gwangju',p_district_id:district,p_district_name:'시험 지역',p_catalogue_version:'test',
       p_policy_code:policy,p_policy_name:policy,p_budget_krw:budget,p_start_month:'2026-10-01',p_duration_months:duration})
   }
   let release, scenario, review
@@ -106,7 +106,7 @@ test('2026-09-20 evidence schema: real checked-in artifact, shared evidence, pri
     assert.ok(result.evidence_statistic_id)
   })
   await t.test('unsupported policy, out-of-scope county and unimported evidence have no fabricated values', async () => {
-    for (const [policy,district,expected] of [['shuttle','12210','unsupported_policy'],['festival','12710','out_of_scope'],['festival','11110','available']]) {
+    for (const [policy,district,expected] of [['shuttle','12210','unsupported_policy'],['festival','12710','out_of_scope'],['festival','11110','available'],['festival','11710','available'],['festival','11740','available']]) {
       const target = await makeScenario(policy,district)
       const result = await rpc('save_scenario_review',{...reviewArgs(),p_scenario_id:target.id,p_idempotency_key:randomUUID(),
         p_baseline_snapshot:{...snapshot,request:{regionId:target.region_id,districtId:target.district_id}}})
@@ -128,6 +128,23 @@ test('2026-09-20 evidence schema: real checked-in artifact, shared evidence, pri
     await db.exec(`select set_config('request.jwt.claim.sub','${outsider}',false)`)
     assert.equal((await db.query('select id from scenario_reviews')).rows.length,0)
     await db.exec('reset role')
+  })
+  await t.test('v2 scope patch includes Songpa/Gangdong while retaining earlier review history', async () => {
+    const patch = await readFile(new URL('../docs/supabase-review-scope-fix.proposed.sql', import.meta.url),'utf8')
+    const old = patch.replace("    or left(v_scenario.district_id,2) = '11'\n",'')
+      .replace("in ('26','27','28','30','31')", "in ('11','26','27','28','30','31')")
+      .replaceAll("'festival-reference-v2'", "'festival-reference-v1'")
+    await db.exec(old)
+    const target = await makeScenario('festival','11740')
+    const args = {...reviewArgs(),p_scenario_id:target.id,p_idempotency_key:randomUUID(),
+      p_baseline_snapshot:{...snapshot,request:{regionId:'seoul',districtId:'11740'}}}
+    const earlier = await rpc('save_scenario_review',args)
+    assert.equal(earlier.reference_status,'out_of_scope')
+    await db.exec(patch)
+    const updated = await rpc('save_scenario_review',{...args,p_idempotency_key:randomUUID()})
+    assert.equal(updated.reference_status,'available')
+    assert.equal(updated.selection_rule_version,'festival-reference-v2')
+    assert.equal((await db.query('select selection_rule_version from scenario_reviews where id=$1',[earlier.id])).rows[0].selection_rule_version,'festival-reference-v1')
   })
   await t.test('stored evidence and reviews are immutable, but deleting the author preserves review history', async () => {
     await assert.rejects(db.query("update scenario_reviews set reference_status='not_imported',evidence_statistic_id=null where id=$1",[review.id]),/immutable/)

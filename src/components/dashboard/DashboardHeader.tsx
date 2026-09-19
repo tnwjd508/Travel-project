@@ -1,11 +1,9 @@
-import { Bell, CalendarDays, ChevronDown, Menu, Search, X } from 'lucide-react'
-import { useState } from 'react'
+import { CalendarDays, ChevronDown, Menu } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
 export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
   const navigate = useNavigate()
-  const [searchOpen, setSearchOpen] = useState(false)
   const district = useDashboardRegion()
 
   return (
@@ -22,11 +20,6 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
         <span className="mx-2 hidden h-5 w-px bg-slate-200 md:block" />
         <button type="button" onClick={() => navigate(district.selectionPath)} className="hidden min-h-11 items-center gap-2 rounded-xl px-2.5 text-xs font-semibold text-slate-700 outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex" aria-label={`${district.regionName} 시군구 선택 화면으로 이동`}><span className="h-2 w-2 rounded-full bg-blue-600" />{district.regionName} {district.nameKo}<ChevronDown size={13} className="text-slate-400" /></button>
 
-        <div className={`hidden h-11 items-center rounded-xl border border-transparent bg-slate-50 transition-all sm:flex ${searchOpen ? 'w-52 px-3' : 'w-11 justify-center'}`}>
-          <button type="button" onClick={() => setSearchOpen((open) => !open)} className="grid h-9 w-9 shrink-0 place-items-center text-slate-500 outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label={searchOpen ? '데이터 검색 닫기' : '데이터 검색 열기'}>{searchOpen ? <X size={16} /> : <Search size={17} />}</button>
-          {searchOpen && <input autoFocus aria-label="데이터 검색" placeholder="데이터 검색" className="ml-1 min-w-0 flex-1 bg-transparent text-xs text-slate-700 outline-none placeholder:text-slate-400" />}
-        </div>
-        <button type="button" className="relative grid h-11 w-11 place-items-center rounded-xl text-slate-500 outline-none transition hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="알림 확인"><Bell size={18} /><span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-blue-600 ring-2 ring-white" /></button>
 
         <div className="hidden items-center gap-2.5 border-l border-slate-200 pl-4 xl:flex">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-[10px] font-bold text-white">{district.nameKo}</div>

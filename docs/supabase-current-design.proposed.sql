@@ -521,7 +521,8 @@ begin
     v_status := 'unsupported_policy';
   elsif v_scenario.policy_code = 'festival' and not (
     v_scenario.district_id in ('12210','12240','12270','12300','12330')
-    or (left(v_scenario.district_id,2) in ('11','26','27','28','30','31') and substring(v_scenario.district_id from 3)::integer < 700)
+    or left(v_scenario.district_id,2) = '11'
+    or (left(v_scenario.district_id,2) in ('26','27','28','30','31') and substring(v_scenario.district_id from 3)::integer < 700)
   ) then
     v_status := 'out_of_scope';
   elsif p_evidence_release_id is null then
@@ -535,7 +536,7 @@ begin
   end if;
   insert into public.scenario_reviews(organization_id, scenario_id, created_by, evidence_statistic_id,
     reference_status, selection_rule_version, baseline_status, baseline_snapshot, idempotency_key, request_sha256)
-  values (p_organization_id, p_scenario_id, p_user_id, v_stat.id, v_status, 'festival-reference-v1',
+  values (p_organization_id, p_scenario_id, p_user_id, v_stat.id, v_status, 'festival-reference-v2',
     p_baseline_status, p_baseline_snapshot, p_idempotency_key, p_request_sha256) returning * into v_review;
   return to_jsonb(v_review);
 end;
