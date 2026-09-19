@@ -47,7 +47,7 @@ export function TourismHero() {
   }, [fallbackHeroAlt, fallbackHeroImage, region.heroKeyword, region.nameKo, region.tourApiAreaCode])
 
   return (
-    <section className="relative min-h-[440px] overflow-hidden rounded-[24px] border border-slate-200/70 bg-white shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:min-h-[380px] lg:min-h-[340px]" aria-labelledby="overview-title">
+    <section className="tourism-hero relative min-h-[440px] overflow-hidden rounded-[24px] border border-slate-200/70 bg-white shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:min-h-[380px] lg:min-h-[340px]" aria-labelledby="overview-title">
       {heroImage && <img
         src={heroImage}
         alt={heroAlt}

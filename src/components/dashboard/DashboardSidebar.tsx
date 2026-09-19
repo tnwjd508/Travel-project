@@ -4,7 +4,7 @@ import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigatio
 import { cn } from '@/utils/cn'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   const navigate = useNavigate()
   const location = useLocation()
   const district = useDashboardRegion()
@@ -38,7 +38,7 @@ export function DashboardSidebar() {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[11px] font-medium text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="설정"><Settings size={14} />설정</button>
+          <button type="button" onClick={onOpenSettings} aria-haspopup="dialog" className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[11px] font-medium text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="설정"><Settings size={14} />설정</button>
           <button type="button" className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[11px] font-medium text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="도움말"><CircleHelp size={14} />도움말</button>
         </div>
 

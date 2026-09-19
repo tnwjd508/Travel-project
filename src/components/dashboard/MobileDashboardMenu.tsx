@@ -6,7 +6,7 @@ import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigatio
 import { cn } from '@/utils/cn'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
-export function MobileDashboardMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function MobileDashboardMenu({ open, onClose, onOpenSettings }: { open: boolean; onClose: () => void; onOpenSettings: () => void }) {
   const navigate = useNavigate()
   const location = useLocation()
   const district = useDashboardRegion()
@@ -56,7 +56,7 @@ export function MobileDashboardMenu({ open, onClose }: { open: boolean; onClose:
                 <button type="button" onClick={() => { onClose(); navigate(district.selectionPath) }} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white text-[11px] font-semibold text-blue-600 outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><RotateCcw size={14} />자치구 다시 선택</button>
                 <button type="button" onClick={() => { onClose(); navigate('/') }} className="mt-2 flex min-h-10 w-full items-center justify-center rounded-xl text-[10px] font-semibold text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-blue-500">광역 지역 다시 선택</button>
               </div>
-              <div className="grid grid-cols-2 gap-2"><button type="button" className="flex min-h-11 items-center justify-center gap-2 rounded-xl text-xs text-slate-500 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500"><Settings size={14} />설정</button><button type="button" className="flex min-h-11 items-center justify-center gap-2 rounded-xl text-xs text-slate-500 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500"><CircleHelp size={14} />도움말</button></div>
+              <div className="grid grid-cols-2 gap-2"><button type="button" onClick={onOpenSettings} aria-haspopup="dialog" className="flex min-h-11 items-center justify-center gap-2 rounded-xl text-xs text-slate-500 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500"><Settings size={14} />설정</button><button type="button" className="flex min-h-11 items-center justify-center gap-2 rounded-xl text-xs text-slate-500 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500"><CircleHelp size={14} />도움말</button></div>
             </div>
           </motion.aside>
         </>
