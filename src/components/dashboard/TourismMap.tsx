@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card'
 import districtData from '@/assets/data/gwangju-districts.json'
 import { STATIC_BOUNDARY_SOURCE_DATE } from '@/data/gwangjuNeighborhoods'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import type { GwangjuDistrict } from '@/data/gwangjuDistricts'
+import { RegionalTourismMap } from './RegionalTourismMap'
 import { useDistrictNeighborhoods } from '@/hooks/useDistrictNeighborhoods'
 import type { NeighborhoodFeature } from '@/types/boundary'
 import type { Attraction } from '@/types/tourism'
@@ -34,6 +36,11 @@ const neighborhoodFills = ['#BFDBFE', '#C7D2FE', '#BAE6FD', '#DDD6FE', '#CCFBF1'
 
 export function TourismMap() {
   const district = useActiveDistrict()
+  // 광주의 상세 행정동 지도는 main 구현을 유지하고 다른 지역은 해당 시군구 경계를 씁니다.
+  return district.legacy ? <GwangjuTourismMap key={district.slug} district={district.legacy} /> : <RegionalTourismMap key={`${district.regionId}/${district.slug}`} />
+}
+
+function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
   const contentState = useDistrictResource('contents', { district: district.slug })
   const attractions = useMemo<Attraction[]>(() => (contentState.data?.items ?? []).filter(item => item.lng !== null && item.lat !== null).map(item => ({ id: item.contentId, name: item.title, category: contentCategoryName(item.category), lng: item.lng!, lat: item.lat!, visitors: '', accent: '#2563EB' })), [contentState.data])
   const { neighborhoods, source, status, errorMessage, retry } = useDistrictNeighborhoods(district)

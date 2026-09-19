@@ -16,7 +16,7 @@ export function KpiGrid() {
     <section aria-labelledby="kpi-title">
       <div className="mb-3 flex items-center justify-between">
         <h2 id="kpi-title" className="text-sm font-bold tracking-[-.02em] text-slate-900">핵심 관광 지표</h2>
-        <p className="text-[10px] font-medium text-slate-400">광주광역시 {district.nameKo} 월간 데이터</p>
+        <p className="text-[10px] font-medium text-slate-400">{district.regionName} {district.nameKo} 월간 데이터</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map(kpi => <article key={kpi.label} className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm"><h3 className="text-xs font-semibold text-slate-500">{kpi.label}</h3><p className="mt-4 text-2xl font-extrabold tracking-tight text-slate-950">{formatValue(kpi.value, kpi.decimals)}</p><p className="mt-1 text-xs text-slate-500">{kpi.unit}</p><p className="mt-3 text-[11px] leading-5 text-slate-500">{kpi.note}</p></article>)}

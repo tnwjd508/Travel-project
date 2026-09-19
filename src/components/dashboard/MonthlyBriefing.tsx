@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CalendarDays, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
-import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 import type { BriefingFestival, BriefingFinding, MonthlyBriefingData } from '@/types/briefing'
 import { type RegionSelection } from '@/data/tourismRegions'
 import { loadMonthlyBriefing } from '@/lib/monthlyBriefingClient'
@@ -42,8 +42,8 @@ function Finding({ finding, data, recommendation = false }: { finding: BriefingF
 }
 
 export function MonthlyBriefing() {
-  const district = useActiveDistrict()
-  return <RegionMonthlyBriefing key={district.slug} selection={{ regionId: 'gwangju', district: district.slug }} districtName={district.nameKo} />
+  const district = useDashboardRegion()
+  return <RegionMonthlyBriefing key={`${district.selection.regionId}:${district.selection.district}`} selection={district.selection} districtName={district.nameKo} />
 }
 
 // 부모 화면이 받은 시도·시군구를 그대로 사용하므로 광주 외 지역에서도 재사용할 수 있습니다.

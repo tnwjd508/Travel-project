@@ -2,10 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { SIMULATION_MODEL_STATUS, type PolicyDuration, type PolicyId } from '@/data/policies'
 import type { DistrictSlug } from '@/data/gwangjuDistricts'
+import type { DistrictId } from '@/data/tourismRegions'
 
 // 효과 예측 모델 연결 전에는 입력 조건만 저장하고 예측 수치는 만들지 않는다.
 export interface SimulationScenario {
-  district: DistrictSlug
+  district: DistrictId
   policy: PolicyId
   budget: number
   duration: PolicyDuration
@@ -28,7 +29,7 @@ interface TourismStrategyState {
   setBudget: (budget: number) => void
   setDuration: (duration: PolicyDuration) => void
   clearSimulationResult: () => void
-  completeSimulation: (district: DistrictSlug) => void
+  completeSimulation: (district: DistrictId) => void
 }
 
 export const useTourismStrategyStore = create<TourismStrategyState>()(
