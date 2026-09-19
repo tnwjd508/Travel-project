@@ -35,10 +35,13 @@ export interface MergeInput {
 }
 export type MergeDiagnosis = (input: MergeInput, signal: AbortSignal) => Promise<BriefingDiagnosis>
 
-export function geminiMerger(apiKey: string, model = 'gemini-3.8-flash', fetcher: typeof fetch = fetch): MergeDiagnosis {
+// 일시적 과부하(503 등)만 재시도합니다. 429 할당량 초과는 재시도해도 소진만 되므로 즉시 실패합니다.
+const RETRYABLE_STATUS = new Set([500, 502, 503, 504])
+
+export function geminiMerger(apiKey: string, model = 'gemini-3.8-flash', fetcher: typeof fetch = fetch, retryDelayMs = 1_500): MergeDiagnosis {
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Gemini 모델 이름을 확인해 주세요.')
   return async (input, signal) => {
-    const response = await fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    const request = () => fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       signal: AbortSignal.any([signal, AbortSignal.timeout(18_000)]),
@@ -57,11 +60,17 @@ export function geminiMerger(apiKey: string, model = 'gemini-3.8-flash', fetcher
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 4096,
-          responseFormat: { text: { mimeType: 'application/json', schema: z.toJSONSchema(diagnosisSchema) } },
+          responseMimeType: 'application/json',
+          responseJsonSchema: z.toJSONSchema(diagnosisSchema),
           ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
         },
       }),
     })
+    let response = await request()
+    for (let attempt = 1; attempt < 3 && RETRYABLE_STATUS.has(response.status) && !signal.aborted; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs * attempt))
+      response = await request()
+    }
     if (!response.ok) throw new Error('Gemini 진단 요청에 실패했습니다.')
     const payload = await response.json() as { candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[] }
     const candidate = payload.candidates?.[0]

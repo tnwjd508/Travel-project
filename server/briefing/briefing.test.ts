@@ -150,11 +150,25 @@ test('Gemini REST 요청은 헤더로 키를 보내고 구조화 응답을 검�
     assert.equal((init?.headers as Record<string, string>)['x-goog-api-key'], 'test-gemini-secret')
     assert.doesNotMatch(String(init?.body), /test-gemini-secret/)
     const body = JSON.parse(String(init?.body))
-    assert.equal(body.generationConfig.responseFormat.text.mimeType, 'application/json')
+    assert.equal(body.generationConfig.responseMimeType, 'application/json')
+    assert.ok(body.generationConfig.responseJsonSchema)
     return { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(diagnosis(['a:1'])) }] } }] }
   }))
   const result = await merge({ context, previous: null, current: source('a'), evidence: [fact('a')], sources: [] }, signal())
   assert.equal(result.findings.length, 1)
+})
+
+test('Gemini 일시 과부하(503)는 재시도하고 할당량 초과(429)는 재시도하지 않는다', async () => {
+  const input = { context, previous: null, current: source('a'), evidence: [fact('a')], sources: [] }
+  const ok = { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(diagnosis(['a:1'])) }] } }] }
+  let calls = 0
+  const flaky = (async () => ++calls < 3 ? Response.json({ error: {} }, { status: 503 }) : Response.json(ok)) as typeof fetch
+  assert.equal((await geminiMerger('k', 'gemini-3.8-flash', flaky, 0)(input, signal())).findings.length, 1)
+  assert.equal(calls, 3)
+  calls = 0
+  const quota = (async () => { calls++; return Response.json({ error: {} }, { status: 429 }) }) as typeof fetch
+  await assert.rejects(geminiMerger('k', 'gemini-3.8-flash', quota, 0)(input, signal()))
+  assert.equal(calls, 1)
 })
 
 test('서비스는 요청 조건과 키를 검증하고 동일 요청을 합치며 캐시를 만료한다', async () => {
