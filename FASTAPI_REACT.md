@@ -54,6 +54,7 @@ macOS/Linux에서는 `.venv/Scripts/python.exe` 대신 `.venv/bin/python`을 사
 
 - API 문서: `http://127.0.0.1:8000/docs`
 - 상태: `http://127.0.0.1:8000/api/health`
+- 월간 브리핑의 원시 근거·API 수집 상태·상세 경고는 기본 화면에서 숨긴다. 개발 시 `VITE_SHOW_DIAGNOSTICS=true`로 Vite를 시작한 경우에만 표시하며, 프로덕션 빌드에서는 이 값과 관계없이 숨긴다. 요약·진단·추천·축제 정보와 필요한 출처·날짜는 유지한다.
 - 예: `/api/district/summary?district=donggu`, `/api/district/summary?district=all`
 - 상세 파라미터·응답 의미: [BACKEND_API.md](BACKEND_API.md), [src/types/district.ts](src/types/district.ts)
 
