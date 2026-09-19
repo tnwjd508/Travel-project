@@ -40,7 +40,13 @@ def create_app(settings=None, transport=None):
         description='전국 관광 실데이터 API와 광주 대시보드. 지수는 시간·금액·인원 단위가 아닙니다.')
 
     from .scenarios import scenario_router
+    from .evidence import evidence_router
+    from .reviews import review_router
+    from .readiness import readiness_router
     app.include_router(scenario_router(env))
+    app.include_router(evidence_router(env))
+    app.include_router(review_router(env))
+    app.include_router(readiness_router(env))
 
     @app.middleware('http')
     async def request_context(request, call_next):
@@ -73,7 +79,8 @@ def create_app(settings=None, transport=None):
 
     @app.exception_handler(HTTPException)
     async def http_error(request, error):
-        if error.status_code == 405 and request.url.path in ('/api/monthly-briefing', '/api/scenarios'):
+        if error.status_code == 405 and (request.url.path in ('/api/monthly-briefing', '/api/scenarios')
+            or request.url.path.startswith('/api/scenarios/') and request.url.path.endswith('/reviews')):
             return JSONResponse({'code': 'METHOD_NOT_ALLOWED', 'message': 'GET 또는 POST 요청만 지원합니다.'}, status_code=405, headers={'Allow': 'GET, POST', 'Cache-Control': 'no-store'})
         return error_response(ApiError(error.status_code, 'METHOD_NOT_ALLOWED' if error.status_code == 405 else 'NOT_FOUND', 'GET 요청만 지원합니다.' if error.status_code == 405 else '요청한 경로가 없습니다.'))
 

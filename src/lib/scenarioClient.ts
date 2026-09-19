@@ -41,5 +41,7 @@ export async function scenarioRequest<T>(client: SupabaseClient, path: string, s
     const message = z.object({ message: z.string() }).safeParse(payload)
     throw new Error(message.success ? message.data.message : '공동 저장 요청에 실패했습니다.')
   }
-  return schema.parse(payload)
+  const parsed = schema.safeParse(payload)
+  if (!parsed.success) throw new Error('저장된 데이터 형식을 확인하지 못했습니다. 서비스 운영자에게 문의하세요.')
+  return parsed.data
 }

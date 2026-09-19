@@ -39,6 +39,19 @@ test('2026-09-20 evidence schema: real checked-in artifact, shared evidence, pri
   const reviewArgs = () => ({p_organization_id:org,p_scenario_id:scenario.id,p_user_id:user,p_idempotency_key:reviewKey,
     p_request_sha256:'a'.repeat(64),p_baseline_status:'unavailable',p_baseline_snapshot:snapshot,p_evidence_release_id:release})
   const importArgs = () => ({p_payload:payload,p_artifact_sha256:sha,p_repository_commit:commit})
+  await t.test('review contract is readable only by the server role', async () => {
+    await db.exec('set role service_role')
+    assert.deepEqual(await rpc('review_contract',{}),{rule_version:'festival-reference-v2',baseline_schema_version:1})
+    for (const table of ['organizations','organization_members','scenario_reviews','policy_evidence_statistics','policy_evidence_releases']) {
+      await db.query(`select * from ${table} limit 0`)
+    }
+    assert.deepEqual(await rpc('briefing_get',{p_region_id:'jeonnam-gwangju',p_district_id:'12210',p_month:'2000-01-01'}),{state:'missing'})
+    for (const role of ['anon','authenticated']) {
+      await db.exec(`set role ${role}`)
+      await assert.rejects(rpc('review_contract',{}),/permission denied/)
+    }
+    await db.exec('set role service_role')
+  })
   await t.test('same artifact imports once; all 12 statistics match its authoritative JSON', async () => {
     await db.exec('set role service_role')
     release = await rpc('import_policy_evidence',importArgs())

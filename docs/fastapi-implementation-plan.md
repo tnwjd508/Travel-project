@@ -1,6 +1,6 @@
-# 최신 코드 통합 후 FastAPI 구현 방향
+# FastAPI 구현 현황과 서비스 연결 안내
 
-2026-09-20. 이번 작업은 최신 GitHub 코드의 로컬 통합과 구현 방향 정리다. 신규 검토 API 개발, 원격 push, Vercel/FastAPI 배포, Supabase 데이터 변경은 하지 않았다.
+2026-09-20. 최신 master·SJbranch 통합에 이어 분석 근거 등록/조회, 기관별 검토 저장/조회, React 연동을 구현했다. 원격 push, Vercel/FastAPI 배포, 실제 Supabase 변경은 수행하지 않았다. 현재 로컬에 Supabase 연결 환경변수가 없어 실계정 저장 검증은 남아 있다.
 
 ## 1. 로컬에 반영한 코드
 
@@ -29,29 +29,30 @@
 | 공개 로그인 설정 | GET /api/account/config | 구현. URL·publishable 키만 반환 |
 | 소속 기관 | GET /api/account/organizations | 구현. JWT 검증 후 소속 조회 |
 | 시나리오 입력 | POST/GET /api/scenarios, GET /api/scenarios/{id} | 구현. 기관 권한·멱등 저장·페이지 조회 |
-| 분석 근거 import/조회 | 아래 3절 | 미구현. 현재 UI는 번들 JSON 사용 |
-| 검토 스냅샷 저장/조회 | 아래 3절 | 미구현. DB 테이블/RPC 설계는 준비됨 |
+| 분석 근거 import/조회 | 운영자 CLI, GET /api/policy-evidence | 구현. DB 조회만 사용 |
+| 검토 스냅샷 저장/조회 | POST/GET /api/scenarios/{id}/reviews, GET /api/scenario-reviews/{id} | 구현. JWT·기관·역할·멱등성 검증 |
+| 연결 준비 상태 | GET /api/ready | 구현. 읽기 전용 DB/RPC 접근과 런타임 파일·키 설정 확인. AI 호출 없음 |
 
 사용자는 Supabase 테이블 8개와 RLS 활성화 결과를 확인했다. 이는 원격 RPC 권한·실제 로그인·저장이 검증됐다는 의미는 아니다. 현재 Codex Supabase 커넥터는 해당 프로젝트의 조회 권한이 없다.
 
-## 3. 다음에 구현할 것: 두 단계
+## 3. 구현한 저장 흐름
 
 ### 단계 A — 공통 분석 근거 등록·조회
 
-새 파일 제안: `backend/evidence.py`, `backend/import_evidence.py`.
+구현 파일: `backend/evidence.py`, `backend/import_evidence.py`.
 
 1. 운영자용 CLI가 `src/assets/data/festival-effect.json`을 읽는다. 공개 웹 요청으로 임의 분석 파일을 받지 않는다.
-2. 파일 바이트 SHA-256, schema version, 12개 통계, 숫자 유한성/구간/표본, 커밋과 provenance_revision을 검증한다.
+2. 지정한 Git 커밋의 파일 바이트 SHA-256, schema version, 12개 통계, 숫자 유한성/구간/표본, 커밋과 provenance_revision을 검증한다.
 3. `import_policy_evidence` RPC로 원본과 12개 통계를 원자적으로 저장한다. 현재 자료는 원본 실행 manifest가 없으므로 `partial` provenance다. 단순 SQL 적용만으로 분석 데이터가 채워지지는 않는다.
 4. 같은 SHA·출처 리비전 재시도는 같은 release_id. 출처 증명을 보완하면 새 리비전으로 등록한다. complete는 원본 보관 파일의 존재·실제 바이트 체크섬까지 import 도구가 검증한 뒤 사용한다.
-5. `GET /api/policy-evidence?policy=festival&district=12210`을 추가한다. 서버가 정규 지역·분석군을 고르고 `releaseId`, `statisticId`, `status`, `basis`, `outcome`, `sampleCount`, `meanPct`, `ci95Pct`, 자료 기간과 선택 규칙 버전을 반환한다.
+5. `GET /api/policy-evidence?policy=festival&district=12210`을 추가한다. 서버가 정규 지역·분석군을 고르고 `releaseId`, `statisticId`, `status`, `basis`, `stat`(n/meanPct/medianPct/ci95Pct/sharePositive), `metadata`(자료 기간/방법/출처), `selectionRuleVersion`을 반환한다. policy를 생략하면 같은 릴리스의 5개 정책을 한 응답으로 조회한다.
 6. `src/data/festivalEffect.ts`의 번들 JSON 직접 조회를 서버 응답으로 교체한다. DB 미연결 시 저장된 근거인 것처럼 번들 값으로 조용히 대체하지 않는다.
 
 근거 JSON의 version=1은 파일 구조 버전이다. 서로 다른 분석 산출물의 고유 버전은 release_id/SHA-256/출처 리비전으로 구분한다. 등록 도구는 새로 만든 난수나 가정값을 통계로 seed하지 않는다.
 
 ### 단계 B — 기관별 검토 결과 저장·조회
 
-새 파일 제안: `backend/reviews.py`, `backend/tests/test_reviews.py`.
+구현 파일: `backend/reviews.py`, `backend/tests/test_reviews.py`.
 
 | 신규 API | 책임 |
 |---|---|
@@ -73,7 +74,7 @@ POST 처리 순서:
 
 ## 4. 공통 모듈과 검증 경계
 
-현재 `backend/scenarios.py`의 `ScenarioDatabase`는 Auth 확인과 Supabase HTTP 호출을 함께 담당한다. 새 모듈을 추가할 때 이 연결 부분을 `backend/supabase.py` 같은 공통 모듈로 옮겨 재사용하고, scenarios/evidence/reviews에는 도메인 검증만 남긴다. 새 로그인 체계나 별도 DB 연결 설정을 추가하지 않는다.
+공통 `backend/supabase.py`의 `SupabaseDatabase`가 Auth 확인과 Supabase HTTP 호출을 담당한다. scenarios/evidence/reviews는 이를 재사용한다. 새 로그인 체계나 별도 DB 연결 설정을 추가하지 않는다.
 
 - 읽기는 사용자 JWT + RLS + organization_id 필터. 신뢰된 서버의 근거 조회/import와 쓰기 RPC에만 secret 권한 사용.
 - 외부 Supabase 오류 본문·서버 키·토큰은 로그/응답에 노출하지 않음.
@@ -124,12 +125,36 @@ npm run dev
 
 월간 브리핑 시간 제한은 Node 분석 240초, DB 임대 280초, Python 285초, Vercel 전달 290초, 함수 설정 300초다. 실제 호스팅의 허용 시간과 ingress 제한을 확인해야 한다. 현재 구조가 먼저 정상 동작한 후 필요하면 장기 실행을 별도 작업 처리 방식으로 바꾼다.
 
-추가 운영 구현: 기존 `/api/health`는 생존 확인으로 유지하고, Supabase 읽기/RPC 접근 및 Node 실행 준비 상태를 확인하는 내부 readiness 경로를 별도로 만든다. readiness 확인 때문에 실제 브리핑 생성이나 유료 AI 호출을 실행하지 않는다.
+`GET /api/ready`는 Supabase 읽기/검토 계약/브리핑 조회 RPC와 Node·tsx 파일, 서버 키 설정 여부를 확인한다. 분리 운영에서는 기존 origin 토큰으로 보호되며 Vercel 공개 어댑터는 만들지 않았다. 모든 항목이 준비되면 200, 아니면 503과 항목별 boolean을 반환한다. 로그인·외부 API 키의 실제 유효성 및 유료 생성 성공을 보장하는 검사는 아니다. readiness 확인 때문에 실제 브리핑 생성이나 유료 AI 호출을 실행하지 않는다.
 
-## 6. 이번 통합 검증
+## 6. 기존 8개 테이블을 적용한 사용자: 연결 순서
 
-- Node 테스트 87건, LangGraph 테스트 17건, Python/API/축제 분석 테스트 51건 통과: 총 155건.
-- 앱 타입 검사와 프로덕션 빌드 통과. 기존 번들 크기·의존성 주석 경고는 남아 있다.
-- 격리된 브라우저에서 로그인·기관 저장·재조회·기관 전환, 전국 라우트, 서울 자치구/군의 근거 범위, 테마·페이지 이동을 확인했다. 브라우저 외부 API는 테스트 응답을 사용했으며 운영 계정 검증은 아니다.
-- 과거 분석 JSON을 다시 계산하지 않았고 외부 관광 API/Gemini/Supabase 운영 호출도 하지 않았다.
-- 신규 검토 API와 import 도구는 위 설계에 따라 다음 작업에서 구현한다. 현재 화면의 저장 버튼은 입력 조건 저장이다.
+1. Supabase SQL Editor에서 **[검토 범위·계약 갱신 SQL](supabase-review-scope-fix.proposed.sql)**을 실행한다. `save_scenario_review`를 v2로 갱신하고 읽기 전용 `review_contract()`를 추가한다. 기존 테이블과 기록은 유지한다. 빈 DB용 `supabase-current-design.proposed.sql`을 다시 실행하지 않는다. 이 파일은 이번 로컬 작업에서 원격 실행하지 않았다. CLI 배포를 사용한다면 동일 변경을 `supabase migration new review_contract_v2`로 만든 후속 마이그레이션에 담고 실제 적용 이력과 맞춘다.
+2. 위 5절의 Supabase·관광 API 환경변수를 **FastAPI 호스트**에 설정한다. 공개 로그인 키는 `sb_publishable_`, 서버 키는 `sb_secret_` 또는 기존 service_role JWT다. Vercel에는 FastAPI 주소와 서버 간 토큰만 설정한다.
+3. 분석 자료를 검증하고, 실제 등록 시에만 `--apply`를 붙인다.
+
+```powershell
+# 검증만 실행: DB 접속/쓰기 없음
+& .venv/Scripts/python.exe -m backend.import_evidence --repository-commit f25dc8673420c451d3fdb4482fce5feb00a485f1
+
+# 서버 환경변수를 설정한 뒤 실제 Supabase에 원본 + 통계 12개 등록
+& .venv/Scripts/python.exe -m backend.import_evidence --repository-commit f25dc8673420c451d3fdb4482fce5feb00a485f1 --apply
+```
+
+CLI는 작업 파일의 JSON이 지정 커밋과 같은지 확인한 뒤 **커밋에 보관된 원본 바이트의 SHA**를 등록한다. Windows CRLF 체크아웃은 새 통계 버전으로 취급하지 않는다. 현재 분석 실행 manifest가 없으므로 provenance는 `partial`이다. `--provenance-status complete`는 manifest의 원본 Storage 객체를 실제로 읽어 SHA까지 일치할 때만 등록한다. 기본 dry-run은 Storage 바이트를 확인하지 않고 `storageVerified:false`를 반환한다.
+
+4. Supabase Auth에 실제 사용할 계정이 있어야 한다. 운영자가 해당 UUID를 `organizations`/`organization_members`의 기관에 `editor` 또는 `viewer`로 등록한다. 계정을 만들거나 초대 메일을 발송하는 작업은 이번 구현에서 수행하지 않았다.
+5. `npm run dev` 또는 배포한 FastAPI를 실행하고 `/api/ready`를 확인한다. 브리핑 모델 키가 없으면 전체 readiness는 실패하지만, 기관 검토 저장에는 Gemini를 사용하지 않는다. 판별은 응답의 각 항목으로 한다.
+6. 정책 시뮬레이션 → 로그인 → **현재 조건을 기관에 저장** → 저장 조건 선택 → **현재 자료로 검토 저장**을 실행한다. 이 순서는 조건 저장과 당시 지표 수집을 구분한다. viewer는 조회만 가능하다.
+
+저장 주소의 `organization`, `scenario`, `review`가 세 화면에서 유지된다. 재접속·새로고침·보고서 인쇄는 해당 검토를 다시 읽는다. summary/diagnosis가 NULL이면 최신 지표로 채우지 않는다. 상단 KPI도 같은 스냅샷이다. **저장된 검토의 전략 비교는 저장된 기준선을 사용하며, 과거 통계는 검토한 정책 한 개만 표시**한다. 다른 정책을 현재 규칙으로 재평가해 과거 기록에 섞지 않는다. 새 정책의 근거를 확인하려면 별도 검토를 저장한다.
+
+검토 POST는 `organizationId`가 필수이며 `releaseId`, `baseYm`, `visitorYm`은 선택이다. 기준월은 `YYYYMM`이고 서버 허용 범위 내여야 한다. 요청 키와 본문이 같으면 최초 저장 기록을 반환한다. 응답 유실 후 재시도 버튼도 같은 키를 유지한다. 서로 다른 요청을 동시에 실행하는 경우 서버 수집은 중복될 수 있지만, DB의 기관·요청 키 제약과 트랜잭션 잠금이 최종 기록의 중복을 막는다. 수집은 최대 24초, 전체 저장 처리 55초, Vite/Vercel 전달 65초이며 Vercel 함수 제한은 90초로 설정했다. 실제 호스팅 ingress도 이를 수용해야 한다.
+
+## 7. 로컬 검증과 남은 범위
+
+- Node 테스트 86건, LangGraph 테스트 17건, Python/API/축제 분석 테스트 84건으로 총 187건 통과. PostgreSQL 엔진(PGlite)의 권한·불변성·멱등성 검사와 HTTP 계약 검사를 포함한다.
+- 타입 검사와 프로덕션 빌드 통과. 기존 번들 크기·의존성 주석 경고는 남아 있다.
+- 격리된 Edge에서 로그인, 조건 저장, 검토 저장 응답 유실/재시도, 새로고침, 전략·보고서 이동, NULL 기준선, 기관 변경·로그아웃·viewer, 모바일, 전국 지역 범위와 테마를 확인했다. 브라우저의 외부 API는 테스트 응답을 사용한다.
+- SQL 원본과 생성된 통합/후속 SQL 일치, Git 원본 분석 바이트 해시 일치 확인. teammate LangGraph 구현은 변경하지 않았다.
+- 실제 Supabase 등록·기관 계정 검증·FastAPI 호스트 배포·Vercel 연결·GitHub push는 남아 있다. 이번 작업에서 원본 축제 통계를 재분석하거나 외부 관광 API/Gemini를 유료 호출하지 않았다.

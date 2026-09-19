@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronRight, MapPin, RotateCcw, Settings, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigation'
+import { getDashboardMenuItems, reviewSearch } from '@/components/dashboard/DashboardNavigation'
 import { cn } from '@/utils/cn'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
@@ -40,7 +40,7 @@ export function MobileDashboardMenu({ open, onClose, onOpenSettings }: { open: b
               {dashboardMenuItems.map(({ label, path, icon: Icon }) => (
                 <NavLink
                   key={path}
-                  to={path}
+                  to={path + reviewSearch(location.search)}
                   onClick={onClose}
                   aria-current={isItemActive(path) ? 'page' : undefined}
                   className={() => cn('flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500', isItemActive(path) ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900')}

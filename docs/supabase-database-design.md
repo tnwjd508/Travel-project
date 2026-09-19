@@ -2,7 +2,7 @@
 
 기준일: 2026-09-20 KST. **현재 권고 설계의 진입 문서다.** GitHub 최신 브랜치를 fetch하여 확인했고, 기존 로컬 구현은 보존했다. 이 작업은 설계·SQL의 로컬 검증이며 앱 통합, 원격 테이블 삭제·생성, GitHub 병합·배포는 수행하지 않았다.
 
-후속 현황(같은 날): master와 SJbranch 및 기존 로컬 저장 구현을 `codex/sync-master-20260920`에서 통합했다. 사용자는 원격 8테이블·RLS 적용 결과를 확인했다. 현재 통합 상태와 다음 API 구현은 [FastAPI 구현 방향](fastapi-implementation-plan.md)을 우선 참조한다. 아래 1절은 재설계 당시의 브랜치 현황 기록이다.
+후속 현황(같은 날): master와 SJbranch 및 기존 로컬 저장 구현을 `codex/sync-master-20260920`에서 통합했다. 사용자는 원격 8테이블·RLS 적용 결과를 확인했다. 분석 근거 import/API와 기관 검토 저장·조회·화면 연동까지 로컬 구현했다. 실제 서버 설정과 검증 현황은 [FastAPI 구현 방향](fastapi-implementation-plan.md)을 우선 참조한다. 아래 1절은 재설계 당시의 브랜치 현황 기록이다.
 
 ## 1. 최신 작업 현황과 설계 근거
 
@@ -143,15 +143,15 @@ summary/diagnosis가 있으면 실제 API 응답 전체를 저장한다. 각 응
 - 통계는 숫자 유한성, CI 순서, share_positive 0~1, 표본 0의 NULL 조합을 검사한다. 빈 값을 0%로 채우지 않는다.
 - 조회 인덱스: 기관별 최신 검토, 기관·시나리오별 이력, release/outcome/segment UNIQUE, 분석 생성일, 작성자·통계 FK. 초기에는 파티션·JSON 전체 GIN·별도 웨어하우스를 추가하지 않는다.
 
-## 7. 구현해야 할 연결 계약
+## 7. 구현된 연결 계약 (2026-09-20 후속)
 
-현재 로컬 `/api/scenarios` 저장·조회는 입력 조건만 다룬다. 이번 SQL을 추가한다고 새 결과 저장이 자동 연결되지는 않는다.
+`/api/scenarios`는 입력 조건을 다루며, 별도 `/reviews` API가 검토 결과를 다룬다. FastAPI와 화면 연결은 구현했고 실제 Supabase 등록·배포는 남아 있다.
 
 1. 운영자 import 명령: 원본 파일을 읽고 바이트 SHA-256을 계산 → 구조/출처 검증 → `import_policy_evidence` 호출. 사용자용 공개 import API는 만들지 않음.
 2. `GET /api/policy-evidence`: 정책·정규 지역과 릴리스 버전으로 과거 통계·자료 범위 반환. 앱 번들 JSON 직접 참조를 서버 계약으로 교체.
 3. `POST /api/scenarios/{id}/reviews`: 사용자 JWT·현재 기관·editor/admin 검증 → 같은 요청 키 존재 여부 우선 확인 → 서버가 기준선 응답 수집·지역/단위 검증 → 릴리스 선택 → `save_scenario_review` 호출.
 4. `GET /api/scenarios/{id}/reviews` 및 `/api/scenario-reviews/{id}`: 기관 범위 조회, 고정 baseline + 참조한 정확한 릴리스의 통계 반환. 조회 중 최신 릴리스로 바꾸지 않음.
-5. 보고서·전략 화면이 저장된 review_id를 선택하면 같은 스냅샷을 사용. 현재 ReportPage의 메모리 보고서/PDF는 아직 DB 보고서가 아님. 별도 PDF 파일·보고서 편집 이력은 현재 요청 범위 밖.
+5. 보고서·전략 화면이 저장된 review_id를 선택하면 같은 스냅샷을 사용. 저장 검토 모드의 ReportPage는 DB 스냅샷을 읽어 인쇄하며, 검토 선택이 없을 때는 현재 조회값의 미리보기를 제공한다. 별도 PDF 파일·보고서 편집 이력은 현재 요청 범위 밖.
 
 저장 POST 본문에는 숫자 효과나 baseline 응답을 받지 않는다. 기관 ID·scenario_id·선택한 release_id(또는 서버 기본 선택)·요청 키만 계약에 넣는다. 요청 해시는 인증한 사용자·기관·시나리오·요청된 릴리스 선택 기준으로 서버에서 계산한다. 재전송은 최초 저장된 스냅샷을 반환하고 관광 API/분석을 새로 실행하지 않는다.
 
@@ -162,7 +162,7 @@ summary/diagnosis가 있으면 실제 API 응답 전체를 저장한다. 각 응
 | supabase/migrations/001_monthly_briefings.sql | master와 동일. 브리핑 2테이블 |
 | supabase/migrations/002_monthly_briefing_jobs.sql | master와 동일. 기존 RPC |
 | supabase/migrations/20260919115012_organization_scenarios.sql | 로컬 구현. 기관/회원/시나리오 3테이블와 저장 RPC |
-| docs/supabase-evidence-extension.proposed.sql | 이번 신규 설계. 근거 릴리스·통계·검토 3테이블와 import/save RPC. API 미연결 |
+| docs/supabase-evidence-extension.proposed.sql | 이번 신규 설계. 근거 릴리스·통계·검토 3테이블와 import/save RPC. 로컬 API 연결 완료 |
 | docs/supabase-current-design.proposed.sql | 위 네 파일을 하나의 트랜잭션으로 묶은 **빈 DB용 검증 설계안**. DELETE/DROP 없음 |
 | docs/supabase-simulation-schema.proposed.sql | 미래 예측 실행용 이전 확장안. 이번 설치에 포함하지 않음 |
 | docs/supabase-empty-legacy-reset.sql | 이전에 요청한 구형 8테이블 제거용 별도 파일. 이번 작업에서 실행하지 않음 |
@@ -177,6 +177,6 @@ summary/diagnosis가 있으면 실제 API 응답 전체를 저장한다. 각 응
 
 `tests/evidence-schema-design.test.mjs`는 SJbranch의 실제 결과 JSON을 테스트 fixture로 읽는다. 원격 DB나 실제 사용자 데이터는 사용하지 않는다. PGlite의 PostgreSQL 엔진에서 기본 5테이블 + 신규 3테이블, 실제 12개 통계 매핑, 멱등 import/save, 잘못된 통계의 전체 롤백, 기관 격리, viewer 차단, 불변성, 탈퇴 후 기록 보존을 검증한다.
 
-남은 것은 SJbranch 기능과 최신 master의 전국 라우트 통합, 로컬 인증·저장 변경의 GitHub 반영, 위 새 API/UI 연결, 원본 분석 실행 자료 확보, 대상 Supabase 적용 및 실계정 검증이다. 이 설계 검증을 이미 운영 서비스가 연결됐거나 통계의 인과성이 입증됐다는 의미로 보고하지 않는다.
+후속 로컬 작업에서 브랜치 통합과 새 API/UI 연결을 완료했다. 남은 것은 GitHub 반영, 원본 분석 실행 자료 확보, 대상 Supabase의 후속 계약 SQL 적용·자료 등록, 서버 배포 및 실계정 검증이다. 이 설계 검증을 이미 운영 서비스가 연결됐거나 통계의 인과성이 입증됐다는 의미로 보고하지 않는다.
 
 공식 확인: [RLS와 권한](https://supabase.com/docs/guides/database/postgres/row-level-security), [DB 함수](https://supabase.com/docs/guides/database/functions), [변경 이력](https://supabase.com/changelog). 확인일 2026-09-20. 이 설계는 Realtime 내부 스키마 변경, 만료 예정 관리 logs API, 확장 버전 고정에 의존하지 않는다.

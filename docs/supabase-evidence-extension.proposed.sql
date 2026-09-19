@@ -281,6 +281,14 @@ $$;
 revoke all on function public.save_scenario_review(uuid,uuid,uuid,uuid,text,text,jsonb,uuid) from public, anon, authenticated;
 grant execute on function public.save_scenario_review(uuid,uuid,uuid,uuid,text,text,jsonb,uuid) to service_role;
 
+-- Read-only deployment contract: FastAPI checks this before collecting/saving new reviews.
+create or replace function public.review_contract() returns jsonb
+language sql stable security invoker set search_path = '' as $$
+  select jsonb_build_object('rule_version', 'festival-reference-v2', 'baseline_schema_version', 1);
+$$;
+revoke all on function public.review_contract() from public, anon, authenticated;
+grant execute on function public.review_contract() to service_role;
+
 comment on table public.policy_evidence_releases is 'Immutable imported artifact. repository_commit locates the checked-in artifact; it does not prove the original execution environment.';
 comment on table public.policy_evidence_statistics is 'Derived only by import RPC from artifact_payload. meanPct is exp(mean(log_effect))-1, not the arithmetic mean of per-event percentages.';
 comment on table public.scenario_reviews is 'Organization-owned frozen baseline and historical evidence selection. Not a future forecast or budget response.';

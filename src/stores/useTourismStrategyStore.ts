@@ -4,7 +4,7 @@ import type { PolicyDuration, PolicyId } from '@/data/policies'
 import type { DistrictSlug } from '@/data/gwangjuDistricts'
 import type { DistrictId } from '@/data/tourismRegions'
 
-// 입력 조건만 저장한다. 효과 수치는 화면에서 근거 자료(festival-effect.json)로 계산한다.
+// 입력 조건만 저장한다. 분석 근거와 저장된 검토는 서버에서 조회한다.
 export interface SimulationScenario {
   district: DistrictId
   policy: PolicyId

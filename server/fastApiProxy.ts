@@ -4,8 +4,9 @@ export interface ApiResponse { status(code: number): ApiResponse; setHeader(name
 export async function proxyFastApi(path: string, request: ApiRequest, response: ApiResponse, omit: string[] = [], timeoutMs = 30000) {
   response.setHeader('Cache-Control', 'no-store')
   response.setHeader('X-Content-Type-Options', 'nosniff')
-  const privateRequest = path.startsWith('/api/account/') || path === '/api/scenarios' || path.startsWith('/api/scenarios/')
-  const allowed = path === '/api/monthly-briefing' || path === '/api/scenarios' ? ['GET', 'POST'] : ['GET']
+  const privateRequest = path.startsWith('/api/account/') || path === '/api/scenarios' || path.startsWith('/api/scenarios/') || path.startsWith('/api/scenario-reviews/')
+  const reviewWrite = /^\/api\/scenarios\/[0-9a-f-]{36}\/reviews$/.test(path)
+  const allowed = path === '/api/monthly-briefing' || path === '/api/scenarios' || reviewWrite ? ['GET', 'POST'] : ['GET']
   if (!allowed.includes(request.method ?? '')) {
     response.setHeader('Allow', allowed.join(', '))
     return response.status(405).json({ code: 'METHOD_NOT_ALLOWED', message: `${allowed.join(', ')} 요청만 지원합니다.` })

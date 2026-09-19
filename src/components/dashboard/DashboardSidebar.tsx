@@ -1,6 +1,6 @@
 import { MapPin, RotateCcw, Settings } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigation'
+import { getDashboardMenuItems, reviewSearch } from '@/components/dashboard/DashboardNavigation'
 import { cn } from '@/utils/cn'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
@@ -18,7 +18,7 @@ export function DashboardSidebar({ onOpenSettings }: { onOpenSettings: () => voi
         {dashboardMenuItems.map(({ label, path, icon: Icon }) => (
           <NavLink
             key={path}
-            to={path}
+            to={path + reviewSearch(location.search)}
             aria-current={isItemActive(path) ? 'page' : undefined}
             className={() => cn(
               'flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500',

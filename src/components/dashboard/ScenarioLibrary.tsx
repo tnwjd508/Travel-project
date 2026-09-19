@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { ScenarioReviews } from './ScenarioReviews'
 import { Card } from '@/components/ui/Card'
 import { policyDurationMonths, type PolicyDuration, type PolicyId } from '@/data/policies'
 import { requireTourismDistrict } from '@/data/tourismRegions'
@@ -104,7 +105,7 @@ export function ScenarioLibrary({ district, policy, budget, duration, onLoad, on
   }, [client, userId, orgId, canonical.id, reload, requestedId, requestedOrg])
 
   function open(saved: SavedScenario) {
-    setParams(previous => { const next = new URLSearchParams(previous); next.set('organization', saved.organization_id); next.set('scenario', saved.id); return next })
+    setParams(previous => { const next = new URLSearchParams(previous); next.set('organization', saved.organization_id); next.set('scenario', saved.id); next.delete('review'); return next })
   }
 
   async function save() {
@@ -172,7 +173,7 @@ export function ScenarioLibrary({ district, policy, budget, duration, onLoad, on
       <button className={buttonClass} disabled={!client || busy}>기관 계정 로그인</button><p className="w-full text-xs text-slate-500">기관에 등록된 계정으로 로그인하세요.</p>
     </form> : <>
       <div className="mt-5 flex flex-wrap items-end gap-3">
-        <label className="grid gap-2 text-xs font-semibold">저장 기관<select aria-label="저장 기관" className={fieldClass} value={orgId} disabled={busy} onChange={event => { setOrgId(event.target.value); setParams(previous => { const next = new URLSearchParams(previous); next.delete('scenario'); next.delete('organization'); return next }) }}><option value="" disabled>기관 선택</option>{organizations.map(item => <option key={item.id} value={item.id}>{item.name}{item.role === 'viewer' ? ' (조회 전용)' : ''}</option>)}</select></label>
+        <label className="grid gap-2 text-xs font-semibold">저장 기관<select aria-label="저장 기관" className={fieldClass} value={orgId} disabled={busy} onChange={event => { setOrgId(event.target.value); setParams(previous => { const next = new URLSearchParams(previous); next.delete('scenario'); next.delete('organization'); next.delete('review'); return next }) }}><option value="" disabled>기관 선택</option>{organizations.map(item => <option key={item.id} value={item.id}>{item.name}{item.role === 'viewer' ? ' (조회 전용)' : ''}</option>)}</select></label>
         <label className="grid gap-2 text-xs font-semibold">시행 시작월<input aria-label="시행 시작월" className={fieldClass} type="month" value={startMonth} onChange={event => setStartMonth(event.target.value)}/></label>
         <label className="grid gap-2 text-xs font-semibold">참고 브리핑 월 (선택)<input aria-label="참고 브리핑 월" className={fieldClass} type="month" value={briefingMonth} onChange={event => setBriefingMonth(event.target.value)}/></label>
         <button className={buttonClass} onClick={() => void save()} disabled={busy || !organization || organization.role === 'viewer' || !startMonth}>{busy ? '처리 중…' : '현재 조건을 기관에 저장'}</button>
@@ -185,8 +186,9 @@ export function ScenarioLibrary({ district, policy, budget, duration, onLoad, on
         {nextCursor && <button className="mt-3 min-h-11 px-4 text-sm text-blue-700" disabled={busy} onClick={() => void more()}>이전 기록 더 보기</button>}
       </div><div>{selected ? <article className="rounded-xl border border-blue-100 bg-blue-50/40 p-5"><p className="text-xs font-semibold text-blue-700">저장된 시나리오 · {organization?.name}</p><h4 className="mt-2 font-bold">{selected.title}</h4><dl className="mt-4 grid grid-cols-2 gap-2 text-sm"><dt>시행 시작</dt><dd>{selected.start_month.slice(0,7)}</dd><dt>예산</dt><dd>{selected.budget_krw.toLocaleString('ko-KR')}원</dd><dt>기간</dt><dd>{selected.duration_months}개월</dd><dt>참고 브리핑</dt><dd>{selected.briefing_month?.slice(0,7) ?? '연결 없음'}</dd></dl>
         {briefing?.diagnosis && <div className="mt-4 border-t border-blue-100 pt-4"><h5 className="text-sm font-semibold">{briefing.month} 저장 브리핑</h5><p className="mt-2 text-sm leading-6">{briefing.diagnosis.summary}</p></div>}
-        <button className="mt-4 min-h-11 rounded-lg bg-white px-4 text-sm font-semibold text-blue-700" onClick={() => { setStartMonth(selected.start_month.slice(0,7)); setBriefingMonth(selected.briefing_month?.slice(0,7) ?? ''); onLoad(selected) }}>이 조건으로 검토</button>
+        <button className="mt-4 min-h-11 rounded-lg bg-white px-4 text-sm font-semibold text-blue-700" onClick={() => { setStartMonth(selected.start_month.slice(0,7)); setBriefingMonth(selected.briefing_month?.slice(0,7) ?? ''); onLoad(selected); setParams(previous => { const next = new URLSearchParams(previous); next.delete('review'); return next }) }}>조건 불러오기</button>
         <p className="mt-3 text-xs leading-5 text-slate-500">다시 저장하면 새 기록이 생깁니다. 이 페이지 주소로 같은 기관 구성원이 기록을 열 수 있습니다.</p>
+        {client && userId && <ScenarioReviews key={`${userId}:${orgId}:${selected.id}`} client={client} scenario={selected} canWrite={!!organization && organization.role !== 'viewer'}/> }
       </article> : <p className="p-5 text-sm text-slate-500">목록에서 저장한 조건을 선택하세요.</p>}</div></div>
     </>}
   </Card>
