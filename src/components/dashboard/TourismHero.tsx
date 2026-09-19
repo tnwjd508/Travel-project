@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, Sparkles } from 'lucide-react'
-import { regions } from '@/data/regions'
 import { getRegionTourismHero } from '@/services/tourApi'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 import { useDistrictResource } from '@/hooks/useDistrictResource'
@@ -9,11 +8,11 @@ const defaultHeroImage = '/images/gwangju-acc-hero.jpg'
 const defaultHeroAlt = '국립아시아문화전당과 광주 도심의 저녁 풍경'
 
 export function TourismHero() {
-  const region = regions[0]
   const district = useActiveDistrict()
+  const region = district.region
   const summary = useDistrictResource('summary', { district: district.slug })
-  const fallbackHeroImage = region.heroImage ?? defaultHeroImage
-  const fallbackHeroAlt = region.heroAlt ?? defaultHeroAlt
+  const fallbackHeroImage = region.heroImage ?? (district.regionId === 'gwangju' ? defaultHeroImage : undefined)
+  const fallbackHeroAlt = region.heroAlt ?? (district.regionId === 'gwangju' ? defaultHeroAlt : `${district.regionName} 관광 이미지`)
   const [heroImage, setHeroImage] = useState(fallbackHeroImage)
   const [heroAlt, setHeroAlt] = useState(fallbackHeroAlt)
 
@@ -49,7 +48,7 @@ export function TourismHero() {
 
   return (
     <section className="relative min-h-[440px] overflow-hidden rounded-[24px] border border-slate-200/70 bg-white shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:min-h-[380px] lg:min-h-[340px]" aria-labelledby="overview-title">
-      <img
+      {heroImage && <img
         src={heroImage}
         alt={heroAlt}
         className="absolute inset-0 h-full w-full object-cover object-[62%_70%] sm:left-auto sm:right-0 sm:w-[72%] sm:object-[58%_68%] lg:w-[68%]"
@@ -64,7 +63,7 @@ export function TourismHero() {
             setHeroAlt(fallbackHeroAlt)
           }
         }}
-      />
+      />}
       <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 sm:via-white/90 sm:to-transparent lg:via-white/85" />
       <div className="absolute inset-0 bg-gradient-to-t from-white/55 via-transparent to-white/10 sm:from-transparent" />
 
@@ -75,7 +74,7 @@ export function TourismHero() {
       <div className="relative z-10 flex min-h-[440px] max-w-[720px] flex-col justify-end px-6 py-7 sm:min-h-[380px] sm:justify-center sm:px-9 lg:min-h-[340px] lg:px-12">
         <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50/90 px-3 py-1.5 text-[10px] font-semibold text-blue-700">
           <Sparkles size={13} aria-hidden="true" />
-          AI가 분석한 광주광역시 {district.nameKo} 관광 현황
+          AI가 분석한 {district.regionName} {district.nameKo} 관광 현황
         </div>
         <h1 id="overview-title" className="mt-5 text-[32px] font-bold leading-[1.18] tracking-[-.045em] text-slate-950 sm:text-[39px] lg:text-[42px]">
           {district.nameKo}의 관광 미래를<br />

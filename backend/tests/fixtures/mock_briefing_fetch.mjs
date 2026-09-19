@@ -1,8 +1,8 @@
-// Loaded only by tests through --import, never by the production worker.
-globalThis.fetch = async input => {
+// 테스트 전용 DB 응답입니다. 조회 도중 관광 API나 Gemini 호출이 생기면 실패합니다.
+globalThis.fetch = async (input, init) => {
   const url = new URL(String(input))
-  if (url.hostname !== 'apis.data.go.kr') throw new Error('Network is disabled in tests')
-  const codeName = [...url.searchParams.keys()].find(key => key.endsWith('IxCd'))
-  const rows = codeName ? [{ areaCd: url.searchParams.get('areaCd'), signguCd: url.searchParams.get('signguCd'), baseYm: url.searchParams.get('baseYm'), [codeName]: url.searchParams.get(codeName), [codeName.replace(/Cd$/, 'Val')]: '50' }] : []
-  return Response.json({ response: { header: { resultCode: '0000' }, body: { totalCount: rows.length, items: { item: rows } } } })
+  if (url.hostname !== 'database.example' || url.pathname !== '/rest/v1/rpc/briefing_get') throw new Error('예상하지 않은 외부 호출')
+  if (init.headers.apikey !== 'sb_secret_fixture') throw new Error('서버 키 전달 실패')
+  const query = JSON.parse(init.body)
+  return Response.json({ state: query.p_district_id === '11110' ? 'generating' : 'missing' })
 }
