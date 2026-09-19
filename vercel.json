@@ -4,6 +4,9 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/monthly-briefing.ts": { "maxDuration": 300 }
+  },
   "rewrites": [
     {
       "source": "/(.*)",

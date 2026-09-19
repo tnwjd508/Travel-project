@@ -62,15 +62,15 @@ function RegionCard() {
       <div className="mt-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-lg font-extrabold tracking-[-.03em] text-white">광주광역시</p>
-          <p className="mt-2 text-[10px] font-semibold text-slate-400">관광 활성화 지수</p>
-          <p className="mt-0.5 text-xs font-bold text-emerald-300">AI 분석 완료</p>
+          <p className="mt-2 text-[10px] font-semibold text-slate-400">관광 활성화 지수 · 예시</p>
+          <p className="mt-0.5 text-xs font-bold text-emerald-300">화면 예시값 · 산출 기준 없음</p>
         </div>
         <RegionGauge />
       </div>
       <div className="mt-3 flex items-center justify-between border-t border-white/[.07] pt-3">
-        <span className="text-[10px] text-slate-500">실시간 관광 데이터 연동</span>
+        <span className="text-[10px] text-slate-500">실제 지수는 지역 대시보드에서 확인</span>
         <span className="rounded-full border border-emerald-400/15 bg-emerald-400/10 px-2 py-1 text-[9px] font-extrabold tracking-wide text-emerald-300">
-          LIVE DATA
+          DEMO
         </span>
       </div>
     </motion.aside>

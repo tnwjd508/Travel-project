@@ -1,6 +1,10 @@
 node_modules
 dist
 .test-build
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
 *.tsbuildinfo
 .DS_Store
 

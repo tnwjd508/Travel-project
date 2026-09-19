@@ -1,48 +1,22 @@
 # 한국관광공사 TourAPI 인증키 설정
 
-ON:GIL은 인증키를 브라우저에 노출하지 않도록 `/api/tourism` 서버 프록시를 사용합니다.
+현재 인증키는 FastAPI 서버에만 설정한다. React는 `/api/tourism` 또는 `/api/district/*`를 호출하며, Vite/Vercel이 FastAPI에 전달한다.
 
-## 로컬 설정
+1. 공공데이터포털에서 필요한 한국관광공사 관광 콘텐츠·데이터랩·지수 API의 활용신청을 확인한다.
+2. 일반 인증키(Decoding)를 서버 환경변수 `TOUR_API_SERVICE_KEY`에 설정한다. 인코딩 키도 서버에서 한 번 디코딩한다.
+3. 파일 사용 시 `npm run dev -- --key-file <파일경로>`로 실행한다. 파일 형식은 `인증키 : 값` 또는 `TOUR_API_SERVICE_KEY=값`이다. 원본 파일은 수정·복사하지 않는다.
+4. `.env.local` 사용 시 `.env.example`을 복사해 값을 채운 후 `npm run dev`로 실행한다. 이 프로젝트는 공유 폴더이므로 실제 키를 저장하는 대신 외부 키 파일 또는 프로세스 환경 사용을 권장한다.
+5. 실행 중 키를 바꾸면 FastAPI를 재시작한다.
 
-1. 공공데이터포털의 `한국관광공사_국문 관광정보 서비스_GW` 활용신청을 완료합니다.
-2. 마이페이지에서 **일반 인증키(Decoding)** 를 복사합니다.
-3. 프로젝트 루트의 `.env.local`에 다음처럼 입력합니다.
+Python 가상환경 설치가 먼저 필요하다. 설치 명령은 [FASTAPI_REACT.md](FASTAPI_REACT.md)에 있다. 인증키·프록시 토큰에 `VITE_` 접두사를 붙이지 않는다. `.env.local`과 `.venv`는 Git에서 제외한다.
 
-```env
-TOUR_API_SERVICE_KEY=발급받은_디코딩_인증키
-```
-
-4. 이미 개발 서버가 실행 중이었다면 종료 후 다시 실행합니다.
-
-```bash
-npm run dev
-```
-
-5. 브라우저에서 아래 주소를 열어 연결을 확인합니다.
+연결 확인:
 
 ```text
-http://localhost:5173/api/tourism?endpoint=areaCode2&numOfRows=1&pageNo=1
+http://127.0.0.1:8000/api/health
+http://127.0.0.1:8000/api/district/summary?district=donggu
 ```
 
-응답의 `resultCode`가 `0000`이면 정상입니다.
+`tourApiConfigured`는 키 존재 여부만 의미하며 활용승인이나 키 유효성을 검증하지 않는다. summary가 200이고 source/fetchedAt 및 지표를 반환하는지 확인한다. 503 MISSING_KEY는 서버 키 설정, 502 UPSTREAM_ERROR는 API 활용승인/쿼터/서비스 응답을 확인한다. 원본 외부 응답이나 키는 오류 메시지에 포함하지 않는다.
 
-## Vercel 배포 설정
-
-Vercel 프로젝트의 **Settings → Environment Variables**에서 다음 변수를 추가합니다.
-
-- Name: `TOUR_API_SERVICE_KEY`
-- Value: 공공데이터포털의 일반 인증키(Decoding)
-- Environment: Production, Preview, Development
-
-저장 후 재배포해야 적용됩니다. `.env.local`은 Git에 업로드되지 않습니다.
-
-## 프런트엔드 사용 예시
-
-```ts
-import { getGwangjuTourismList } from '@/services/tourApi'
-
-const result = await getGwangjuTourismList()
-console.log(result.items)
-```
-
-인증키에 `VITE_` 접두사를 붙이거나 React 컴포넌트에서 직접 사용하지 마세요.
+Vercel 분리 배포 설정은 [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md)를 참고한다.

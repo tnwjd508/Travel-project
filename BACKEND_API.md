@@ -1,10 +1,10 @@
 # 광주 관광 대시보드 백엔드 인수 문서
 
-기존 Vite + Vercel 구조에서 `api/district/[resource].ts` 한 함수로 8개 리소스를 제공한다. 개발 서버도 `server/districtHttp.ts`의 동일 핸들러를 사용한다. 기존 관광 이미지·행정동 경계 프록시는 유지했다. 프런트 화면의 샘플 데이터 교체는 별도 프런트 작업이다.
+현재 기본 엔진은 **FastAPI**, 프런트는 **React**다. 실행·폴더 구성·배포는 [FASTAPI_REACT.md](FASTAPI_REACT.md)를 먼저 참고한다. 아래 API 계약과 지표 해석은 Python 구현에서도 유지된다. 아래의 `server/*.ts` 구현 설명과 당시 검증 기록은 최초 TypeScript 백엔드의 이력이며, 현재 React의 KPI·분석·지도·진단·보고서는 FastAPI와 연결되어 있다.
 
 ## 실행과 검증
 
-Node.js 22 이상 권장. 런타임 추가 패키지 없이 Node 내장 fetch·crypto·AsyncLocalStorage를 사용한다.
+Node.js 22 이상과 Python 3.12 이상 권장. Python 설치 단계는 FASTAPI_REACT.md에 있다. `npm test`는 보존한 TypeScript 계약 회귀 테스트다.
 
 ```powershell
 npm test
@@ -21,11 +21,11 @@ TOUR_API_VISITOR_BASE_YM=202607
 
 이 날짜는 제공 문서와 2026-09-17 실호출에서 확인한 스냅샷 설정이다. **최신월 자동 탐지가 아니다.** 새로운 완월 데이터 확인 후 갱신한다. 방문자 현재월·전월의 일별 3종 데이터가 모두 있을 때만 `momPct`를 계산한다.
 
-실데이터 HTTP 스모크 검증은 로컬 서버를 시작하고 종료한다. 공공데이터 API 호출량을 소비한다. 기본 실행은 방문자 2개월과 전년 동월, `--full-history`는 12개월과 전년 동월을 검증한다.
+실데이터 HTTP 스모크 검증은 이미 실행 중인 FastAPI 또는 Vite 프록시에 연결한다. 공공데이터 API 호출량을 소비한다. 기본 실행은 방문자 2개월과 전년 동월, `--full-history`는 12개월과 전년 동월을 검증한다.
 
 ```powershell
-node scripts/smoke-district.mjs --key-file 'C:/Users/subin/OneDrive/바탕 화면/env.txt'
-node scripts/smoke-district.mjs --key-file 'C:/Users/subin/OneDrive/바탕 화면/env.txt' --full-history
+node scripts/smoke-district.mjs --base-url http://127.0.0.1:8000
+node scripts/smoke-district.mjs --base-url http://127.0.0.1:8000 --full-history
 ```
 
 키 파일은 메모리에서만 읽으며 로그·파일·브라우저 번들에 넣지 않는다. 이미 `TOUR_API_SERVICE_KEY`가 설정되어 있으면 `--key-file`을 생략한다.
