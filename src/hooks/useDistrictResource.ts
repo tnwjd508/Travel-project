@@ -13,8 +13,8 @@ export function useDistrictResource<R extends DistrictResource>(resource: R, par
     setState({ key, status: 'loading', data: null, error: '' })
     districtRequest(resource, query, controller.signal, attempt > 0).then(data => {
       if (!controller.signal.aborted) setState({ key, status: 'live', data, error: '' })
-    }).catch(error => {
-      if (!controller.signal.aborted) setState({ key, status: 'error', data: null, error: error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.' })
+    }).catch(() => {
+      if (!controller.signal.aborted) setState({ key, status: 'error', data: null, error: '관광 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' })
     })
     return () => controller.abort()
   }, [resource, query, key, attempt, enabled])

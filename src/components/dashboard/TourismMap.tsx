@@ -140,12 +140,12 @@ export function TourismMap() {
             <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Administrative areas</span>
             <span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-bold text-blue-600">{district.nameKo} · {neighborhoods.length}개 동</span>
           </div>
-          <div className="min-h-[68px] rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <div aria-label="행정구역 선택 정보" className="flex h-20 flex-col justify-center overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
             {focusedArea ? (
               <>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</p>
-                <p className="mt-0.5 text-sm font-bold text-slate-800">{focusedArea.properties.name}</p>
-                <p className="mt-0.5 text-[10px] text-slate-400">{boundaryKind} 코드 <b className="text-slate-600">{focusedArea.properties.code}</b></p>
+                <p className="mt-0.5 truncate text-sm font-bold text-slate-800" title={focusedArea.properties.name}>{focusedArea.properties.name}</p>
+
               </>
             ) : (
               <p className="text-[11px] leading-5 text-slate-500">{district.nameKo}의 {boundaryKind} 경계가 표시됩니다. 동을 클릭하면 선택이 고정됩니다.</p>
@@ -316,13 +316,13 @@ export function TourismMap() {
           )}
         </AnimatePresence>
 
-        <motion.div layout className="absolute bottom-5 left-5 z-20 min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur">
+        <motion.div className="absolute bottom-5 left-5 z-20 h-28 overflow-y-auto min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur">
           {focusedArea ? (
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</span>
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{focusedArea.properties.districtName} · {focusedArea.properties.name}</h4>
-                <p className="mt-1 text-[10px] text-slate-400">{boundaryKind} 코드 <b className="text-slate-600">{focusedArea.properties.code}</b></p>
+
               </div>
               <button type="button" aria-label={`선택한 ${boundaryKind} 상세 보기`} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><ArrowUpRight size={14} /></button>
             </div>
@@ -331,7 +331,7 @@ export function TourismMap() {
               <div>
                 <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: activeAttraction.accent }}>{activeAttraction.category}</span>
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{activeAttraction.name}</h4>
-                <p className="mt-1 text-[10px] text-slate-400">한국관광공사 콘텐츠 좌표 · 관광지별 방문객 수는 제공되지 않습니다.</p>
+                <p className="mt-1 text-[10px] text-slate-400">한국관광공사 콘텐츠 좌표</p>
               </div>
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><MapPin size={14} /></span>
             </div>
@@ -339,7 +339,7 @@ export function TourismMap() {
             <div>
               <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Administrative map</span>
               <h4 className="mt-1 text-sm font-bold text-slate-800">{district.nameKo} {neighborhoods.length}개 {boundaryKind}</h4>
-              <p className="mt-1 text-[10px] text-slate-400">동을 클릭하면 이름과 코드가 여기에 고정됩니다.</p>
+              <p className="mt-1 text-[10px] text-slate-400">동을 클릭하면 선택한 지역이 여기에 표시됩니다.</p>
             </div>
           )}
         </motion.div>

@@ -8,7 +8,6 @@ export function SourceNote({ data }: { data: DistrictMeta & { temporalBasis?: st
   return <div className="mt-3 space-y-1 text-[11px] leading-5 text-slate-500">
     <p><span className="font-semibold text-emerald-700">실데이터</span> · {dateLabel} · {data.source}</p>
     <p>수집 시각 {new Date(data.fetchedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} (한국 시간)</p>
-    {data.warnings.map(warning => <p key={warning}>{warning}</p>)}
   </div>
 }
 export function DataNotice({ state }: { state: { status: string; error: string; retry: () => void } }) {

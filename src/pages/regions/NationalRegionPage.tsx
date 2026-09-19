@@ -18,7 +18,7 @@ function RegionContents({ selection }: { selection: RegionSelection }) {
     fetch(`/api/district/contents?${regionQuery(selection)}`, { signal: controller.signal })
       .then(async response => {
         const data = await response.json() as ContentsResponse & { message?: string }
-        if (!response.ok) throw new Error(data.message || '관광 정보를 불러오지 못했습니다.')
+        if (!response.ok) throw new Error('관광 정보를 불러오지 못했습니다.')
         if (data.district !== selection.district || !Array.isArray(data.items)) throw new Error('지역 정보 응답을 확인해 주세요.')
         if (active) setResult({ key: `${key}:${retry}`, data })
       })

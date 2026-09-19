@@ -9,7 +9,6 @@ export function StrategyPage() {
   const { simulationResult, selectedPolicy, budget, duration } = useTourismStrategyStore()
   return <DashboardPageFrame eyebrow="Strategy Compare" title="가장 현실적인 전략을 비교합니다" description="기대효과뿐 아니라 예산과 실행 난이도까지 균형 있게 평가했습니다." icon={GitCompareArrows}>
     {simulationResult && <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-5 py-3 text-xs text-blue-800"><span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-600 text-white"><Sparkles size={15}/></span><b>현재 시뮬레이션</b><span>{policyLabels[selectedPolicy]} · {budget}억 원 · {duration}</span><span className="ml-auto rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-emerald-600">분석 결과 유지 중</span></div>}
-    <p className="mb-4 rounded-xl bg-amber-50 p-4 text-xs leading-6 text-amber-900">전략 비교와 효과 타임라인은 시나리오 예시입니다. 예산·기대효과·난이도는 공공 API 관측값이나 검증된 예측이 아닙니다.</p>
     <div className="space-y-5"><StrategyTable/><ImpactTimeline/></div>
   </DashboardPageFrame>
 }

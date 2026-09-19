@@ -13,7 +13,7 @@ export const metricDefinitions = {
   spendDiversity: { label: '관광소비 다양성', description: '관광 소비의 다양성 관련 하위 지표를 종합한 값입니다. 실제 소비액이나 소비 구성비와는 단위가 다릅니다.' },
   international: { label: '국제적 다양성', description: '지역 관광의 국제적 다양성 관련 하위 지표를 종합한 값입니다. 외국인 수 또는 외국인 비중을 직접 나타내지 않습니다.' },
   access: { label: '운송업 소비 지수', description: '관광서비스수요의 운송업 소비 관련 세부지표입니다. 교통 접근성 점수나 이동시간을 직접 측정한 값이 아닙니다.' },
-  awareness: { label: 'SNS 여행유형 언급 지수 평균', description: '이 서비스가 관광서비스수요의 SNS 여행유형 4개 지수(1101~1104)를 더해 4로 나눈 값입니다. SNS 게시물 수나 인지도 설문 점수가 아닙니다.' },
+  awareness: { label: 'SNS 여행유형 언급 지수 평균', description: '이 서비스가 관광서비스수요의 SNS 여행유형 4개 지수를 더해 4로 나눈 값입니다. SNS 게시물 수나 인지도 설문 점수가 아닙니다.' },
 } satisfies Record<string, { label: string; description: string }>
 export type MetricKey = keyof typeof metricDefinitions
 export const radarMetrics: MetricKey[] = ['access', 'culture', 'spend', 'stay', 'awareness', 'international']
@@ -21,10 +21,10 @@ export const briefingMetrics: MetricKey[] = ['demand', 'culture', 'stay', 'spend
 
 // backend/diagnosis.py 및 server/diagnosis.ts의 draft-1 규칙 설명. 공인 판정 기준이 아님.
 export const diagnosisCriteria: Record<string, string> = {
-  youth: '20대·30대 지수 합계의 전월 대비 변화율 = (당월 합계 − 전월 합계) ÷ 전월 합계 × 100. −5% 미만이면 검토 대상입니다. 실제 2030 방문자 수의 변화율은 아닙니다.',
-  stay: '숙박 비중 지수가 80 미만이면 검토 대상입니다. 80은 서비스의 임시 기준이며 공식 평균이나 숙박 비율 80%가 아닙니다.',
-  concentration: '상위 3개 허브의 연관 건수 ÷ 전체 허브 연관 건수 × 100. 60% 초과이면 검토 대상입니다. 방문객 집중률은 아닙니다.',
-  spend: '관광소비강도 지수가 80 미만이면 검토 대상입니다. 80은 서비스의 임시 기준이며 공식 평균이나 적정 소비액이 아닙니다.',
+  youth: '20대·30대 지수 합계의 전월 대비 변화율 = (당월 합계 − 전월 합계) ÷ 전월 합계 × 100. −5% 미만이면 검토 대상입니다.',
+  stay: '숙박 비중 지수가 80 미만이면 검토 대상입니다. 서비스의 임시 점검 기준입니다.',
+  concentration: '상위 3개 허브의 연관 건수 ÷ 전체 허브 연관 건수 × 100. 60% 초과이면 검토 대상입니다.',
+  spend: '관광소비강도 지수가 80 미만이면 검토 대상입니다. 서비스의 임시 점검 기준입니다.',
 }
 export const ACTIVATION_BASIS = '자체 활성화 지수 = 아래 6축 지수의 합 ÷ 6 (동일 가중치, 소수 둘째 자리 반올림). 한 축이라도 없으면 산출하지 않습니다. 한국관광공사의 8개 지표 평균인 관광수요 지수와는 별도의 검토용 산식이며, 100점 만점이 아닙니다.'
 
