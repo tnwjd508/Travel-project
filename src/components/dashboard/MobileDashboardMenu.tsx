@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronRight, CircleHelp, MapPin, RotateCcw, Settings, X } from 'lucide-react'
+import { ChevronRight, MapPin, RotateCcw, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigation'
 import { cn } from '@/utils/cn'
@@ -56,7 +56,6 @@ export function MobileDashboardMenu({ open, onClose }: { open: boolean; onClose:
                 <button type="button" onClick={() => { onClose(); navigate('/regions/gwangju') }} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white text-[11px] font-semibold text-blue-600 outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><RotateCcw size={14} />자치구 다시 선택</button>
                 <button type="button" onClick={() => { onClose(); navigate('/') }} className="mt-2 flex min-h-10 w-full items-center justify-center rounded-xl text-[10px] font-semibold text-slate-400 outline-none focus-visible:ring-2 focus-visible:ring-blue-500">광역 지역 다시 선택</button>
               </div>
-              <div className="grid grid-cols-2 gap-2"><button type="button" className="flex min-h-11 items-center justify-center gap-2 rounded-xl text-xs text-slate-500 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500"><Settings size={14} />설정</button><button type="button" className="flex min-h-11 items-center justify-center gap-2 rounded-xl text-xs text-slate-500 outline-none hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-blue-500"><CircleHelp size={14} />도움말</button></div>
             </div>
           </motion.aside>
         </>
