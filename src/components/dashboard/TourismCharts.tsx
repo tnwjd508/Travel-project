@@ -1,31 +1,47 @@
 import { useState } from 'react'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { BarChart3, MoreHorizontal, TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
-import data from '@/assets/data/gwangju-tourism.json'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { useDistrictResource } from '@/hooks/useDistrictResource'
+import { DataNotice, SourceNote, formatValue } from './DataNotice'
+import { contentCategoryName } from '@/data/contentCategories'
+import { metricMonth } from '@/data/tourismMetrics'
+import type { DiagnosisResponse } from '@/types/district'
 
-const tabs = ['관광객 추이', '방문객 연령', '관광 유형'] as const
-type Tab = typeof tabs[number]
-
-const tooltipStyle = { border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 10px 30px rgba(15,23,42,.08)', fontSize: 11 }
-
+const tabs = ['방문 추이', '연령 지수', '콘텐츠 구성', '연관 관광지'] as const
+const colors = ['#2563eb', '#0891b2', '#059669', '#d97706', '#7c3aed', '#64748b']
 export function TourismCharts() {
-  const [tab,setTab] = useState<Tab>('관광객 추이')
+  const [tab, setTab] = useState<typeof tabs[number]>('방문 추이')
   const district = useActiveDistrict()
-  return <Card className="h-full overflow-hidden p-6 sm:p-7">
-    <div className="flex flex-wrap items-center justify-between gap-4"><div><div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-blue-600"><BarChart3 size={14}/>Tourism Data</div><h3 className="mt-1 text-lg font-bold tracking-tight">{district.nameKo} 관광 데이터</h3></div><button className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-400"><MoreHorizontal size={17}/></button></div>
-    <div className="mt-5 flex w-fit gap-1 rounded-xl bg-slate-100 p-1">{tabs.map(t=><button key={t} onClick={()=>setTab(t)} className={`rounded-lg px-3 py-2 text-[11px] font-bold transition ${tab===t?'bg-white text-slate-900 shadow-sm':'text-slate-400 hover:text-slate-600'}`}>{t}</button>)}</div>
-    <div className="mt-5 h-[228px]">
-      {tab==='관광객 추이' && <ResponsiveContainer><AreaChart data={data.monthlyVisitors} margin={{top:8,right:2,left:-28,bottom:0}}><defs><linearGradient id="visitorGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2563EB" stopOpacity={.24}/><stop offset="100%" stopColor="#2563EB" stopOpacity={0}/></linearGradient></defs><CartesianGrid vertical={false} stroke="#EEF2F7"/><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize:10,fill:'#94A3B8'}}/><YAxis axisLine={false} tickLine={false} tick={{fontSize:10,fill:'#94A3B8'}}/><Tooltip contentStyle={tooltipStyle} formatter={(v:number)=>[`${v}만 명`,'관광객']}/><Area type="monotone" dataKey="previous" stroke="#CBD5E1" fill="transparent" strokeWidth={2} strokeDasharray="4 5"/><Area type="monotone" dataKey="visitors" stroke="#2563EB" strokeWidth={2.5} fill="url(#visitorGradient)" activeDot={{r:5,fill:'#2563EB',stroke:'#fff',strokeWidth:3}}/></AreaChart></ResponsiveContainer>}
-      {tab==='방문객 연령' && <ResponsiveContainer><BarChart data={data.ageVisitors} margin={{top:8,right:0,left:-32,bottom:0}}><CartesianGrid vertical={false} stroke="#EEF2F7"/><XAxis dataKey="age" axisLine={false} tickLine={false} tick={{fontSize:10,fill:'#94A3B8'}}/><YAxis axisLine={false} tickLine={false} tick={{fontSize:10,fill:'#94A3B8'}}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="value" radius={[7,7,2,2]}>{data.ageVisitors.map((_,i)=><Cell key={i} fill={i===1?'#2563EB':'#BFDBFE'}/>)}</Bar></BarChart></ResponsiveContainer>}
-      {tab==='관광 유형' && <div className="flex h-full items-center"><div className="h-full flex-1"><ResponsiveContainer><PieChart><Pie data={data.tourismTypes} dataKey="value" innerRadius={55} outerRadius={82} paddingAngle={4} stroke="none">{data.tourismTypes.map(x=><Cell key={x.name} fill={x.color}/>)}</Pie><Tooltip contentStyle={tooltipStyle}/></PieChart></ResponsiveContainer></div><div className="w-36 space-y-3">{data.tourismTypes.map(x=><div key={x.name} className="flex items-center justify-between text-[11px]"><span className="flex items-center gap-2 text-slate-500"><i className="h-2 w-2 rounded-full" style={{background:x.color}}/>{x.name}</span><b>{x.value}%</b></div>)}</div></div>}
+  const visitors = useDistrictResource('visitors', { district: district.slug, months: 12 }, tab === '방문 추이')
+  const indices = useDistrictResource('indices', { district: district.slug }, tab === '연령 지수')
+  const contents = useDistrictResource('contents', { district: district.slug }, tab === '콘텐츠 구성')
+  const related = useDistrictResource('related', { district: district.slug }, tab === '연관 관광지')
+  const active = tab === '방문 추이' ? visitors : tab === '연령 지수' ? indices : tab === '콘텐츠 구성' ? contents : related
+  const series = visitors.data?.series.map((point, index) => ({ month: `${point.ym.slice(2, 4)}.${point.ym.slice(4)}`, current: point.total, previous: visitors.data?.previousYear[index]?.total })) ?? []
+  const contentMix = contents.data?.typeShare.map(item => ({ ...item, name: contentCategoryName(item.category) })) ?? []
+  const ages = indices.data ? Array.from({ length: 7 }, (_, i) => ({ age: i === 6 ? '70대 이상' : `${(i + 1) * 10}대`, value: indices.data!.groups.touristDiversity[`310${i + 1}`] })) : []
+  return <Card className="p-5 sm:p-7">
+    <h2 className="text-lg font-bold">{district.nameKo} 관광 데이터</h2>
+    <div className="mt-4 flex flex-wrap gap-1" role="tablist" aria-label="관광 데이터 유형">{tabs.map(item => <button key={item} role="tab" aria-selected={tab === item} onClick={() => setTab(item)} className={`min-h-11 rounded-lg px-3 text-xs font-bold ${tab === item ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{item}</button>)}</div>
+    <div className="mt-5" role="tabpanel" aria-label={tab}>
+      <DataNotice state={active}/>
+      {tab === '방문 추이' && visitors.data && <><p className="mb-2 text-xs text-slate-500">일별 방문 추정치 월 합계 · 파랑: 해당 연도 / 회색: 전년 동월</p><div className="h-64"><ResponsiveContainer><AreaChart data={series}><CartesianGrid stroke="#e2e8f0" vertical={false}/><XAxis dataKey="month" tick={{ fontSize: 10 }}/><YAxis width={65} tick={{ fontSize: 10 }} tickFormatter={value => `${(value / 10000).toFixed(0)}만`}/><Tooltip formatter={(value: number) => formatValue(value)}/><Area name="전년 동월" type="monotone" dataKey="previous" stroke="#94a3b8" fill="transparent" connectNulls={false}/><Area name="일별 추정치 합계" type="monotone" dataKey="current" stroke="#2563eb" fill="#dbeafe" connectNulls={false}/></AreaChart></ResponsiveContainer></div></>}
+      {tab === '연령 지수' && indices.data && <><div className="h-64"><ResponsiveContainer><BarChart data={ages}><CartesianGrid vertical={false}/><XAxis dataKey="age" tick={{ fontSize: 10 }}/><YAxis tick={{ fontSize: 10 }} width={55}/><Tooltip formatter={(value: number) => [`${formatValue(value, 2)} (지수)`, '연령별 방문 지수']}/><Bar dataKey="value" name="연령별 방문 지수" fill="#2563eb" radius={[5, 5, 0, 0]}/></BarChart></ResponsiveContainer></div></>}
+      {tab === '콘텐츠 구성' && contents.data && (contents.data.totalCount ? <><p className="mb-3 text-xs leading-6 text-slate-500">조회 시점의 등록 콘텐츠 {contents.data.totalCount.toLocaleString()}건 기준 · 구성비 = 해당 분류 콘텐츠 수 ÷ 전체 등록 콘텐츠 수 × 100</p><div className="grid gap-4 sm:grid-cols-2"><div className="h-64"><ResponsiveContainer><PieChart><Pie data={contentMix} dataKey="pct" nameKey="name" innerRadius={55} outerRadius={90}>{contentMix.map((item, i) => <Cell key={item.category} fill={colors[i % colors.length]}/>)}</Pie><Tooltip formatter={(value: number) => `${value.toFixed(1)}%`}/></PieChart></ResponsiveContainer></div><ul className="space-y-2 py-4">{contentMix.map(item => <li key={item.category} className="flex justify-between text-xs"><span>{item.name}</span><span>{item.count}건 · {item.pct.toFixed(1)}%</span></li>)}</ul></div></> : <p className="py-8 text-sm text-slate-500">등록된 관광 콘텐츠가 없습니다.</p>)}
+      {tab === '연관 관광지' && related.data && <div className="space-y-3"><p className="text-sm">상위 3개 허브의 연관 건수 비중: <strong>{formatValue(related.data.top3Share, 2)}{related.data.top3Share !== null && '%'}</strong></p>{related.data.hubs.length ? related.data.hubs.map(hub => <div key={hub.tAtsCd} className="flex justify-between rounded-xl bg-slate-50 p-3 text-xs"><span>{hub.name}</span><span>{hub.relatedCount}건 · {hub.share.toFixed(1)}%</span></div>) : <p className="text-xs text-slate-500">연관 관광지 자료가 없습니다.</p>}</div>}
     </div>
-    <div className="mt-3 flex items-center justify-between rounded-xl bg-blue-50/70 px-3.5 py-2.5"><span className="flex items-center gap-2 text-[11px] font-semibold text-blue-700"><TrendingUp size={14}/>10월 방문객이 가장 빠르게 증가했어요</span><b className="text-xs text-blue-700">+12.4%</b></div>
+    {active.data && <SourceNote data={active.data}/>}
   </Card>
 }
 
-const radarData = [{x:'접근성',v:82},{x:'콘텐츠',v:68},{x:'소비력',v:77},{x:'재방문',v:61},{x:'체류',v:66},{x:'인지도',v:74}]
-export function RegionRadar() {
-  return <Card className="p-6 sm:p-7"><div className="flex items-start justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-blue-600">Regional Index</p><h3 className="mt-1 text-lg font-bold">지역 경쟁력 지수</h3></div><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-600">상위 18%</span></div><div className="mt-2 h-[250px]"><ResponsiveContainer><RadarChart data={radarData} outerRadius="72%"><PolarGrid stroke="#E2E8F0"/><PolarAngleAxis dataKey="x" tick={{fontSize:10,fill:'#64748B'}}/><Radar dataKey="v" fill="#2563EB" fillOpacity={.16} stroke="#2563EB" strokeWidth={2}/></RadarChart></ResponsiveContainer></div></Card>
+export function RegionRadar({ data }: { data?: DiagnosisResponse }) {
+  const district = useActiveDistrict()
+  const [showRank, setShowRank] = useState(false)
+  const rank = useDistrictResource('rank', { district: district.slug, metric: '21' }, showRank)
+  return <Card className="p-5 sm:p-7"><h2 className="text-lg font-bold">관광 지수 6축</h2><p className="mt-2 text-xs text-slate-500">자체 활성화 지수: {formatValue(data?.activationIndex, 2)} · 검토용 단순평균</p>
+    {data && data.radar.every(axis => axis.value !== null) ? <div className="mt-3 h-64"><ResponsiveContainer><RadarChart data={data.radar} outerRadius="60%"><PolarGrid/><PolarAngleAxis dataKey="label" tick={{ fontSize: 9 }}/><Radar name="지수" dataKey="value" stroke="#2563eb" fill="#2563eb" fillOpacity={.16}/><Tooltip/></RadarChart></ResponsiveContainer></div> : <p className="py-8 text-xs text-slate-500">6축 데이터가 모두 제공되면 레이더를 표시합니다.</p>}
+    <button onClick={() => setShowRank(value => !value)} className="min-h-11 text-xs font-semibold text-blue-700">{showRank ? '순위 접기' : '전국 관측 시군구 내 체류지수 순위 확인'}</button>
+    {showRank && <><DataNotice state={rank}/>{rank.data && <><p className="text-xs leading-6 text-slate-500">{metricMonth(rank.data.baseYm)} 관광체류강도 지수가 높은 순서입니다. 값이 관측된 시군구만 포함하며 동점은 같은 순위입니다.</p><p className="text-sm font-bold">{rank.data.rank === null ? '순위 자료 부족' : `${rank.data.total}개 관측 시군구 중 ${rank.data.rank}위`}</p><SourceNote data={rank.data}/></>}</>}
+  </Card>
 }

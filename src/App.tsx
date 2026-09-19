@@ -8,12 +8,15 @@ import { ReportPage } from '@/pages/dashboard/ReportPage'
 import { SimulationPage } from '@/pages/dashboard/SimulationPage'
 import { StrategyPage } from '@/pages/dashboard/StrategyPage'
 import { GwangjuDistrictSelectPage } from '@/pages/regions/GwangjuDistrictSelectPage'
+import { NationalRegionPage } from '@/pages/regions/NationalRegionPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/regions/gwangju" element={<GwangjuDistrictSelectPage />} />
+      <Route path="/regions" element={<NationalRegionPage />} />
+      <Route path="/regions/:regionId" element={<NationalRegionPage />} />
       <Route path="/dashboard" element={<Navigate to="/regions/gwangju" replace />} />
       <Route path="/dashboard/gwangju" element={<Navigate to="/regions/gwangju" replace />} />
       <Route path="/dashboard/gwangju/:district" element={<DashboardLayout />}>

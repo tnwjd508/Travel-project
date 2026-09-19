@@ -115,6 +115,17 @@ export function getRegionTourismHero(areaCode: number, keyword: string) {
   })
 }
 
+export function getDistrictFestivals(sigunguCode: number, eventStartDate: string, pageNo = 1) {
+  return requestTourApi<TourApiItem>('searchFestival2', {
+    areaCode: 5,
+    sigunguCode,
+    eventStartDate,
+    pageNo,
+    numOfRows: 100,
+    arrange: 'A',
+  })
+}
+
 export function checkTourApiConnection() {
   return requestTourApi<TourApiItem>('areaCode2', { pageNo: 1, numOfRows: 1 })
 }

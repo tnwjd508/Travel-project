@@ -11,6 +11,9 @@ import { useDistrictNeighborhoods } from '@/hooks/useDistrictNeighborhoods'
 import type { NeighborhoodFeature } from '@/types/boundary'
 import type { Attraction } from '@/types/tourism'
 import { toD3FeatureCollection } from '@/utils/geoRendering'
+import { useDistrictResource } from '@/hooks/useDistrictResource'
+import { contentCategoryName } from '@/data/contentCategories'
+import { DataNotice, SourceNote } from './DataNotice'
 
 interface DistrictProperties {
   code: string
@@ -29,16 +32,10 @@ const ZOOM_LEVELS = [1, 1.25, 1.55, 1.9]
 const LABEL_MIN_AREA = 900
 const neighborhoodFills = ['#BFDBFE', '#C7D2FE', '#BAE6FD', '#DDD6FE', '#CCFBF1', '#E0E7FF']
 
-// 화면 구성 검증용 표본 관광지. 실데이터 연동 시 TourAPI 결과로 대체한다.
-const attractions: Attraction[] = [
-  { name: '국립아시아문화전당', category: '문화예술', lng: 126.9199, lat: 35.1469, visitors: '12.8만', accent: '#2563EB' },
-  { name: '무등산 국립공원', category: '자연', lng: 126.991, lat: 35.134, visitors: '9.4만', accent: '#22C55E' },
-  { name: '양림역사문화마을', category: '역사', lng: 126.9146, lat: 35.1402, visitors: '7.6만', accent: '#8B5CF6' },
-  { name: '대인예술시장', category: '미식·시장', lng: 126.9178, lat: 35.154, visitors: '5.2만', accent: '#F59E0B' },
-]
-
 export function TourismMap() {
   const district = useActiveDistrict()
+  const contentState = useDistrictResource('contents', { district: district.slug })
+  const attractions = useMemo<Attraction[]>(() => (contentState.data?.items ?? []).filter(item => item.lng !== null && item.lat !== null).map(item => ({ id: item.contentId, name: item.title, category: contentCategoryName(item.category), lng: item.lng!, lat: item.lat!, visitors: '', accent: '#2563EB' })), [contentState.data])
   const { neighborhoods, source, status, errorMessage, retry } = useDistrictNeighborhoods(district)
 
   const [hovered, setHovered] = useState<NeighborhoodFeature | null>(null)
@@ -79,7 +76,7 @@ export function TourismMap() {
 
   const districtAttractions = useMemo(
     () => (districtFeature ? attractions.filter((attraction) => geoContains(districtFeature, [attraction.lng, attraction.lat])) : []),
-    [districtFeature],
+    [districtFeature, attractions],
   )
 
   useEffect(() => {
@@ -143,12 +140,12 @@ export function TourismMap() {
             <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Administrative areas</span>
             <span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-bold text-blue-600">{district.nameKo} · {neighborhoods.length}개 동</span>
           </div>
-          <div className="min-h-[68px] rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <div aria-label="행정구역 선택 정보" className="flex h-20 flex-col justify-center overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
             {focusedArea ? (
               <>
                 <p className="text-[9px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</p>
-                <p className="mt-0.5 text-sm font-bold text-slate-800">{focusedArea.properties.name}</p>
-                <p className="mt-0.5 text-[10px] text-slate-400">{boundaryKind} 코드 <b className="text-slate-600">{focusedArea.properties.code}</b></p>
+                <p className="mt-0.5 truncate text-sm font-bold text-slate-800" title={focusedArea.properties.name}>{focusedArea.properties.name}</p>
+
               </>
             ) : (
               <p className="text-[11px] leading-5 text-slate-500">{district.nameKo}의 {boundaryKind} 경계가 표시됩니다. 동을 클릭하면 선택이 고정됩니다.</p>
@@ -159,10 +156,10 @@ export function TourismMap() {
         <div className="mt-5 border-t border-slate-100 pt-4">
           <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
           {districtAttractions.length > 0 ? (
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
               {districtAttractions.map((attraction) => (
                 <button
-                  key={attraction.name}
+                  key={attraction.id ?? attraction.name}
                   type="button"
                   onMouseEnter={() => setActiveAttraction(attraction)}
                   onFocus={() => setActiveAttraction(attraction)}
@@ -174,13 +171,14 @@ export function TourismMap() {
                     <b className="block truncate text-xs text-slate-700">{attraction.name}</b>
                     <span className="text-[10px] text-slate-400">{attraction.category}</span>
                   </span>
-                  <b className="text-[10px] text-slate-500">{attraction.visitors}</b>
                 </button>
               ))}
             </div>
           ) : (
-            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{district.nameKo}의 표본 관광지 좌표가 아직 없습니다.</p>
+            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{district.nameKo}에 표시할 관광지 좌표가 없습니다.</p>
           )}
+          <DataNotice state={contentState}/>
+          {contentState.data && <SourceNote data={contentState.data}/>}
         </div>
       </aside>
 
@@ -287,7 +285,7 @@ export function TourismMap() {
               const active = activeAttraction?.name === attraction.name
               return (
                 <motion.g
-                  key={attraction.name}
+                  key={attraction.id ?? attraction.name}
                   transform={`translate(${point[0]} ${point[1]})`}
                   onMouseEnter={() => setActiveAttraction(attraction)}
                   onClick={() => setActiveAttraction(attraction)}
@@ -318,13 +316,13 @@ export function TourismMap() {
           )}
         </AnimatePresence>
 
-        <motion.div layout className="absolute bottom-5 left-5 z-20 min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur">
+        <motion.div className="absolute bottom-5 left-5 z-20 h-28 overflow-y-auto min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur">
           {focusedArea ? (
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</span>
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{focusedArea.properties.districtName} · {focusedArea.properties.name}</h4>
-                <p className="mt-1 text-[10px] text-slate-400">{boundaryKind} 코드 <b className="text-slate-600">{focusedArea.properties.code}</b></p>
+
               </div>
               <button type="button" aria-label={`선택한 ${boundaryKind} 상세 보기`} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><ArrowUpRight size={14} /></button>
             </div>
@@ -333,7 +331,7 @@ export function TourismMap() {
               <div>
                 <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: activeAttraction.accent }}>{activeAttraction.category}</span>
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{activeAttraction.name}</h4>
-                <p className="mt-1 text-[10px] text-slate-400">월 방문객 <b className="text-slate-600">{activeAttraction.visitors}</b> · 지도 좌표 연동</p>
+                <p className="mt-1 text-[10px] text-slate-400">한국관광공사 콘텐츠 좌표</p>
               </div>
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><MapPin size={14} /></span>
             </div>
@@ -341,7 +339,7 @@ export function TourismMap() {
             <div>
               <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Administrative map</span>
               <h4 className="mt-1 text-sm font-bold text-slate-800">{district.nameKo} {neighborhoods.length}개 {boundaryKind}</h4>
-              <p className="mt-1 text-[10px] text-slate-400">동을 클릭하면 이름과 코드가 여기에 고정됩니다.</p>
+              <p className="mt-1 text-[10px] text-slate-400">동을 클릭하면 선택한 지역이 여기에 표시됩니다.</p>
             </div>
           )}
         </motion.div>
