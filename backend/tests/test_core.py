@@ -10,6 +10,13 @@ def test_envelope_and_redaction():
         parse_envelope('<returnReasonCode>22</returnReasonCode><secret>hidden</secret>')
     assert result.value.result_code == '22'
     assert 'hidden' not in result.value.message
+    with pytest.raises(ApiError) as limited:
+        parse_envelope('{"OpenAPI_ServiceResponse":{"cmmMsgHeader":{"returnReasonCode":"22","errMsg":"private"}}}')
+    assert limited.value.code == 'UPSTREAM_RATE_LIMIT' and limited.value.result_code == '22'
+    assert 'private' not in limited.value.message
+    with pytest.raises(ApiError) as authentication:
+        parse_envelope('{"OpenAPI_ServiceResponse":{"cmmMsgHeader":{"returnReasonCode":"30"}}}')
+    assert authentication.value.code == 'UPSTREAM_AUTH'
     assert numeric('') is None and numeric(True) is None and numeric('NaN') is None
 
 

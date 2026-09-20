@@ -54,6 +54,15 @@ class DatabaseFixture:
         if path.endswith('policy_evidence_statistics'):
             identifier=params.get('release_id','eq.'+RELEASE).removeprefix('eq.')
             return httpx.Response(200,json=[stat_row(release=identifier)])
+        if path.endswith('rpc/visitor_months_get'):
+            return httpx.Response(200,json=[])
+        if path.endswith('rpc/visitor_months_store'):
+            return httpx.Response(200,json=len(json.loads(request.content)['p_rows']))
+        if path.endswith('rpc/tourism_cache_get'):
+            return httpx.Response(200,json={'state':'missing'})
+        if path.endswith('rpc/tourism_cache_store'):
+            args=json.loads(request.content)
+            return httpx.Response(200,json={'state':'stored','payload':args['p_response_payload'],'fetchedAt':args['p_source_fetched_at']})
         if path.endswith('rpc/save_scenario_review'):
             assert request.headers['apikey']=='sb_secret_test' and 'authorization' not in request.headers
             args=json.loads(request.content)
