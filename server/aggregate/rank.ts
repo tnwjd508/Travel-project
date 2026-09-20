@@ -20,7 +20,13 @@ export function rankRows(rows: Row[], field: string, code: string, ym: string, t
   }
   const value = values.get(target); const total = values.size
   const rank = value === undefined ? null : 1 + [...values.values()].filter(item => item > value).length
+  // 시도 합계·중복을 제외한 동일 집합으로 평균과 중앙값을 계산합니다.
+  const sorted = [...values.values()].sort((a, b) => a - b)
+  const middle = Math.floor(total / 2)
+  const mean = rank === null ? null : sorted.reduce((sum, item) => sum + item, 0) / total
+  const median = rank === null ? null : total % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
   return { rank, total, percentile: rank === null ? null : total === 1 ? 100 : (total - rank) / (total - 1) * 100,
+    value: value ?? null, mean, median, tieCount: rank === null ? null : sorted.filter(item => item === value).length,
     topPct: rank === null ? null : rank / total * 100 }
 }
 export async function getRank(client: KntoClient, district: DistrictSlug, ym: string, code: string) {
@@ -32,6 +38,6 @@ export async function getRank(client: KntoClient, district: DistrictSlug, ym: st
   const missingDistricts = [...new Set(batches.flatMap(batch => batch.rows.filter(row => /^\d{5}$/.test(String(row.signguCd)) && String(row.baseYm) === ym && String(row[`${field}Cd`]) === code && numeric(row[`${field}Val`]) === null).map(row => String(row.signguCd))))]
   const result = rankRows(batches.flatMap(batch => batch.rows), field, code, ym, target)
   const complete = missingAreas.length === 0 && missingDistricts.length === 0 && result.rank !== null
-  return { ...result, ...(complete ? {} : { rank: null, percentile: null, topPct: null }), metric: code, complete, missingAreas, missingDistricts,
+  return { ...result, ...(complete ? {} : { rank: null, percentile: null, topPct: null, mean: null, median: null, tieCount: null }), metric: code, complete, missingAreas, missingDistricts,
     scope: 'observed_nationwide_districts' as const, populationVerified: false as const }
 }

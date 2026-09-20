@@ -65,6 +65,7 @@ export interface HubsResponse extends DistrictMeta {
 }
 export interface RankResponse extends DistrictMeta {
   district: DistrictSlug; metric: string; rank: number | null; total: number
+  value: number | null; mean: number | null; median: number | null; tieCount: number | null
   percentile: number | null; topPct: number | null; complete: boolean
   missingAreas: string[]
   missingDistricts: string[]
@@ -77,4 +78,12 @@ export interface DiagnosisResponse extends DistrictMeta {
   priorities: { issueId: string; title: string; evidence: string }[]
   radar: { id: string; label: string; value: number | null }[]
   activationIndex: number | null
+}
+
+// 생성한 보고서의 비교 자료를 당시의 값으로 고정합니다.
+export interface IndicatorComparisonSnapshot {
+  district: DistrictSlug
+  baseYm: string
+  ranks: Record<'21' | '22' | '11', RankResponse | null>
+  indices: IndicesResponse | null
 }
