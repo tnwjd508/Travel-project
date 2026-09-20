@@ -60,3 +60,16 @@ def test_vworld_xml_errors_are_classified_without_leaking_upstream(body, expecte
         result = client.get('/api/vworld?district=donggu')
         assert result.status_code == 502 and result.json()['code'] == expected
         assert not any(secret in result.text for secret in ('secret-key', 'private-domain', 'private-limit', 'private-detail', 'UNKNOWN_PRIVATE_CODE'))
+
+
+@pytest.mark.parametrize(('upstream', 'expected'), [
+    (lambda request: httpx.Response(403, text='<html>blocked</html>'), 'UPSTREAM_HTTP'),
+    (lambda request: httpx.Response(200, text='<html>not geojson</html>'), 'INVALID_RESPONSE'),
+    (lambda request: (_ for _ in ()).throw(httpx.ConnectError('private network detail', request=request)), 'UPSTREAM_NETWORK'),
+    (lambda request: (_ for _ in ()).throw(httpx.ReadTimeout('private timeout detail', request=request)), 'UPSTREAM_TIMEOUT'),
+])
+def test_vworld_transport_failures_are_distinct_and_redacted(upstream, expected):
+    with TestClient(create_app({'VWORLD_API_KEY': 'secret-key', 'VWORLD_DOMAIN': 'https://example.test'}, httpx.MockTransport(upstream))) as client:
+        result = client.get('/api/vworld?district=donggu')
+        assert result.status_code == 502 and result.json()['code'] == expected
+        assert not any(secret in result.text for secret in ('secret-key', 'private network detail', 'private timeout detail'))

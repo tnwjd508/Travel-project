@@ -28,7 +28,11 @@ def wfs_error(text):
         return None
     match = re.search(r'\b(?:exceptionCode|code)=["\']([A-Za-z0-9_-]{1,32})["\']', text, re.IGNORECASE)
     upstream_code = match[1].upper() if match else ''
-    return VWORLD_ERRORS.get(upstream_code, ('VWORLD_ERROR', 'VWorld가 오류를 반환했습니다.'))
+    if upstream_code:
+        return VWORLD_ERRORS.get(upstream_code, ('VWORLD_ERROR', 'VWorld가 오류를 반환했습니다.'))
+    if re.search(r'<(?:ows:)?(?:Exception|ExceptionReport|ServiceException|ServiceExceptionReport)\b', text, re.IGNORECASE):
+        return 'VWORLD_ERROR', 'VWorld가 오류를 반환했습니다.'
+    return None
 
 
 def valid_ring(ring):
@@ -47,13 +51,19 @@ async def boundary(district, env, http, cache):
         try:
             result = await http.get('https://api.vworld.kr/req/wfs', params=dict(service='WFS', request='GetFeature', version='1.1.0', typename='lt_c_ademd_info',
                 bbox=','.join(map(str, box)), srsname='EPSG:4326', output='application/json', maxfeatures='500', key=env['VWORLD_API_KEY'], domain=env['VWORLD_DOMAIN']), timeout=20)
-            error = wfs_error(result.text)
-            if error:
-                raise ApiError(502, error[0], error[1])
-            result.raise_for_status()
+        except httpx.TimeoutException:
+            raise ApiError(502, 'UPSTREAM_TIMEOUT', 'VWorld 응답 시간이 초과되었습니다.') from None
+        except httpx.HTTPError:
+            raise ApiError(502, 'UPSTREAM_NETWORK', 'VWorld 서버에 연결하지 못했습니다.') from None
+        error = wfs_error(result.text)
+        if error:
+            raise ApiError(502, error[0], error[1])
+        if not result.is_success:
+            raise ApiError(502, 'UPSTREAM_HTTP', f'VWorld 서버가 HTTP {result.status_code} 응답을 반환했습니다.')
+        try:
             payload = result.json()
-        except (httpx.HTTPError, ValueError):
-            raise ApiError(502, 'UPSTREAM_UNAVAILABLE', 'VWorld 경계 데이터를 가져오지 못했습니다.') from None
+        except ValueError:
+            raise ApiError(502, 'INVALID_RESPONSE', 'VWorld 응답을 GeoJSON으로 해석하지 못했습니다.') from None
         if not isinstance(payload, dict) or payload.get('type') != 'FeatureCollection' or not isinstance(payload.get('features'), list):
             raise ApiError(502, 'INVALID_RESPONSE', 'VWorld GeoJSON 형식이 올바르지 않습니다.')
         features = []
