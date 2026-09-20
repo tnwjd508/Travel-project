@@ -157,12 +157,21 @@ def image_url(value):
         return None
 
 
+TOP_RELATED = 5  # 화면에서 펼쳐 보여주는 연관 장소 수
+
+
 def related_rows(rows):
     links = {(text(r.get('tAtsCd')), text(r.get('rlteTatsCd'))): r for r in rows if r.get('tAtsCd') and r.get('rlteTatsCd')}
     hubs = {}
     for (code, _), row in links.items():
-        hub = hubs.setdefault(code, dict(tAtsCd=code, name=text(row.get('tAtsNm')), relatedCount=0))
+        hub = hubs.setdefault(code, dict(tAtsCd=code, name=text(row.get('tAtsNm')), relatedCount=0, top=[]))
         hub['relatedCount'] += 1
+        rank = numeric(row.get('rlteRank'))
+        if rank is not None:
+            hub['top'].append(dict(rank=int(rank), name=text(row.get('rlteTatsNm')),
+                                   category=text(row.get('rlteCtgrySclsNm')) or None, district=text(row.get('rlteSignguNm')) or None))
+    for hub in hubs.values():
+        hub['top'] = sorted(hub['top'], key=lambda item: item['rank'])[:TOP_RELATED]
     result = sorted([dict(hub, share=hub['relatedCount'] / len(links) * 100) for hub in hubs.values()], key=lambda h: (-h['relatedCount'], h['tAtsCd']))
     return dict(metric='related_link_share', hubs=result, top3Share=sum(h['share'] for h in result[:3]) if result else None,
         categoryMix=distribution([text(r.get('rlteCtgryMclsNm')) or 'unknown' for r in links.values()]))

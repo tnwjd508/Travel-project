@@ -38,7 +38,7 @@ export function RegionDistrictMap({ regionId, regionName, selectedDistrict, onSe
   return <div>
     <div className="relative aspect-[800/590] w-full">
       <div className="absolute inset-[8%] rounded-full border border-white/[.06] bg-[#172945]/30" />
-      <p className="absolute left-4 top-2 z-10 rounded-full border border-[#F4C57A]/20 bg-[#0B1528]/85 px-3 py-2 text-[10px] font-bold text-[#FFD89A]">{regionName} · {districts.length}개 시군구</p>
+      <p className="absolute left-4 top-2 z-10 rounded-full border border-[#F4C57A]/20 bg-[#0B1528]/85 px-3 py-2 text-[12px] font-bold text-[#FFD89A]">{regionName} · {districts.length}개 시군구</p>
       {!current && <p role="status" className="absolute inset-0 grid place-items-center text-sm text-slate-300">시군구 지도를 불러오고 있습니다.</p>}
       {current?.error && <div role="alert" className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-8 text-center text-sm text-slate-300"><p>{current.error}</p><button onClick={() => { setResult(null); setRetry(value => value + 1) }} className="min-h-11 underline">다시 시도</button></div>}
       {data && path && <svg viewBox="0 0 800 590" className="absolute inset-0 h-full w-full" aria-label={`${regionName} 시군구 선택 지도`}>
@@ -61,8 +61,8 @@ export function RegionDistrictMap({ regionId, regionName, selectedDistrict, onSe
           return <text key={index} x={x} y={y} fill="#F1F5F9" stroke="#0A1628" strokeWidth="3" paintOrder="stroke" fontSize={data.features.length > 30 ? 10 : 12} fontWeight="700">{feature.properties.name}</text>
         })}</g>
       </svg>}
-      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-[#0B1528]/90 px-4 py-2 text-[10px] text-slate-300">{hovered ? `${hovered} · 선택하면 지역 현황으로 이동` : '시군구 모양을 클릭해 지역 현황으로 이동'}</p>
+      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-[#0B1528]/90 px-4 py-2 text-[12px] text-slate-300">{hovered ? `${hovered} · 선택하면 지역 현황으로 이동` : '시군구 모양을 클릭해 지역 현황으로 이동'}</p>
     </div>
-    {data && <p className="px-4 text-[10px] leading-5 text-slate-400"><a href={data.sourceUrl} target="_blank" rel="noreferrer" className="underline">{data.source} · {data.sourceYear} 경계 기반</a>{missing.length > 0 && ' · 일부 개편 지역은 경계 정보가 연결되지 않아 선택할 수 없습니다.'}</p>}
+    {data && <p className="px-4 text-[12px] leading-5 text-slate-400"><a href={data.sourceUrl} target="_blank" rel="noreferrer" className="underline">{data.source} · {data.sourceYear} 경계 기반</a>{missing.length > 0 && ' · 일부 개편 지역은 경계 정보가 연결되지 않아 선택할 수 없습니다.'}</p>}
   </div>
 }

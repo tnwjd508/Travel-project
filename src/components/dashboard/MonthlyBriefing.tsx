@@ -23,13 +23,13 @@ function FestivalList({ title, festivals, failed }: { title: string; festivals: 
     <div className="mt-3 space-y-2">
       {festivals.map((festival) => <article key={festival.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
         <h4 className="text-xs font-bold leading-5 text-slate-900">{festival.title}</h4>
-        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-violet-700"><CalendarDays size={13} aria-hidden="true" />{festival.startDate} ~ {festival.endDate}</p>
-        {festival.address && <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-5 text-slate-500"><MapPin size={13} className="mt-0.5 shrink-0" aria-hidden="true" />{festival.address}</p>}
+        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-violet-700"><CalendarDays size={13} aria-hidden="true" />{festival.startDate} ~ {festival.endDate}</p>
+        {festival.address && <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-5 text-slate-500"><MapPin size={13} className="mt-0.5 shrink-0" aria-hidden="true" />{festival.address}</p>}
       </article>)}
       {/* API의 빈 응답은 실제 축제가 없다는 뜻이 아니므로 정보 제공 범위를 명확히 안내합니다. */}
       {!festivals.length && <div className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">
         <p>{failed ? '축제 자료를 모두 수집하지 못해 목록을 확인할 수 없습니다.' : '조회 조건에 맞는 축제 정보를 확인하지 못했습니다.'}</p>
-        {!failed && <p className="mt-2 text-[11px] text-slate-400">실제 축제 개최 여부와 일정은 지자체 공지를 확인해 주세요.</p>}
+        {!failed && <p className="mt-2 text-[12px] text-slate-400">실제 축제 개최 여부와 일정은 지자체 공지를 확인해 주세요.</p>}
       </div>}
     </div>
   </div>
@@ -40,7 +40,7 @@ function Finding({ finding, data, recommendation = false }: { finding: BriefingF
   return <article className={`rounded-xl p-4 ${recommendation ? 'bg-orange-50 ring-1 ring-orange-100' : 'bg-blue-50/60'}`}>
     <h4 className="flex items-center gap-2 text-xs font-bold text-slate-900">{recommendation && <Check size={14} className="shrink-0 text-orange-600" aria-hidden="true" />}{finding.title}</h4>
     <p className="mt-2 text-xs leading-6 text-slate-600">{finding.description}</p>
-    {showDiagnostics && <p className="mt-2 text-[10px] leading-5 text-slate-500">근거: {labels.join(' · ')}</p>}
+    {showDiagnostics && <p className="mt-2 text-[12px] leading-5 text-slate-500">근거: {labels.join(' · ')}</p>}
   </article>
 }
 
@@ -84,8 +84,8 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
   return <section className="rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:p-7" aria-labelledby="briefing-title" aria-busy={loading}>
     <header className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-5">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><Sparkles size={18} aria-hidden="true" /></span>
-      <div><p className="text-[10px] font-semibold uppercase tracking-[.15em] text-blue-600">Monthly briefing</p><h2 id="briefing-title" className="mt-0.5 text-lg font-bold tracking-[-.03em] text-slate-950">{districtName} 월간 브리핑</h2></div>
-      {data && <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${data.aiStatus === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{data.aiStatus === 'ready' ? 'AI 분석' : data.aiStatus === 'partial' ? 'AI 일부 분석' : 'AI 분석 이용 불가'}</span>}
+      <div><p className="text-[12px] font-semibold uppercase tracking-[.15em] text-blue-600">Monthly briefing</p><h2 id="briefing-title" className="mt-0.5 text-lg font-bold tracking-[-.03em] text-slate-950">{districtName} 월간 브리핑</h2></div>
+      {data && <span className={`rounded-full px-3 py-1.5 text-[12px] font-bold ${data.aiStatus === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{data.aiStatus === 'ready' ? 'AI 분석' : data.aiStatus === 'partial' ? 'AI 일부 분석' : 'AI 분석 이용 불가'}</span>}
       <label className="ml-auto flex items-center gap-2 text-xs font-medium text-slate-500">진단 월
         <select value={month} onChange={(event) => { setMonth(event.target.value); setRetry(0) }} className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
           {months.map((value) => <option key={value} value={value}>{value.replace('-', '년 ')}월</option>)}
@@ -101,7 +101,7 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
       <div className="mt-5 rounded-2xl bg-slate-50 p-4">
         <h3 className="text-xs font-bold text-slate-900">{data.diagnosis ? '월간 AI 요약' : '월간 브리핑'}</h3>
         <p className="mt-2 text-sm leading-7 text-slate-700">{data.diagnosis?.summary ?? '현재 AI 분석을 이용할 수 없습니다. 축제 정보는 아래에서 확인할 수 있습니다.'}</p>
-        <p className="mt-2 text-[10px] leading-5 text-slate-500">{data.month} 통계 · 생성 {new Date(data.generatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
+        <p className="mt-2 text-[12px] leading-5 text-slate-500">{data.month} 통계 · 생성 {new Date(data.generatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
       </div>
       <div className="grid gap-6 pt-6 lg:grid-cols-2">
         {data.diagnosis && <div className="order-1"><h3 className="text-xs font-bold text-slate-900">핵심 진단</h3><div className="mt-3 space-y-3">
@@ -110,7 +110,7 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
         <div className="order-3 grid gap-5 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:col-span-2">
           <FestivalList title="최근 종료된 축제" festivals={data.festivals.recent} failed={festivalIncomplete} />
           <FestivalList title="저장 당시 예정 축제" festivals={data.festivals.upcoming} failed={festivalIncomplete} />
-          <p className="text-[10px] leading-5 text-slate-400 sm:col-span-2">{data.festivalAsOf} 한국 날짜 기준 · 최근 1년 종료 / 예정 시작 90일 · 각각 최대 3개 · 한국관광공사 TourAPI<br />최근 2년 시작 행사 조회. 예정 일정은 변경될 수 있습니다.{festivalIncomplete && ' 일부 수집으로 목록이 완전하지 않을 수 있습니다.'}</p>
+          <p className="text-[12px] leading-5 text-slate-400 sm:col-span-2">{data.festivalAsOf} 한국 날짜 기준 · 최근 1년 종료 / 예정 시작 90일 · 각각 최대 3개 · 한국관광공사 TourAPI<br />최근 2년 시작 행사 조회. 예정 일정은 변경될 수 있습니다.{festivalIncomplete && ' 일부 수집으로 목록이 완전하지 않을 수 있습니다.'}</p>
         </div>
         {data.diagnosis && <div className="order-2"><h3 className="text-xs font-bold text-slate-900">AI 추천 검토사항</h3><div className="mt-3 space-y-3">
           {data.diagnosis.recommendations.map((finding, index) => <Finding key={index} finding={finding} data={data} recommendation />)}
@@ -120,10 +120,10 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
 
       {showDiagnostics && <details className="mt-6 border-t border-slate-100 pt-4">
         <summary className="cursor-pointer py-2 text-xs font-bold text-slate-700">수집 근거와 API 상태 보기 ({data.evidence.length}개 근거)</summary>
-        <p className="mt-2 text-[10px] text-slate-500">{data.sources.filter((source) => source.status === 'ready').length}/{data.sources.length}개 API 수집 완료</p>
+        <p className="mt-2 text-[12px] text-slate-500">{data.sources.filter((source) => source.status === 'ready').length}/{data.sources.length}개 API 수집 완료</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">{data.sources.map((source) => <div key={source.id} className="rounded-xl border border-slate-100 p-3 text-xs"><p className="font-semibold text-slate-800">{source.label} · {statusLabels[source.status]} · {source.count}행</p>{source.note && <p className="mt-1 leading-5 text-slate-500">{source.note}</p>}</div>)}</div>
-        <dl className="mt-4 space-y-3">{data.evidence.map((item) => <div key={item.id} className="rounded-xl bg-slate-50 p-3"><dt className="text-xs font-semibold text-slate-800">{item.label}: {item.value}</dt><dd className="mt-1 text-[11px] leading-5 text-slate-500">{item.period} · {item.note}</dd></div>)}</dl>
-        {(data.warnings.length > 0 || Boolean(data.diagnosis?.limitations.length)) && <div className="mt-4 rounded-xl bg-amber-50/70 p-4 text-[11px] leading-6 text-amber-900"><p className="font-bold">자료와 해석의 한계</p><ul className="mt-1 list-disc space-y-1 pl-4">{[...data.warnings, ...(data.diagnosis?.limitations ?? [])].map((warning, index) => <li key={index}>{warning}</li>)}</ul></div>}
+        <dl className="mt-4 space-y-3">{data.evidence.map((item) => <div key={item.id} className="rounded-xl bg-slate-50 p-3"><dt className="text-xs font-semibold text-slate-800">{item.label}: {item.value}</dt><dd className="mt-1 text-[12px] leading-5 text-slate-500">{item.period} · {item.note}</dd></div>)}</dl>
+        {(data.warnings.length > 0 || Boolean(data.diagnosis?.limitations.length)) && <div className="mt-4 rounded-xl bg-amber-50/70 p-4 text-[12px] leading-6 text-amber-900"><p className="font-bold">자료와 해석의 한계</p><ul className="mt-1 list-disc space-y-1 pl-4">{[...data.warnings, ...(data.diagnosis?.limitations ?? [])].map((warning, index) => <li key={index}>{warning}</li>)}</ul></div>}
       </details>}
     </>}
   </section>

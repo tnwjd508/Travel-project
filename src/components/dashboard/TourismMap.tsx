@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw } from 'lucide-react'
+import { Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { geoContains, geoMercator, geoPath } from 'd3-geo'
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
@@ -191,7 +191,7 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
   return (
     <Card className="grid min-h-[520px] overflow-hidden lg:grid-cols-[320px_1fr]">
       <aside className="z-10 border-b border-slate-100 bg-white/90 p-6 backdrop-blur lg:border-b-0 lg:border-r sm:p-7">
-        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-blue-600">
+        <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[.15em] text-blue-600">
           <Navigation size={14} /> Tourism Map
         </div>
         <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900">{district.nameKo}를 {neighborhoods.length}개 {boundaryKind}으로<br />세밀하게 탐색하세요</h3>
@@ -199,26 +199,29 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
 
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Administrative areas</span>
-            <span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-bold text-blue-600">{district.nameKo} · {neighborhoods.length}개 동</span>
+            <span className="text-[12px] font-extrabold uppercase tracking-[.12em] text-slate-400">Administrative areas</span>
+            <span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] font-bold text-blue-600">{district.nameKo} · {neighborhoods.length}개 동</span>
           </div>
-          <div aria-label="행정구역 선택 정보" className="flex h-20 flex-col justify-center overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <div aria-label="행정구역 선택 정보" className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
             {focusedArea ? (
-              <>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</p>
-                <p className="mt-0.5 truncate text-sm font-bold text-slate-800" title={focusedArea.properties.name}>{focusedArea.properties.name}</p>
-
-              </>
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-950 text-[12px] font-bold text-white">{boundaryKind.slice(-1)}</span>
+                <span className="min-w-0 flex-1">
+                  <b className="block truncate text-sm font-bold text-slate-800" title={focusedArea.properties.name}>{focusedArea.properties.name}</b>
+                  <span className="block text-[12px] text-slate-500">{selected ? `관광지 ${areaHotspots.length}곳` : '클릭하면 선택 고정'}</span>
+                </span>
+                {selected && <button type="button" onClick={() => setSelected(null)} aria-label="선택 해제" className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white text-slate-500 transition hover:bg-slate-200"><X size={14}/></button>}
+              </div>
             ) : (
-              <p className="text-[11px] leading-5 text-slate-500">{district.nameKo}의 {boundaryKind} 경계가 표시됩니다. 동을 클릭하면 선택이 고정됩니다.</p>
+              <p className="text-[12px] leading-5 text-slate-500">{district.nameKo}의 {boundaryKind} 경계가 표시됩니다. 동을 클릭하면 선택이 고정됩니다.</p>
             )}
           </div>
         </div>
 
         <div className="mt-5 border-t border-slate-100 pt-4">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
-            <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{areaName} {areaHotspots.length}곳</span>
+            <span className="text-[12px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[12px] font-bold text-slate-500">{areaName} {areaHotspots.length}곳</span>
           </div>
           <div role="tablist" aria-label="관광지 목록 구분" className="mt-2 flex gap-1.5">
             {([['rank', '중심 관광지 순위', rankedHotspots.length], ['content', '관광 콘텐츠', contentHotspots.length]] as const).map(([value, label, count]) => (
@@ -228,13 +231,13 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
                 role="tab"
                 aria-selected={hotspotTab === value}
                 onClick={() => setHotspotTab(value)}
-                className={`min-h-11 flex-1 rounded-xl border text-[11px] font-bold transition ${hotspotTab === value ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200'}`}
+                className={`min-h-11 flex-1 rounded-xl border text-[12px] font-bold transition ${hotspotTab === value ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200'}`}
               >
                 {label} {count}
               </button>
             ))}
           </div>
-          {selected && <button type="button" onClick={() => setSelected(null)} className="mt-2 min-h-11 w-full rounded-xl border border-blue-200 bg-blue-50 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100">{district.nameKo} 전체 보기</button>}
+          {selected && <button type="button" onClick={() => setSelected(null)} className="mt-2 min-h-11 w-full rounded-xl border border-blue-200 bg-blue-50 text-[12px] font-bold text-blue-700 transition hover:bg-blue-100">{district.nameKo} 전체 보기</button>}
           {tabHotspots.length > 0 ? (
             <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
               {visibleHotspots.map((attraction) => (
@@ -248,26 +251,26 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
                 >
                   {attraction.areaRank === null
                     ? <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
-                    : <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[10px] font-bold text-white ${attraction.fromHub ? 'bg-violet-600' : 'bg-blue-600'}`} title={`${areaName} 중심 관광지 순위`}>{attraction.areaRank}</span>}
+                    : <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[12px] font-bold text-white ${attraction.fromHub ? 'bg-violet-600' : 'bg-blue-600'}`} title={`${areaName} 중심 관광지 순위`}>{attraction.areaRank}</span>}
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-xs text-slate-700">{attraction.name}</b>
-                    <span className="text-[10px] text-slate-400">{attraction.category}{selected && attraction.districtRank !== null && ` · ${district.nameKo} ${attraction.districtRank}위`}{attraction.fromHub && ' · 순위 목록'}</span>
+                    <span className="text-[12px] text-slate-400">{attraction.category}{selected && attraction.districtRank !== null && ` · ${district.nameKo} ${attraction.districtRank}위`}{attraction.fromHub && ' · 순위 목록'}</span>
                   </span>
                 </button>
               ))}
               {tabHotspots.length > HOTSPOT_PREVIEW && (
-                <button type="button" onClick={() => setShowAllHotspots((value) => !value)} className="min-h-11 w-full rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 transition hover:border-blue-200 hover:text-blue-600">
+                <button type="button" onClick={() => setShowAllHotspots((value) => !value)} className="min-h-11 w-full rounded-xl border border-slate-200 text-[12px] font-bold text-slate-600 transition hover:border-blue-200 hover:text-blue-600">
                   {showAllHotspots ? '접기' : `더 보기 (${tabHotspots.length - HOTSPOT_PREVIEW}곳)`}
                 </button>
               )}
             </div>
           ) : (
-            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{hotspotTab === 'rank' ? `${areaName}에 중심 관광지 순위 자료가 없습니다.` : `${areaName}에 표시할 관광 콘텐츠가 없습니다.`}</p>
+            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[12px] leading-5 text-slate-400">{hotspotTab === 'rank' ? `${areaName}에 중심 관광지 순위 자료가 없습니다.` : `${areaName}에 표시할 관광 콘텐츠가 없습니다.`}</p>
           )}
-          <p className="mt-2 text-[10px] leading-4 text-slate-400">{hotspotTab === 'rank'
+          <p className="mt-2 text-[12px] leading-4 text-slate-400">{hotspotTab === 'rank'
             ? `한국관광공사 중심 관광지 순위 · 기준월 ${hubState.data?.baseYm.slice(0, 4)}.${hubState.data?.baseYm.slice(4)} · 숫자는 ${areaName} 안에서의 순번이며, 다른 관광지와의 연결 건수 기준입니다. 방문객 수나 인기 순위가 아닙니다.`
             : `한국관광공사 관광 콘텐츠 중 순위 자료가 없는 곳입니다. 순위가 있는 ${rankedHotspots.length}곳은 왼쪽 탭에 있습니다.`}</p>
-          {hubState.status === 'error' && <p className="mt-2 text-[10px] leading-4 text-amber-700">중심 관광지 순위 자료를 불러오지 못했습니다.</p>}
+          {hubState.status === 'error' && <p className="mt-2 text-[12px] leading-4 text-amber-700">중심 관광지 순위 자료를 불러오지 못했습니다.</p>}
           <DataNotice state={contentState}/>
           {contentState.data && <SourceNote data={contentState.data}/>}
         </div>
@@ -276,12 +279,12 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
       <div className="map-grid relative min-h-[460px] overflow-hidden bg-[#eef5f7]">
         <div className="absolute left-5 top-5 z-20 max-w-[300px] rounded-xl border border-white/80 bg-white/90 px-3 py-2 shadow-sm backdrop-blur">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Administrative coverage</p>
+            <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400">Administrative coverage</p>
             {status === 'loading' && <LoaderCircle size={12} className="animate-spin text-blue-500" aria-label="VWorld 연결 중" />}
-            {status === 'error' && <button type="button" onClick={retry} className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600" aria-label="VWorld 경계 다시 불러오기"><RefreshCw size={11} /> 재시도</button>}
+            {status === 'error' && <button type="button" onClick={retry} className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-600" aria-label="VWorld 경계 다시 불러오기"><RefreshCw size={11} /> 재시도</button>}
           </div>
           <p className="mt-0.5 text-xs font-bold text-slate-700">{source === 'vworld' ? 'VWorld 실시간' : `${STATIC_BOUNDARY_SOURCE_DATE} 기준`} <span className="text-blue-600">{district.nameKo} {neighborhoods.length}개 {boundaryKind}</span></p>
-          <p className={`mt-1 text-[9px] font-semibold ${statusTone}`}>{statusText}</p>
+          <p className={`mt-1 text-[12px] font-semibold ${statusTone}`}>{statusText}</p>
         </div>
 
         <div className="absolute right-4 top-4 z-30 flex flex-col gap-2">
@@ -383,9 +386,9 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
                   className="cursor-pointer"
                   animate={{ scale: active ? 1.16 : 1 }}
                 >
-                  {active && <circle r="18" fill={attraction.accent} opacity=".16"><animate attributeName="r" values="11;22" dur="1.8s" repeatCount="indefinite" /><animate attributeName="opacity" values=".32;0" dur="1.8s" repeatCount="indefinite" /></circle>}
-                  <circle r="10" fill={attraction.accent} stroke="white" strokeWidth="3" vectorEffect="non-scaling-stroke" />
-                  <path d="M0 -4.3C-2.6-4.3-4.5-2.5-4.5 0c0 3.3 4.5 7.4 4.5 7.4S4.5 3.3 4.5 0C4.5-2.5 2.6-4.3 0-4.3Z" fill="white" transform="scale(.62)" />
+                  {active && <circle r="14" fill={attraction.accent} opacity=".16"><animate attributeName="r" values="11;22" dur="1.8s" repeatCount="indefinite" /><animate attributeName="opacity" values=".32;0" dur="1.8s" repeatCount="indefinite" /></circle>}
+                  <circle r="7" fill={attraction.accent} stroke="white" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                  <path d="M0 -4.3C-2.6-4.3-4.5-2.5-4.5 0c0 3.3 4.5 7.4 4.5 7.4S4.5 3.3 4.5 0C4.5-2.5 2.6-4.3 0-4.3Z" fill="white" transform="scale(.45)" />
                 </motion.g>
               )
             })}
@@ -401,40 +404,41 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
               className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-[115%] rounded-xl border border-white bg-slate-950/90 px-3 py-2 text-white shadow-xl backdrop-blur"
               style={{ left: `${tooltip.x}%`, top: `${tooltip.y}%` }}
             >
-              <p className="text-[9px] font-bold text-blue-300">{hovered.properties.districtName}</p>
+              <p className="text-[12px] font-bold text-blue-300">{hovered.properties.districtName}</p>
               <p className="text-xs font-extrabold">{hovered.properties.name}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <motion.div className="absolute bottom-5 left-5 z-20 h-28 overflow-y-auto min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur">
+        <motion.div className="absolute bottom-5 left-5 z-20 max-h-28 overflow-y-auto max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-3 shadow-xl backdrop-blur">
           {focusedArea ? (
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</span>
-                <h4 className="mt-1 text-sm font-bold text-slate-800">{focusedArea.properties.districtName} · {focusedArea.properties.name}</h4>
-
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-950 text-[12px] font-bold text-white">{boundaryKind.slice(-1)}</span>
+              <span className="min-w-0">
+                <b className="block truncate text-sm font-bold text-slate-800">{focusedArea.properties.name}</b>
+                <span className="block text-[12px] text-slate-500">{focusedArea.properties.districtName} · {selected ? `관광지 ${areaHotspots.length}곳` : '클릭하면 선택 고정'}</span>
+              </span>
+              {selected && <button type="button" onClick={() => setSelected(null)} aria-label="선택 해제" className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200"><X size={14}/></button>}
             </div>
           ) : activeAttraction ? (
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: activeAttraction.accent }}>{activeAttraction.category}</span>
+                <span className="text-[12px] font-bold uppercase tracking-wider" style={{ color: activeAttraction.accent }}>{activeAttraction.category}</span>
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{activeAttraction.name}</h4>
-                <p className="mt-1 text-[10px] text-slate-400">{(activeAttraction as Hotspot).fromHub ? '한국관광공사 중심 관광지 좌표' : '한국관광공사 콘텐츠 좌표'}</p>
+                <p className="mt-1 text-[12px] text-slate-400">{(activeAttraction as Hotspot).fromHub ? '한국관광공사 중심 관광지 좌표' : '한국관광공사 콘텐츠 좌표'}</p>
               </div>
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><MapPin size={14} /></span>
             </div>
           ) : (
             <div>
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Administrative map</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400">Administrative map</span>
               <h4 className="mt-1 text-sm font-bold text-slate-800">{district.nameKo} {neighborhoods.length}개 {boundaryKind}</h4>
-              <p className="mt-1 text-[10px] text-slate-400">동을 클릭하면 선택한 지역이 여기에 표시됩니다.</p>
+              <p className="mt-1 text-[12px] text-slate-400">동을 클릭하면 선택한 지역이 여기에 표시됩니다.</p>
             </div>
           )}
         </motion.div>
 
-        <div className="absolute bottom-5 right-5 z-20 hidden rounded-full border border-white/80 bg-white/85 px-3 py-1.5 text-[9px] font-bold text-slate-500 shadow-sm backdrop-blur sm:block">
+        <div className="absolute bottom-5 right-5 z-20 hidden rounded-full border border-white/80 bg-white/85 px-3 py-1.5 text-[12px] font-bold text-slate-500 shadow-sm backdrop-blur sm:block">
           경계: {boundaryKind} · {Math.round(zoom * 100)}%
         </div>
       </div>

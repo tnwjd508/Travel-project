@@ -91,8 +91,8 @@ export function GwangjuDistrictMap({ selectedDistrict, onSelectDistrict, onConfi
         : 'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(37,99,235,.12),transparent_34%),linear-gradient(145deg,rgba(255,255,255,.96),rgba(239,246,255,.72))]'} />
       {isLanding && <div className="pointer-events-none absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/[.055]" />}
       <div className={isLanding
-        ? 'absolute left-5 top-5 z-20 rounded-full border border-[#F4C57A]/20 bg-[#0B1528]/85 px-3 py-1.5 text-[9px] font-bold tracking-[.08em] text-[#FFD89A] shadow-lg backdrop-blur'
-        : 'absolute left-5 top-5 z-20 rounded-full border border-blue-100 bg-white/90 px-3 py-1.5 text-[10px] font-bold text-blue-700 shadow-sm backdrop-blur'}>
+        ? 'absolute left-5 top-5 z-20 rounded-full border border-[#F4C57A]/20 bg-[#0B1528]/85 px-3 py-1.5 text-[12px] font-bold tracking-[.08em] text-[#FFD89A] shadow-lg backdrop-blur'
+        : 'absolute left-5 top-5 z-20 rounded-full border border-blue-100 bg-white/90 px-3 py-1.5 text-[12px] font-bold text-blue-700 shadow-sm backdrop-blur'}>
         광주광역시 · 5개 자치구
       </div>
 
@@ -173,7 +173,7 @@ export function GwangjuDistrictMap({ selectedDistrict, onSelectDistrict, onConfi
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className={isLanding ? 'pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-[calc(100%+12px)] rounded-lg border border-[#F4C57A]/20 bg-[#071020]/95 px-3 py-2 text-[10px] font-bold text-[#FFF9EE] shadow-xl' : 'pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-[calc(100%+12px)] rounded-lg bg-slate-950 px-3 py-2 text-[11px] font-bold text-white shadow-xl'}
+          className={isLanding ? 'pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-[calc(100%+12px)] rounded-lg border border-[#F4C57A]/20 bg-[#071020]/95 px-3 py-2 text-[12px] font-bold text-[#FFF9EE] shadow-xl' : 'pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-[calc(100%+12px)] rounded-lg bg-slate-950 px-3 py-2 text-[12px] font-bold text-white shadow-xl'}
           style={{ left: `${tooltip.x}%`, top: `${tooltip.y}%` }}
         >
           {hoveredName} 선택
@@ -183,7 +183,7 @@ export function GwangjuDistrictMap({ selectedDistrict, onSelectDistrict, onConfi
       <p className="sr-only" aria-live="polite">
         {selectedDistrict ? `${features.find(({ slug }) => slug === selectedDistrict)?.name ?? ''}가 선택되었습니다. 지역 현황 화면으로 이동합니다.` : '선택된 자치구가 없습니다.'}
       </p>
-      <p className={isLanding ? 'absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[.08] bg-[#0B1528]/88 px-4 py-2 text-[9px] font-semibold text-[#AAB4C5] shadow-lg backdrop-blur' : 'absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white bg-white/85 px-4 py-2 text-[10px] font-semibold text-slate-500 shadow-sm backdrop-blur'}>
+      <p className={isLanding ? 'absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[.08] bg-[#0B1528]/88 px-4 py-2 text-[12px] font-semibold text-[#AAB4C5] shadow-lg backdrop-blur' : 'absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white bg-white/85 px-4 py-2 text-[12px] font-semibold text-slate-500 shadow-sm backdrop-blur'}>
         자치구 모양을 클릭해 지역 현황으로 이동
       </p>
     </div>

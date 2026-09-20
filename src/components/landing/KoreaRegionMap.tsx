@@ -89,7 +89,7 @@ export function KoreaRegionMap({ regions, selectedId, onSelect }: KoreaRegionMap
             >
               {selected && <motion.span className="absolute h-10 w-10 rounded-full border border-[#FFD89A]/70" animate={{ scale: [1, 2.1], opacity: [.75, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }} />}
               <span className={`relative grid rounded-full border-2 transition-all duration-300 ${selected ? 'h-5 w-5 border-[#FFF9EE] bg-[#F4C57A] shadow-[0_0_8px_#F4C57A,0_0_24px_rgba(244,197,122,.75)]' : 'h-3 w-3 border-[#AAB4C5] bg-[#14233D] shadow-[0_0_10px_rgba(96,165,250,.28)] group-hover:border-[#F4C57A] group-hover:bg-[#F4C57A]'}`}><span className="m-auto h-1 w-1 rounded-full bg-white" /></span>
-              <span className={`pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/[.08] bg-[#071020]/90 px-2 py-1 text-[9px] font-semibold backdrop-blur transition-all ${selected ? 'translate-x-0 text-[#FFF9EE] opacity-100' : '-translate-x-1 text-[#AAB4C5] opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100'}`}>{region.nameKo}</span>
+              <span className={`pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-white/[.08] bg-[#071020]/90 px-2 py-1 text-[12px] font-semibold backdrop-blur transition-all ${selected ? 'translate-x-0 text-[#FFF9EE] opacity-100' : '-translate-x-1 text-[#AAB4C5] opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100'}`}>{region.nameKo}</span>
             </motion.button>
           </div>
         )
