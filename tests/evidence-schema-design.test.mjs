@@ -6,6 +6,8 @@ import { createHash, randomUUID } from 'node:crypto'
 import { PGlite } from '@electric-sql/pglite'
 
 const commit = 'f25dc8673420c451d3fdb4482fce5feb00a485f1'
+// Windows 체크아웃은 CRLF라 문자열 치환이 어긋난다. 읽을 때 LF로 맞춘다.
+const readSql = async url => (await readFile(url, 'utf8')).replace(/\r\n/g, '\n')
 const artifact = await readFile(new URL('./fixtures/festival-evidence-v1.json', import.meta.url))
 const payload = JSON.parse(artifact)
 const sha = createHash('sha256').update(artifact).digest('hex')
@@ -19,9 +21,9 @@ test('2026-09-20 evidence schema: real checked-in artifact, shared evidence, pri
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema auth to authenticated;`)
   for (const file of ['001_monthly_briefings.sql','002_monthly_briefing_jobs.sql','20260919115012_organization_scenarios.sql']) {
-    await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url),'utf8'))
+    await db.exec(await readSql(new URL(`../supabase/migrations/${file}`, import.meta.url)))
   }
-  await db.exec(await readFile(new URL('../docs/supabase-evidence-extension.proposed.sql', import.meta.url),'utf8'))
+  await db.exec(await readSql(new URL('../docs/supabase-evidence-extension.proposed.sql', import.meta.url)))
   await db.query('insert into auth.users values ($1),($2),($3)',[user,viewer,outsider])
   await db.query("insert into organizations(id,name) values ($1,'A'),($2,'B')",[org,other])
   await db.query("insert into organization_members(organization_id,user_id,role) values ($1,$2,'editor'),($1,$3,'viewer'),($4,$5,'editor')",[org,user,viewer,other,outsider])
@@ -143,7 +145,7 @@ test('2026-09-20 evidence schema: real checked-in artifact, shared evidence, pri
     await db.exec('reset role')
   })
   await t.test('v2 scope patch includes Songpa/Gangdong while retaining earlier review history', async () => {
-    const patch = await readFile(new URL('../docs/supabase-review-scope-fix.proposed.sql', import.meta.url),'utf8')
+    const patch = await readSql(new URL('../docs/supabase-review-scope-fix.proposed.sql', import.meta.url))
     const old = patch.replace("    or left(v_scenario.district_id,2) = '11'\n",'')
       .replace("in ('26','27','28','30','31')", "in ('11','26','27','28','30','31')")
       .replaceAll("'festival-reference-v2'", "'festival-reference-v1'")
