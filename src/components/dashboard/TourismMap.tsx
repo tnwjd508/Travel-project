@@ -209,11 +209,6 @@ export function TourismMap() {
             <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
             <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{areaName} {areaHotspots.length}곳</span>
           </div>
-          <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 rounded-xl bg-slate-50 px-3 py-2 text-[10px] text-slate-500">
-            <li className="flex items-center gap-1.5"><span className="grid h-4 w-4 place-items-center rounded bg-blue-600 text-[8px] font-bold text-white">1</span>순위 · 관광 콘텐츠</li>
-            <li className="flex items-center gap-1.5"><span className="grid h-4 w-4 place-items-center rounded bg-violet-600 text-[8px] font-bold text-white">1</span>순위 목록에만 있음</li>
-            <li className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: '#2563EB' }} />순위 자료 없음</li>
-          </ul>
           {selected && <button type="button" onClick={() => setSelected(null)} className="mt-2 min-h-11 w-full rounded-xl border border-blue-200 bg-blue-50 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100">{district.nameKo} 전체 보기</button>}
           {areaHotspots.length > 0 ? (
             <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
@@ -244,6 +239,11 @@ export function TourismMap() {
           ) : (
             <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{selected ? `${selected.properties.name}에 등록된 관광지가 없습니다.` : `${district.nameKo}에 표시할 관광지 좌표가 없습니다.`}</p>
           )}
+          <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 rounded-xl bg-slate-50 px-3 py-2 text-[10px] text-slate-500">
+            <li className="flex items-center gap-1.5"><span className="grid h-4 w-4 place-items-center rounded bg-blue-600 text-[8px] font-bold text-white">1</span>순위 · 관광 콘텐츠</li>
+            <li className="flex items-center gap-1.5"><span className="grid h-4 w-4 place-items-center rounded bg-violet-600 text-[8px] font-bold text-white">1</span>순위 목록에만 있음</li>
+            <li className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: '#2563EB' }} />순위 자료 없음</li>
+          </ul>
           {rankedCount > 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">숫자는 {areaName} 안에서의 중심 관광지 순위 {rankedCount}곳입니다{selected && `. 각 항목의 '${district.nameKo} N위'는 자치구 전체 순위입니다`}. 한국관광공사 기준월 {hubState.data?.baseYm.slice(0, 4)}.{hubState.data?.baseYm.slice(4)} · 다른 관광지와의 연결 건수 기준이며 방문객 수나 인기 순위가 아닙니다.</p>}
           {hubState.status === 'live' && rankedCount === 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">중심 관광지 순위 자료를 불러오지 못해 순위 없이 표시합니다.</p>}
           <DataNotice state={contentState}/>
