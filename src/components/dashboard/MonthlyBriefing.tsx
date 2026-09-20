@@ -5,6 +5,9 @@ import type { BriefingFestival, BriefingFinding, MonthlyBriefingData } from '@/t
 import { type RegionSelection } from '@/data/tourismRegions'
 import { loadMonthlyBriefing } from '@/lib/monthlyBriefingClient'
 
+// Collection diagnostics stay out of product UI, including local demos, unless explicitly enabled.
+const showDiagnostics = import.meta.env.DEV && import.meta.env.VITE_SHOW_DIAGNOSTICS === 'true'
+
 function completedMonths() {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
   return Array.from({ length: 24 }, (_, index) => {
@@ -33,11 +36,11 @@ function FestivalList({ title, festivals, failed }: { title: string; festivals: 
 }
 
 function Finding({ finding, data, recommendation = false }: { finding: BriefingFinding; data: MonthlyBriefingData; recommendation?: boolean }) {
-  const labels = [...new Set(finding.evidenceIds.map((id) => data.evidence.find((item) => item.id === id)?.label).filter(Boolean))]
+  const labels = showDiagnostics ? [...new Set(finding.evidenceIds.map((id) => data.evidence.find((item) => item.id === id)?.label).filter(Boolean))] : []
   return <article className={`rounded-xl p-4 ${recommendation ? 'bg-orange-50 ring-1 ring-orange-100' : 'bg-blue-50/60'}`}>
     <h4 className="flex items-center gap-2 text-xs font-bold text-slate-900">{recommendation && <Check size={14} className="shrink-0 text-orange-600" aria-hidden="true" />}{finding.title}</h4>
     <p className="mt-2 text-xs leading-6 text-slate-600">{finding.description}</p>
-    <p className="mt-2 text-[10px] leading-5 text-slate-500">근거: {labels.join(' · ')}</p>
+    {showDiagnostics && <p className="mt-2 text-[10px] leading-5 text-slate-500">근거: {labels.join(' · ')}</p>}
   </article>
 }
 
@@ -82,7 +85,7 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
     <header className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-5">
       <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><Sparkles size={18} aria-hidden="true" /></span>
       <div><p className="text-[10px] font-semibold uppercase tracking-[.15em] text-blue-600">Monthly briefing</p><h2 id="briefing-title" className="mt-0.5 text-lg font-bold tracking-[-.03em] text-slate-950">{districtName} 월간 브리핑</h2></div>
-      {data && <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${data.aiStatus === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{data.aiStatus === 'ready' ? 'Gemini 분석' : data.aiStatus === 'partial' ? 'AI 일부 분석' : '수집 근거만 표시'}</span>}
+      {data && <span className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${data.aiStatus === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{data.aiStatus === 'ready' ? 'AI 분석' : data.aiStatus === 'partial' ? 'AI 일부 분석' : 'AI 분석 이용 불가'}</span>}
       <label className="ml-auto flex items-center gap-2 text-xs font-medium text-slate-500">진단 월
         <select value={month} onChange={(event) => { setMonth(event.target.value); setRetry(0) }} className="min-h-11 rounded-lg border border-slate-200 bg-white px-3 text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
           {months.map((value) => <option key={value} value={value}>{value.replace('-', '년 ')}월</option>)}
@@ -96,32 +99,32 @@ export function RegionMonthlyBriefing({ selection, districtName }: { selection: 
     {data && <>
       {data.storage && <p className="mt-4 text-xs text-slate-500">저장된 월간 브리핑 · {new Date(data.storage.savedAt).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })} 저장 · 해당 진단 월에는 다시 생성하지 않습니다.</p>}
       <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-        <h3 className="text-xs font-bold text-slate-900">{data.diagnosis ? '월간 AI 요약' : '자료 수집 결과'}</h3>
-        <p className="mt-2 text-sm leading-7 text-slate-700">{data.diagnosis?.summary ?? 'AI 진단이 생성되지 않았습니다. 아래에서 실제 수집된 근거와 축제 정보를 확인할 수 있습니다.'}</p>
-        <p className="mt-2 text-[10px] leading-5 text-slate-500">{data.month} 통계 · {data.sources.filter((source) => source.status === 'ready').length}/{data.sources.length}개 API 수집 완료 · 생성 {new Date(data.generatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
+        <h3 className="text-xs font-bold text-slate-900">{data.diagnosis ? '월간 AI 요약' : '월간 브리핑'}</h3>
+        <p className="mt-2 text-sm leading-7 text-slate-700">{data.diagnosis?.summary ?? '현재 AI 분석을 이용할 수 없습니다. 축제 정보는 아래에서 확인할 수 있습니다.'}</p>
+        <p className="mt-2 text-[10px] leading-5 text-slate-500">{data.month} 통계 · 생성 {new Date(data.generatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
       </div>
       <div className="grid gap-6 pt-6 lg:grid-cols-2">
-        <div className="order-1"><h3 className="text-xs font-bold text-slate-900">핵심 진단</h3><div className="mt-3 space-y-3">
-          {data.diagnosis?.findings.map((finding, index) => <Finding key={index} finding={finding} data={data} />)}
-          {!data.diagnosis && <p className="text-xs leading-6 text-slate-500">확인되지 않은 진단이나 예상 효과를 표시하지 않습니다.</p>}
-        </div></div>
+        {data.diagnosis && <div className="order-1"><h3 className="text-xs font-bold text-slate-900">핵심 진단</h3><div className="mt-3 space-y-3">
+          {data.diagnosis.findings.map((finding, index) => <Finding key={index} finding={finding} data={data} />)}
+        </div></div>}
         <div className="order-3 grid gap-5 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:col-span-2">
           <FestivalList title="최근 종료된 축제" festivals={data.festivals.recent} failed={festivalIncomplete} />
           <FestivalList title="저장 당시 예정 축제" festivals={data.festivals.upcoming} failed={festivalIncomplete} />
           <p className="text-[10px] leading-5 text-slate-400 sm:col-span-2">{data.festivalAsOf} 한국 날짜 기준 · 최근 1년 종료 / 예정 시작 90일 · 각각 최대 3개 · 한국관광공사 TourAPI<br />최근 2년 시작 행사 조회. 예정 일정은 변경될 수 있습니다.{festivalIncomplete && ' 일부 수집으로 목록이 완전하지 않을 수 있습니다.'}</p>
         </div>
-        <div className="order-2"><h3 className="text-xs font-bold text-slate-900">AI 추천 검토사항</h3><div className="mt-3 space-y-3">
-          {data.diagnosis?.recommendations.map((finding, index) => <Finding key={index} finding={finding} data={data} recommendation />)}
-          {!data.diagnosis?.recommendations.length && <p className="text-xs leading-6 text-slate-500">{data.diagnosis ? '제안을 작성할 근거가 충분하지 않습니다.' : 'AI 진단이 생성되면 수집 근거와 연결된 검토사항을 제공합니다.'}</p>}
-        </div></div>
+        {data.diagnosis && <div className="order-2"><h3 className="text-xs font-bold text-slate-900">AI 추천 검토사항</h3><div className="mt-3 space-y-3">
+          {data.diagnosis.recommendations.map((finding, index) => <Finding key={index} finding={finding} data={data} recommendation />)}
+          {!data.diagnosis.recommendations.length && <p className="text-xs leading-6 text-slate-500">제안을 작성할 근거가 충분하지 않습니다.</p>}
+        </div></div>}
       </div>
 
-      <details className="mt-6 border-t border-slate-100 pt-4">
+      {showDiagnostics && <details className="mt-6 border-t border-slate-100 pt-4">
         <summary className="cursor-pointer py-2 text-xs font-bold text-slate-700">수집 근거와 API 상태 보기 ({data.evidence.length}개 근거)</summary>
+        <p className="mt-2 text-[10px] text-slate-500">{data.sources.filter((source) => source.status === 'ready').length}/{data.sources.length}개 API 수집 완료</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">{data.sources.map((source) => <div key={source.id} className="rounded-xl border border-slate-100 p-3 text-xs"><p className="font-semibold text-slate-800">{source.label} · {statusLabels[source.status]} · {source.count}행</p>{source.note && <p className="mt-1 leading-5 text-slate-500">{source.note}</p>}</div>)}</div>
         <dl className="mt-4 space-y-3">{data.evidence.map((item) => <div key={item.id} className="rounded-xl bg-slate-50 p-3"><dt className="text-xs font-semibold text-slate-800">{item.label}: {item.value}</dt><dd className="mt-1 text-[11px] leading-5 text-slate-500">{item.period} · {item.note}</dd></div>)}</dl>
-      </details>
-      {(data.warnings.length > 0 || Boolean(data.diagnosis?.limitations.length)) && <div className="mt-4 rounded-xl bg-amber-50/70 p-4 text-[11px] leading-6 text-amber-900"><p className="font-bold">자료와 해석의 한계</p><ul className="mt-1 list-disc space-y-1 pl-4">{[...data.warnings, ...(data.diagnosis?.limitations ?? [])].map((warning, index) => <li key={index}>{warning}</li>)}</ul></div>}
+        {(data.warnings.length > 0 || Boolean(data.diagnosis?.limitations.length)) && <div className="mt-4 rounded-xl bg-amber-50/70 p-4 text-[11px] leading-6 text-amber-900"><p className="font-bold">자료와 해석의 한계</p><ul className="mt-1 list-disc space-y-1 pl-4">{[...data.warnings, ...(data.diagnosis?.limitations ?? [])].map((warning, index) => <li key={index}>{warning}</li>)}</ul></div>}
+      </details>}
     </>}
   </section>
 }

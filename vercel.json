@@ -5,7 +5,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/monthly-briefing.ts": { "maxDuration": 300 }
+    "api/monthly-briefing.ts": { "maxDuration": 300 },
+    "api/scenarios/[id]/reviews.ts": { "maxDuration": 90 }
   },
   "rewrites": [
     {

@@ -26,3 +26,17 @@ def test_full_month_and_duplicate():
     assert sum_visitors(rows + [rows[0]], 'donggu', '202607')['total'] == 930
     with pytest.raises(ApiError):
         sum_visitors(rows + [dict(rows[0], touNum='9')], 'donggu', '202607')
+
+
+def test_concentration_not_judged_with_fewer_than_four_hubs():
+    from backend.diagnosis import diagnose
+    meta = dict(district='gwangsangu', baseYm='202608', warnings=[])
+    summary = dict(meta, age=dict(momPct=0), stay=dict(ix2102=100), spend=dict(ix22=100))
+    indices = dict(meta, groups=dict(demand={}, culture={}, spend={}, stay={}, international={}))
+    hub = lambda share: dict(tAtsCd=str(share), name='hub', relatedCount=1, share=share)
+    few = diagnose(summary, indices, dict(meta, hubs=[hub(50), hub(30), hub(20)], top3Share=100))
+    concentration = next(i for i in few['issues'] if i['id'] == 'concentration')
+    assert concentration['status'] == 'unknown' and concentration['value'] == 100
+    assert few['priorities'] == []
+    enough = diagnose(summary, indices, dict(meta, hubs=[hub(40), hub(20), hub(10), hub(30)], top3Share=90))
+    assert next(i for i in enough['issues'] if i['id'] == 'concentration')['status'] == 'attention'

@@ -1,6 +1,9 @@
 """Versioned provisional rules; no fabricated values, predictions or normal-state tasks."""
 from .core import meta
 
+# 상위 3개 비중은 연관 관광지가 3곳 이하이면 항상 100%가 되므로 4곳 이상일 때만 판정한다.
+MIN_HUBS_FOR_CONCENTRATION = 4
+
 MODEL = dict(version='draft-1', status='provisional', description='정책 검토용 자체 규칙입니다. 인과 추정·방문자 예측·공식 관광 활성화 지수가 아닙니다.')
 
 
@@ -15,10 +18,15 @@ def diagnose(summary, indices, related):
         ('concentration', '상위 3개 관광지 연관 건수 비중', related['top3Share'], 'percent', lambda v: v > 60, '연관 관광지 네트워크와 코스 다양화 검토'),
         ('spend', '관광소비강도 지수', summary['spend']['ix22'], 'index', lambda v: v < 80, '관광·상권 소비 연결 프로그램 검토'),
     ]
+    hubs = related.get('hubs')
+    too_few_hubs = hubs is not None and len(hubs) < MIN_HUBS_FOR_CONCENTRATION
     issues, priorities = [], []
     for code, label, value, unit, attention, task in inputs:
         state = 'unknown' if value is None else 'attention' if attention(value) else 'normal'
         evidence = f'{label}: 데이터 부족' if value is None else f'{label}: {value:.2f}{"%" if unit == "percent" else " (지수)"}; 기준월 {summary["baseYm"]}'
+        if code == 'concentration' and value is not None and too_few_hubs:
+            state = 'unknown'
+            evidence = f'{label}: 연관 관광지 {len(hubs)}곳으로 판정 불가 (4곳 이상 필요); 기준월 {summary["baseYm"]}'
         issues.append(dict(id=code, label=label, value=value, unit=unit, status=state, evidence=evidence))
         if state == 'attention' and len(priorities) < 3:
             priorities.append(dict(issueId=code, title=task, evidence=evidence))

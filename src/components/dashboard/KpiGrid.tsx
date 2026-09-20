@@ -1,10 +1,13 @@
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
 import { useDistrictResource } from '@/hooks/useDistrictResource'
 import { DataNotice, SourceNote, formatValue } from './DataNotice'
+import type { SummaryResponse } from '@/types/district'
 
-export function KpiGrid() {
+type SummaryState = { status: string; data: SummaryResponse | null; error: string; retry: () => void }
+export function KpiGrid({ state: supplied }: { state?: SummaryState }) {
   const district = useActiveDistrict()
-  const state = useDistrictResource('summary', { district: district.slug })
+  const live = useDistrictResource('summary', { district: district.slug }, supplied === undefined)
+  const state = supplied ?? live
   const summary = state.data
   const kpis = summary ? [
     { label: '일별 방문 추정치 월 합계', value: summary.visitors.total, unit: '일별 추정치 합산', note: `기준월 ${summary.visitors.month} · 전월 대비 ${summary.visitors.momPct == null ? '자료 없음' : `${summary.visitors.momPct > 0 ? '+' : ''}${summary.visitors.momPct}%`}`, decimals: 0 },
