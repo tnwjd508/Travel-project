@@ -1,24 +1,24 @@
-import { MapPin, RotateCcw } from 'lucide-react'
+import { MapPin, RotateCcw, Settings } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigation'
+import { getDashboardMenuItems, reviewSearch } from '@/components/dashboard/DashboardNavigation'
 import { cn } from '@/utils/cn'
-import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ onOpenSettings }: { onOpenSettings: () => void }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const district = useActiveDistrict()
-  const dashboardMenuItems = getDashboardMenuItems(district.slug)
+  const district = useDashboardRegion()
+  const dashboardMenuItems = getDashboardMenuItems(district.slug, district.regionId)
 
   const isItemActive = (path: string) => location.pathname === path
 
   return (
-    <aside className="fixed bottom-0 left-0 top-[72px] z-30 hidden w-[230px] flex-col overflow-y-auto border-r border-slate-200 bg-white px-4 py-5 lg:flex" aria-label="광주 관광전략 사이드바">
-      <nav className="space-y-1" aria-label="광주 관광전략 카테고리">
+    <aside className="fixed bottom-0 left-0 top-[72px] z-30 hidden w-[230px] flex-col overflow-y-auto border-r border-slate-200 bg-white px-4 py-5 lg:flex" aria-label="지역 관광전략 사이드바">
+      <nav className="space-y-1" aria-label="지역 관광전략 카테고리">
         {dashboardMenuItems.map(({ label, path, icon: Icon }) => (
           <NavLink
             key={path}
-            to={path}
+            to={path + reviewSearch(location.search)}
             aria-current={isItemActive(path) ? 'page' : undefined}
             className={() => cn(
               'flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500',
@@ -32,9 +32,14 @@ export function DashboardSidebar() {
 
       <div className="mt-auto space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5">
-          <div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white text-blue-600 shadow-sm"><MapPin size={15} aria-hidden="true" /></span><div><p className="text-[9px] font-medium text-slate-400">현재 지역</p><p className="text-xs font-bold text-slate-800">광주광역시 {district.nameKo}</p></div></div>
-          <button type="button" onClick={() => navigate('/regions/gwangju')} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white text-[11px] font-semibold text-blue-600 outline-none transition hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-blue-500"><RotateCcw size={14} />자치구 다시 선택</button>
+          <div className="flex items-center gap-2"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white text-blue-600 shadow-sm"><MapPin size={15} aria-hidden="true" /></span><div><p className="text-[9px] font-medium text-slate-400">현재 지역</p><p className="text-xs font-bold text-slate-800">{district.regionName} {district.nameKo}</p></div></div>
+          <button type="button" onClick={() => navigate(district.selectionPath)} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white text-[11px] font-semibold text-blue-600 outline-none transition hover:bg-blue-50 focus-visible:ring-2 focus-visible:ring-blue-500"><RotateCcw size={14} />자치구 다시 선택</button>
           <button type="button" onClick={() => navigate('/')} className="mt-2 flex min-h-10 w-full items-center justify-center rounded-xl text-[10px] font-semibold text-slate-400 outline-none transition hover:bg-white hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-blue-500">광역 지역 다시 선택</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={onOpenSettings} aria-haspopup="dialog" className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[11px] font-medium text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="설정"><Settings size={14} />설정</button>
+
         </div>
 
         <div className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 text-white">

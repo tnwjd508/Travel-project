@@ -92,18 +92,9 @@ test('7월 자원 수요 수집은 개편 전 코드로 요청하고 동일 코�
   assert.equal(result.evidence[0].value, '5')
 })
 
-test('브리핑 서비스는 지역별 캐시를 분리하고 캐시 적중 전에도 시도 소속을 검증한다', async () => {
+test('브리핑은 DB 조회 전에 시도 소속과 요청 형식을 검증한다', async () => {
   let calls = 0
-  const service = createBriefingService({ TOUR_API_SERVICE_KEY: 'test-key' }, async context => {
-    calls++
-    return { district: context.district, month: context.month, aiStatus: 'unavailable', sources: [] }
-  })
-  for (const [region, code] of [['seoul', '11110'], ['busan', '26110'], ['seoul', '11110']]) {
-    const result = await service('GET', new URLSearchParams({ regionId: region, district: code }))
-    assert.equal(result.status, 200)
-    assert.equal(result.body.district, code)
-  }
-  assert.equal(calls, 2)
+  const service = createBriefingService({}, async () => { calls++; throw new Error('호출 금지') })
   for (const query of ['regionId=busan&district=11110', 'regionId=seoul', 'district=11110&district=26110', 'district=11110&serviceKey=bad']) assert.equal((await service('GET', new URLSearchParams(query))).status, 400)
-  assert.equal(calls, 2)
+  assert.equal(calls, 0)
 })

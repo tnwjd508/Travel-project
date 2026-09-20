@@ -2,10 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { PolicyDuration, PolicyId } from '@/data/policies'
 import type { DistrictSlug } from '@/data/gwangjuDistricts'
+import type { DistrictId } from '@/data/tourismRegions'
 
-// 입력 조건만 저장한다. 효과 수치는 화면에서 근거 자료(festival-effect.json)로 계산한다.
+// 입력 조건만 저장한다. 분석 근거와 저장된 검토는 서버에서 조회한다.
 export interface SimulationScenario {
-  district: DistrictSlug
+  district: DistrictId
   policy: PolicyId
   budget: number
   duration: PolicyDuration
@@ -27,7 +28,7 @@ interface TourismStrategyState {
   setBudget: (budget: number) => void
   setDuration: (duration: PolicyDuration) => void
   clearSimulationResult: () => void
-  completeSimulation: (district: DistrictSlug) => void
+  completeSimulation: (district: DistrictId) => void
 }
 
 export const useTourismStrategyStore = create<TourismStrategyState>()(
@@ -59,7 +60,10 @@ export const useTourismStrategyStore = create<TourismStrategyState>()(
     }),
     {
       name: 'ongil-tourism-strategy',
-      version: 4,
+      version: 5,
+      // Persist only input preferences. Saved records are retrieved by server ID.
+      partialize: (state) => ({ selectedRegion: state.selectedRegion, selectedProvince: state.selectedProvince,
+        selectedDistrict: state.selectedDistrict, selectedPolicy: state.selectedPolicy, budget: state.budget, duration: state.duration }),
       // 이전 버전에 저장된 결과(고정 예측값·모델 상태)는 버린다.
       migrate: (persisted) => {
         const next: Record<string, unknown> = { ...(persisted as Record<string, unknown> | undefined), simulationResult: null }

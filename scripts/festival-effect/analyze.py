@@ -29,7 +29,10 @@ def is_metro_gu(code):
     """특별·광역시의 자치구(군 제외, 군 코드는 x710 이상). 통합 코드 12는 옛 광주 5개 구만."""
     if code[:2] == '12':
         return code in GWANGJU
-    return code[:2] in ('11', '26', '27', '28', '30', '31') and int(code[2:]) < 700
+    # 서울 송파구(11710), 강동구(11740)는 군 코드 범위와 겹치지만 자치구다.
+    if code[:2] == '11':
+        return True
+    return code[:2] in ('26', '27', '28', '30', '31') and int(code[2:]) < 700
 
 
 def load_visits():

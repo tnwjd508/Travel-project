@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022", "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "NodeNext", "moduleResolution": "NodeNext", "strict": true,
-    "skipLibCheck": true, "outDir": ".test-build", "rootDir": "."
+    "skipLibCheck": true, "resolveJsonModule": true, "outDir": ".test-build", "rootDir": "."
   },
-  "include": ["server/**/*.ts", "api/**/*.ts", "src/types/district.ts"]
+  "include": ["server/**/*.ts", "api/**/*.ts", "src/types/district.ts", "src/data/dashboardRegions.ts", "src/data/festivalEffect.ts", "src/lib/monthlyBriefingClient.ts"]
 }

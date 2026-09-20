@@ -1,5 +1,9 @@
 # ON:GIL · FastAPI + React 실행 및 인수
 
+현재 Vercel 배포 파일은 [통합 컨테이너 구성](docs/vercel-container-deployment.md)으로 준비돼 있다. 실제 이미지 빌드·배포는 별도 단계다. 로컬 `npm run dev` 동작은 유지한다.
+
+2026-09-20 최신 로컬 통합 상태와 후속 작업은 [FastAPI 구현 방향](docs/fastapi-implementation-plan.md)을 우선 참조한다. 아래에는 초기 통합 당시의 구현 범위·검증 기록이 포함돼 있다.
+
 ## 반영한 저장소 상태
 
 **2026-09-18 통합:** 팀원 PR #7 `work-from-main`의 `888a93b`를 로컬 `JSBbranch`에 병합했다. 전국 화면과 LangGraph 코드를 보존하면서 FastAPI에 전국 코드 지원과 월간 브리핑 워커 연결을 추가했다. 현재 변경·검증·운영 한계는 [PR #7 통합 기록](docs/팀원_PR7_FastAPI_통합_기록.md)을 참고한다. 아래 2026-09-17 항목은 최초 구현 기록이다.
@@ -52,6 +56,7 @@ macOS/Linux에서는 `.venv/Scripts/python.exe` 대신 `.venv/bin/python`을 사
 
 - API 문서: `http://127.0.0.1:8000/docs`
 - 상태: `http://127.0.0.1:8000/api/health`
+- 월간 브리핑의 원시 근거·API 수집 상태·상세 경고는 기본 화면에서 숨긴다. 개발 시 `VITE_SHOW_DIAGNOSTICS=true`로 Vite를 시작한 경우에만 표시하며, 프로덕션 빌드에서는 이 값과 관계없이 숨긴다. 요약·진단·추천·축제 정보와 필요한 출처·날짜는 유지한다.
 - 예: `/api/district/summary?district=donggu`, `/api/district/summary?district=all`
 - 상세 파라미터·응답 의미: [BACKEND_API.md](BACKEND_API.md), [src/types/district.ts](src/types/district.ts)
 
@@ -90,7 +95,7 @@ node scripts/smoke-district.mjs --base-url http://localhost:5173 --full-history
 - 동구 확인값: 202607 방문 추정치 합계 `5,304,194.08`, 202608 체류강도 `72.15`, 관광 콘텐츠 124건, 전국 관측 256개 시군구 중 체류지수 137위.
 - 실제 브라우저에서 지역 진입, 분석 탭, 지도, 진단, 요청 시 순위, 보고서 생성/인쇄 버튼과 동구→서구 전환을 확인했다. 390px 모바일 개요·분석 화면에서 가로 넘침이 없었다.
 
-## 운영 실행과 배포 경계
+## 단독·분리 운영 참고 (현재 Vercel 구성은 위 컨테이너 안내 참조)
 
 단독 서버는 `npm run build` 후 `python -m backend.run`으로 React와 API를 같은 출처에서 제공한다. `/dashboard/gwangju/donggu/overview` 직접 접근도 지원한다. 외부 제공 시 서비스 관리자의 재시작 설정, HTTPS reverse proxy와 요청 제한을 구성한다. `--reload`는 개발 전용이다.
 

@@ -16,7 +16,8 @@ class BriefingWorker:
         self.command = command or [settings.get('NODE_EXECUTABLE') or shutil.which('node') or 'node', '--import', 'tsx', 'server/briefing/bridge.ts']
         runtime_keys = {'PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'NODE_EXTRA_CA_CERTS'}
         self.env = {k: v for k, v in os.environ.items() if k in runtime_keys}
-        self.env.update({k: settings[k] for k in ('TOUR_API_SERVICE_KEY', 'GEMINI_API_KEY', 'GEMINI_MODEL') if settings.get(k)})
+        # Supabase 서버 키는 브라우저 대신 월간 브리핑 워커에만 전달합니다.
+        self.env.update({k: settings[k] for k in ('TOUR_API_SERVICE_KEY', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY') if settings.get(k)})
         self.process, self.reader = None, None
         self.pending, self.sequence = {}, 0
         self.lock = asyncio.Lock()
@@ -68,8 +69,8 @@ class BriefingWorker:
         try:
             self.process.stdin.write((json.dumps(dict(id=identifier, method=method, query=query)) + '\n').encode())
             await self.process.stdin.drain()
-            # The team's graph deadline is 240s; the UI deadline is 260s.
-            async with asyncio.timeout(250):
+            # 수집·생성뿐 아니라 마지막 DB 저장 응답까지 기다립니다.
+            async with asyncio.timeout(285):
                 return await future
         except TimeoutError:
             raise ApiError(504, 'BRIEFING_TIMEOUT', '월간 브리핑 생성 시간이 초과되었습니다. 다시 시도하세요.') from None

@@ -2,8 +2,7 @@ import { createInterface } from 'node:readline'
 import { createBriefingService } from './service.js'
 import { createBriefingBudget } from './budget.js'
 
-// Keep the team's service instance alive: its cache, coalescing and two-job limit
-// must survive individual FastAPI requests. Stdio never contains credentials.
+// FastAPI가 월별 DB 저장 서비스를 같은 워커로 실행합니다. 표준 출력에 키를 기록하지 않습니다.
 const service = createBriefingService(process.env)
 const budget = createBriefingBudget(globalThis.fetch)
 globalThis.fetch = budget.fetch

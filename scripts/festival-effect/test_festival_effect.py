@@ -10,6 +10,8 @@ from merge_festivals import code_from_address, deduplicate  # noqa: E402
 
 def test_metro_gu_includes_all_city_districts_and_only_gwangju_in_merged_province():
     assert is_metro_gu('11680')  # 서울 강남구 (예전 버그: 코드 400 이상 구가 빠짐)
+    assert is_metro_gu('11710')  # 서울 송파구: 군 코드 범위로 오인하면 안 됨
+    assert is_metro_gu('11740')  # 서울 강동구
     assert is_metro_gu('12210')  # 광주 동구
     assert not is_metro_gu('12130')  # 전남 여수시 (예전 버그: 광역시 구로 섞임)
     assert not is_metro_gu('26710')  # 부산 기장군
