@@ -57,7 +57,7 @@ export function RegionRadar({ data }: { data?: DiagnosisResponse }) {
 function RankList({ title, rows, unit, decimals }: { title: string; rows: { label: string; value: number }[]; unit: string; decimals: number }) {
   if (!rows.length) return null
   return <div>
-    <p className="mb-2 text-[12px] font-bold text-slate-600">{title}</p>
+    <p className="-mt-3 mb-2 text-[12px] font-bold text-slate-600">{title}</p>
     <ol className="space-y-1.5">
       {rows.map((row, index) => (
         <li key={row.label} className={`flex items-center gap-2 rounded-xl px-3 py-2 ${index === 0 ? 'bg-blue-50' : 'bg-slate-50'}`}>
