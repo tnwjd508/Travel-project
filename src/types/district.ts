@@ -22,6 +22,13 @@ export interface VisitorsResponse extends DistrictMeta {
   metric: 'sum_of_daily_estimated_visitors'
   series: VisitorMonth[]
   previousYear: VisitorMonth[]
+  collection: {
+    status: 'ready' | 'missing' | 'collecting' | 'error'
+    missingMonths: string[]
+    activeMonth: string | null
+    failedMonths: string[]
+    message?: string
+  }
 }
 export interface SummaryResponse extends DistrictMeta {
   district: DistrictSlug

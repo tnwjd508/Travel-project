@@ -26,10 +26,11 @@ order by routine_name;
 
 1. FastAPI는 요청한 현재 12개월과 전년 동월 12개월을 Supabase에서 한 번에 조회한다.
 2. 저장된 월은 외부 API를 호출하지 않는다.
-3. 누락 월이 있으면 공개 요청 한 번당 최신 누락 월 하나만 수집한다.
-4. 한 달 전국 응답을 성공적으로 받으면 모든 지자체의 월별 집계를 한 RPC로 저장한다.
-5. 외부 API가 실패하면 저장된 월은 계속 반환하고 나머지는 결측으로 표시한다.
-6. 부분 수집 월은 `complete=false`, 합계는 NULL로 유지하여 완전한 월간 방문자 수처럼 표시하지 않는다.
+3. GET은 저장 월과 누락 월, 진행 중인 작업을 반환한다.
+4. 프런트는 누락 월이 있으면 POST로 전국 한 달 수집을 자동 시작한다.
+5. 서버는 같은 월을 한 번만 선점하며 성공한 원본 페이지와 모든 지자체 집계를 저장한다.
+6. 저장되지 않은 월은 수집되는 동안 결측으로 유지하고 완료될 때마다 차트를 갱신한다.
+7. 부분 수집 월은 `complete=false`, 합계는 NULL로 유지하여 완전한 월간 방문자 수처럼 표시하지 않는다.
 
 테이블과 RPC는 서버 secret/service role만 사용한다. 브라우저의 `anon`·`authenticated` 역할에는 테이블 및 함수 권한이 없다.
 
@@ -39,10 +40,10 @@ order by routine_name;
 
 ```powershell
 # 호출 없이 대상 월만 확인
-& .venv/Scripts/python.exe -m backend.backfill_visitors --from-month 2025-08 --to-month 2026-07
+& .venv/Scripts/python.exe -m backend.backfill_visitors --from-month 2024-08 --to-month 2026-07
 
 # API와 Supabase 설정을 확인한 뒤 실제 수집·저장
-& .venv/Scripts/python.exe -m backend.backfill_visitors --from-month 2025-08 --to-month 2026-07 --delay-seconds 2 --apply
+& .venv/Scripts/python.exe -m backend.backfill_visitors --from-month 2024-08 --to-month 2026-07 --delay-seconds 2 --apply
 ```
 
 백필은 저장된 서울 종로구 행으로 해당 전국 월의 완료 여부를 확인하고, 완전하게 저장된 월은 건너뛴다. 부분 수집 월은 다시 조회해 관측 일수가 늘어나면 갱신한다. 중간에 호출 제한이 발생하면 중단되며, 제한이 풀린 뒤 같은 명령을 다시 실행하면 완료 월을 건너뛰며 재개한다.

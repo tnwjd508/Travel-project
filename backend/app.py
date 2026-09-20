@@ -64,7 +64,9 @@ def create_app(settings=None, transport=None):
                 return JSONResponse({'code': 'UNAUTHORIZED', 'message': '서버 인증이 필요합니다.'}, status_code=401,
                     headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
         fresh = trace.set(Freshness())
-        limit = budget.set(Budget())
+        visitor_collection = request.url.path == '/api/district/visitors/collect'
+        limit = budget.set(Budget(maximum=100 if visitor_collection else 80,
+            deadline=time.monotonic() + (270 if visitor_collection else 25)))
         try:
             response = await call_next(request)
             response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -118,21 +120,40 @@ def create_app(settings=None, transport=None):
             headers['Retry-After'] = '30'
         return JSONResponse(result['body'], status_code=result['status'], headers=headers)
 
+    @app.post('/api/district/visitors/collect', tags=['자치구'], description='저장되지 않은 전국 방문자 월 한 건을 선점해 수집합니다.')
+    async def collect_visitors(request: Request, district: str = 'donggu', baseYm: str | None = None,
+        months: int | None = None, regionId: str | None = None):
+        query = parse_query('visitors', list(request.query_params.multi_items()), env)
+        request.state.base_ym = query['baseYm']
+        if not env.get('TOUR_API_SERVICE_KEY', '').strip():
+            raise ApiError(503, 'MISSING_KEY', 'TOUR_API_SERVICE_KEY 환경변수가 필요합니다.')
+        try:
+            async with asyncio.timeout(285):
+                result = await app.state.service.collect_next_visitor_month(query['district'], query['baseYm'], query['months'])
+        except TimeoutError:
+            raise ApiError(504, 'REQUEST_TIMEOUT', '방문자 자료 수집 시간이 초과되었습니다.') from None
+        state = result.get('state')
+        status = 200 if state in ('ready', 'completed') else 202 if state in ('generating', 'busy') else 429
+        headers = {'Cache-Control': 'no-store'}
+        if status == 202: headers['Retry-After'] = '5' if state == 'generating' else '30'
+        if status == 429: headers['Retry-After'] = '300'
+        return JSONResponse(result, status_code=status, headers=headers)
+
     @app.get('/api/district/{resource}', tags=['자치구'], description='summary, visitors, indices, contents, festivals, related, rank, diagnosis, hubs. district는 /api/regions의 시군구 ID 또는 기존 광주 영문 별칭. summary의 all은 광주 5개 구만 의미합니다.')
     async def district_api(request: Request, resource: str, district: str = 'donggu', baseYm: str | None = None,
         visitorYm: str | None = None, months: int | None = None, metric: str | None = None,
         contentTypeId: str | None = None, from_date: str | None = Query(None, alias='from'), regionId: str | None = None):
         query = parse_query(resource, list(request.query_params.multi_items()), env)
         request.state.base_ym = query['baseYm']
-        if not env.get('TOUR_API_SERVICE_KEY', '').strip():
-            raise ApiError(503, 'MISSING_KEY', 'TOUR_API_SERVICE_KEY 환경변수가 필요합니다.')
         try:
             async with asyncio.timeout(25):
                 value = await app.state.service.execute(query)
         except TimeoutError:
             raise ApiError(502, 'REQUEST_TIMEOUT', '데이터 수집 시간 한도를 초과했습니다.') from None
         remaining = max(0, min(TTL[resource], math.floor(trace.get().expires - time.time())))
-        return JSONResponse(value, headers={'Cache-Control': f'public, max-age=0, s-maxage={remaining}, must-revalidate'})
+        headers = {'Cache-Control': 'no-store'} if resource == 'visitors' else {
+            'Cache-Control': f'public, max-age=0, s-maxage={remaining}, must-revalidate'}
+        return JSONResponse(value, headers=headers)
 
     @app.get('/api/tourism', tags=['관광 콘텐츠'])
     async def tourism(request: Request, endpoint: str = 'areaCode2'):

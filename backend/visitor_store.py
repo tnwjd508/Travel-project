@@ -2,6 +2,7 @@
 import calendar
 import re
 from datetime import datetime
+from uuid import UUID
 
 from .core import ApiError, numeric, observe_source, stamp
 from .regions import BY_ID, require_district
@@ -79,7 +80,7 @@ class VisitorMonthStore:
             result[parsed['ym']] = parsed
         return result
 
-    async def store_month(self, ym, values, fetched_at=None):
+    def rows(self, ym, values, fetched_at=None):
         _month(ym)
         fetched_at = fetched_at or stamp()
         try:
@@ -103,7 +104,46 @@ class VisitorMonthStore:
                 'through_date': (value.get('through')[:4] + '-' + value.get('through')[4:6] + '-' + value.get('through')[6:]) if value.get('through') else None,
                 'source_fetched_at': fetched_at,
             })
+        return rows
+
+    async def store_month(self, ym, values, fetched_at=None):
+        rows = self.rows(ym, values, fetched_at)
         changed = await self.db.call('POST', '/rest/v1/rpc/visitor_months_store', payload={'p_rows': rows}, service=True)
         if isinstance(changed, bool) or not isinstance(changed, int) or not 0 <= changed <= len(rows):
             raise ApiError(503, 'INVALID_STORED_VISITORS', '방문자 자료의 저장 결과를 확인하지 못했습니다.')
         return changed
+
+    async def collection_status(self, months):
+        requested = sorted({_month(value) for value in months})
+        payload = await self.db.call('POST', '/rest/v1/rpc/visitor_collection_get', payload={
+            'p_months': [value[:4] + '-' + value[4:] + '-01' for value in requested],
+        }, service=True)
+        if not isinstance(payload, list) or len(payload) != len(requested):
+            raise ApiError(503, 'INVALID_STORED_VISITORS', '방문자 수집 상태를 확인하지 못했습니다.')
+        result = {}
+        for item in payload:
+            if (not isinstance(item, dict) or _month(item.get('month')) not in requested
+                or item.get('state') not in ('missing', 'generating', 'completed', 'failed', 'retryable')):
+                raise ApiError(503, 'INVALID_STORED_VISITORS', '방문자 수집 상태를 확인하지 못했습니다.')
+            result[item['month']] = item
+        return result
+
+    async def claim(self, ym, owner):
+        _month(ym); UUID(owner)
+        return await self.db.call('POST', '/rest/v1/rpc/visitor_collection_claim', payload={
+            'p_month': ym[:4] + '-' + ym[4:] + '-01', 'p_owner_token': owner,
+        }, service=True)
+
+    async def finish(self, ym, owner, values, fetched_at=None):
+        _month(ym); UUID(owner)
+        return await self.db.call('POST', '/rest/v1/rpc/visitor_collection_finish', payload={
+            'p_month': ym[:4] + '-' + ym[4:] + '-01', 'p_owner_token': owner,
+            'p_rows': self.rows(ym, values, fetched_at),
+        }, service=True)
+
+    async def fail(self, ym, owner, code, retry_seconds):
+        _month(ym); UUID(owner)
+        return await self.db.call('POST', '/rest/v1/rpc/visitor_collection_fail', payload={
+            'p_month': ym[:4] + '-' + ym[4:] + '-01', 'p_owner_token': owner,
+            'p_error_code': code, 'p_retry_seconds': retry_seconds,
+        }, service=True)

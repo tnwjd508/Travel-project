@@ -10,8 +10,9 @@ VWorld 경계 API와 Gemini 응답은 이 캐시에 포함하지 않는다. 월�
 
 1. `supabase/migrations/20260920104513_tourism_visitor_month_cache.sql`
 2. `supabase/migrations/20260920110556_tourism_api_response_cache.sql`
+3. `supabase/migrations/20260920163732_tourism_visitor_collection_jobs.sql`
 
-빈 DB용 `docs/supabase-current-design.proposed.sql`을 기존 DB에 다시 실행하지 않는다. 두 마이그레이션은 기존 행을 수정하거나 삭제하지 않는다.
+빈 DB용 `docs/supabase-current-design.proposed.sql`을 기존 DB에 다시 실행하지 않는다. 후속 마이그레이션은 기존 행을 수정하거나 삭제하지 않는다.
 
 적용 확인:
 
@@ -19,7 +20,7 @@ VWorld 경계 API와 Gemini 응답은 이 캐시에 포함하지 않는다. 월�
 select tablename, rowsecurity
 from pg_tables
 where schemaname = 'public'
-  and tablename in ('tourism_visitor_months', 'tourism_api_cache')
+  and tablename in ('tourism_visitor_months', 'tourism_api_cache', 'tourism_visitor_collection_jobs')
 order by tablename;
 
 select routine_name
@@ -27,7 +28,9 @@ from information_schema.routines
 where routine_schema = 'public'
   and routine_name in (
     'visitor_months_get', 'visitor_months_store',
-    'tourism_cache_get', 'tourism_cache_store'
+    'tourism_cache_get', 'tourism_cache_store',
+    'visitor_collection_get', 'visitor_collection_claim',
+    'visitor_collection_finish', 'visitor_collection_fail'
   )
 order by routine_name;
 ```
@@ -42,7 +45,7 @@ order by routine_name;
 
 캐시가 유효하면 외부 API를 호출하지 않는다. 캐시가 오래됐으면 갱신을 시도하며, 상류 호출이 실패하면 오래된 검증 응답을 짧은 캐시 시간으로 반환한다. 성공 응답만 저장하고 오류 응답·키·URL은 저장하지 않는다.
 
-관광객 추이는 추가로 DB에서 24개월을 한 번에 읽는다. 공개 요청은 최신 누락 월 하나만 보충하고, 과거 전체 범위는 호출 한도가 정상일 때 운영 백필 명령으로 채운다. 상세 절차는 [관광객 추이 캐시 운영](관광객_추이_DB_캐시_운영.md)을 참고한다.
+관광객 추이는 DB에서 24개월을 먼저 읽고 누락 월이 있으면 프런트가 수집 POST를 자동 실행한다. 서버는 전국 한 달을 한 번만 선점해 원본 페이지와 지역별 집계를 저장하며 다른 요청은 기존 작업을 기다린다. 상세 절차는 [관광객 추이 캐시 운영](관광객_추이_DB_캐시_운영.md)을 참고한다.
 
 ## 상태 확인
 

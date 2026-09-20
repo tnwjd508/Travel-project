@@ -1,6 +1,15 @@
 import { useEffect, useState, useCallback } from 'react'
-import { districtRequest, type DistrictResource, type DistrictResources } from '@/services/districtApi'
+import { collectVisitorMonth, districtRequest, type DistrictResource, type DistrictResources } from '@/services/districtApi'
 import { useParams } from 'react-router-dom'
+
+function wait(milliseconds: number, signal: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal.aborted) { reject(signal.reason); return }
+    const aborted = () => { window.clearTimeout(timer); reject(signal.reason) }
+    const timer = window.setTimeout(() => { signal.removeEventListener('abort', aborted); resolve() }, milliseconds)
+    signal.addEventListener('abort', aborted, { once: true })
+  })
+}
 
 export function useDistrictResource<R extends DistrictResource>(resource: R, params: Record<string, string | number | undefined>, enabled = true) {
   const { regionId = 'gwangju' } = useParams()
@@ -15,9 +24,31 @@ export function useDistrictResource<R extends DistrictResource>(resource: R, par
     if (!enabled) return
     const controller = new AbortController()
     setState({ key, status: 'loading', data: null, error: '' })
-    districtRequest(resource, query, controller.signal, attempt > 0).then(data => {
+    void (async () => {
+      let data = await districtRequest(resource, query, controller.signal, attempt > 0)
       if (!controller.signal.aborted) setState({ key, status: 'live', data, error: '' })
-    }).catch(() => {
+      if (resource !== 'visitors') return
+      let visitorData = data as DistrictResources['visitors']
+      for (let cycle = 0; cycle < 240 && visitorData.collection.missingMonths.length; cycle++) {
+        if (controller.signal.aborted) return
+        visitorData = { ...visitorData, collection: { ...visitorData.collection, status: 'collecting' } }
+        setState({ key, status: 'live', data: visitorData as DistrictResources[R], error: '' })
+        try {
+          const collection = await collectVisitorMonth(query, controller.signal)
+          if (collection.state === 'generating' || collection.state === 'busy') {
+            await wait(Math.min(30, collection.retryAfter) * 1000, controller.signal)
+          }
+          data = await districtRequest(resource, query, controller.signal, true)
+          visitorData = data as DistrictResources['visitors']
+          if (!controller.signal.aborted) setState({ key, status: 'live', data, error: '' })
+        } catch (error) {
+          if (controller.signal.aborted) return
+          visitorData = { ...visitorData, collection: { ...visitorData.collection, status: 'error', message: '방문객 추이를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' } }
+          setState({ key, status: 'live', data: visitorData as DistrictResources[R], error: '' })
+          return
+        }
+      }
+    })().catch(() => {
       if (!controller.signal.aborted) setState({ key, status: 'error', data: null, error: '관광 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.' })
     })
     return () => controller.abort()

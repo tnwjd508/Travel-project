@@ -5,6 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
+from uuid import uuid4
 
 import httpx
 from dotenv import load_dotenv
@@ -49,9 +50,26 @@ async def apply(months, env, delay, transport=None):
                 if month in existing and existing[month]['complete']:
                     completed.append({'month': month, 'status': 'already_stored'})
                     continue
-                values = await service.source_visitor_month(month, persist=False)
-                changed = await store.store_month(month, values, stamp())
-                completed.append({'month': month, 'status': 'stored', 'rows': changed})
+                owner = str(uuid4())
+                claim = await store.claim(month, owner)
+                if claim.get('state') != 'claimed':
+                    completed.append({'month': month, 'status': claim.get('state', 'not_claimed')})
+                    if claim.get('state') in ('busy', 'generating', 'failed'):
+                        break
+                    continue
+                try:
+                    values = await service.collect_visitor_month(month, persist=False)
+                    result = await store.finish(month, owner, values, stamp())
+                    completed.append({'month': month, 'status': 'stored', 'rows': result.get('storedRows', 0)})
+                except ApiError as error:
+                    mapping = {'UPSTREAM_RATE_LIMIT': ('UPSTREAM_RATE_LIMIT', 3600), 'UPSTREAM_AUTH': ('UPSTREAM_AUTH', 86400),
+                        'REQUEST_TIMEOUT': ('REQUEST_TIMEOUT', 300), 'INVALID_VISITOR_DATE': ('INVALID_DATA', 3600),
+                        'DUPLICATE_DATA': ('INVALID_DATA', 3600), 'DB_UNAVAILABLE': ('STORE_FAILED', 300),
+                        'DB_SCHEMA_NOT_READY': ('STORE_FAILED', 300), 'INVALID_STORED_VISITORS': ('STORE_FAILED', 300)}
+                    code, retry = mapping.get(error.code, ('UPSTREAM_UNAVAILABLE', 300))
+                    try: await store.fail(month, owner, code, retry)
+                    except ApiError: pass
+                    raise
                 if delay and index + 1 < len(months):
                     await asyncio.sleep(delay)
         finally:

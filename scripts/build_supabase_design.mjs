@@ -8,6 +8,7 @@ const files = [
   'supabase/migrations/20260919115012_organization_scenarios.sql',
   'supabase/migrations/20260920104513_tourism_visitor_month_cache.sql',
   'supabase/migrations/20260920110556_tourism_api_response_cache.sql',
+  'supabase/migrations/20260920163732_tourism_visitor_collection_jobs.sql',
   'docs/supabase-evidence-extension.proposed.sql',
 ]
 const parts = []
@@ -16,7 +17,7 @@ for (const file of files) {
   if ((sql.match(/^begin;$/gm) ?? []).length !== 1 || !sql.endsWith('commit;')) throw new Error(`Unexpected transaction wrapper: ${file}`)
   parts.push(`-- Source: ${file}\n${sql.replace(/^begin;\n/m, '').replace(/commit;$/, '').trim()}`)
 }
-const bundle = `-- 2026-09-20: Travel-project current database design (10 service tables).
+const bundle = `-- 2026-09-20: Travel-project current database design (11 service tables).
 -- EMPTY DATABASE ONLY. Review docs/supabase-database-design.md before deployment.
 -- Preserves existing briefing contracts. Matches backend/reviews.py.
 -- No DROP/DELETE, remote execution or production data seeds.
