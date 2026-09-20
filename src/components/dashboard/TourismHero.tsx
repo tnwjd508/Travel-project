@@ -47,7 +47,7 @@ export function TourismHero() {
   }, [fallbackHeroAlt, fallbackHeroImage, region.heroKeyword, region.nameKo, region.tourApiAreaCode])
 
   return (
-    <section className="tourism-hero relative min-h-[440px] overflow-hidden rounded-[24px] border border-slate-200/70 bg-white shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:min-h-[380px] lg:min-h-[340px]" aria-labelledby="overview-title">
+    <section className="tourism-hero relative min-h-[300px] overflow-hidden rounded-[24px] border border-slate-200/70 bg-white shadow-[0_8px_30px_rgba(15,23,42,.05)] sm:min-h-[260px] lg:min-h-[230px]" aria-labelledby="overview-title">
       {heroImage && <img
         src={heroImage}
         alt={heroAlt}
@@ -67,12 +67,12 @@ export function TourismHero() {
       <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/5 sm:via-white/90 sm:to-transparent lg:via-white/85" />
       <div className="absolute inset-0 bg-gradient-to-t from-white/55 via-transparent to-white/10 sm:from-transparent" />
 
-      <div className="absolute right-4 top-4 z-10 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-[10px] font-semibold text-slate-600 shadow-sm backdrop-blur-md sm:right-6 sm:top-6">
+      <div className="absolute right-4 top-4 z-10 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-[12px] font-semibold text-slate-600 shadow-sm backdrop-blur-md sm:right-6 sm:top-6">
         {summary.data ? `데이터 기준월 : ${summary.data.baseYm}` : summary.status === 'error' ? '데이터 연결 확인 필요' : '데이터 확인 중'}
       </div>
 
-      <div className="relative z-10 flex min-h-[440px] max-w-[720px] flex-col justify-end px-6 py-7 sm:min-h-[380px] sm:justify-center sm:px-9 lg:min-h-[340px] lg:px-12">
-        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50/90 px-3 py-1.5 text-[10px] font-semibold text-blue-700">
+      <div className="relative z-10 flex min-h-[300px] max-w-[720px] flex-col justify-end px-6 py-6 sm:min-h-[260px] sm:justify-center sm:px-9 lg:min-h-[230px] lg:px-10">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50/90 px-3 py-1.5 text-[12px] font-semibold text-blue-700">
           <Sparkles size={13} aria-hidden="true" />
           AI가 분석한 {district.regionName} {district.nameKo} 관광 현황
         </div>
@@ -83,7 +83,7 @@ export function TourismHero() {
         <p className="mt-4 text-sm font-medium leading-6 text-slate-600 sm:text-[15px]">
           데이터와 AI 분석으로 관광 현황을 진단하고,<br className="hidden sm:block" /> 최적의 정책 전략을 제안합니다.
         </p>
-        <p className="mt-5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+        <p className="mt-5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-500">
           ON:GIL과 함께 미래 관광의 길을 열어보세요.
           <ArrowRight size={13} className="text-blue-600" aria-hidden="true" />
         </p>

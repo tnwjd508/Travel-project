@@ -98,11 +98,11 @@ export function LandingPage() {
         <section className="relative z-20 flex min-w-0 flex-col items-center lg:pl-4" aria-labelledby="region-map-title">
           <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .6, delay: .58 }} className="mb-2 flex w-full max-w-[600px] items-center justify-between gap-4 px-2">
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[.22em] text-[#78849A]">{mapMode === 'korea' ? 'Select your region' : 'Select your district'}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[.22em] text-[#78849A]">{mapMode === 'korea' ? 'Select your region' : 'Select your district'}</p>
               <h2 id="region-map-title" className="mt-1 text-sm font-semibold tracking-[-.02em] text-[#FFF9EE] sm:text-base">{mapMode === 'korea' ? '지역을 선택해 주세요' : `${selectedRegion.nameKo}의 시군구를 선택해 주세요`}</h2>
-              <p className="mt-1 text-[10px] text-[#78849A] sm:text-[11px]">{mapMode === 'korea' ? '빛나는 길이 시작됩니다.' : '구를 선택하면 지역 현황으로 이동합니다.'}</p>
+              <p className="mt-1 text-[12px] text-[#78849A] sm:text-[12px]">{mapMode === 'korea' ? '빛나는 길이 시작됩니다.' : '구를 선택하면 지역 현황으로 이동합니다.'}</p>
             </div>
-            {mapMode === 'korea' ? <div className="hidden items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 py-1.5 text-[9px] font-semibold text-[#AAB4C5] sm:flex"><MapPin size={11} className="text-[#F4C57A]" />6개 지역 탐색 가능</div> : <button type="button" onClick={showKoreaMap} className="flex min-h-10 items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 text-[9px] font-semibold text-[#AAB4C5] outline-none transition hover:border-[#F4C57A]/30 hover:text-[#FFF9EE] focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70"><ArrowLeft size={12} />대한민국 지도</button>}
+            {mapMode === 'korea' ? <div className="hidden items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 py-1.5 text-[12px] font-semibold text-[#AAB4C5] sm:flex"><MapPin size={11} className="text-[#F4C57A]" />6개 지역 탐색 가능</div> : <button type="button" onClick={showKoreaMap} className="flex min-h-10 items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 text-[12px] font-semibold text-[#AAB4C5] outline-none transition hover:border-[#F4C57A]/30 hover:text-[#FFF9EE] focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70"><ArrowLeft size={12} />대한민국 지도</button>}
           </motion.div>
 
           <div className="relative w-full max-w-[650px]">
@@ -124,21 +124,21 @@ export function LandingPage() {
             {mapMode === 'korea' ? (
               <motion.div key="region-controls" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: .4 }} className="relative z-30 -mt-2 w-full max-w-[610px] space-y-3 lg:-mt-7">
                 <RegionSelector regions={regions} selectedId={selectedId} onSelect={selectRegion} />
-                <label className="flex items-center justify-end gap-2 text-[11px] text-slate-400">다른 시도 선택<select aria-label="다른 시도 선택" value={regions.some(region => region.id === selectedId) ? '' : selectedId} onChange={event => { if (event.target.value) setSelectedId(event.target.value) }} className="min-h-10 max-w-[190px] rounded-lg border border-white/10 bg-[#0B1528] px-2 text-slate-200"><option value="">전체 시도 목록</option>{tourismProvinces.filter(region => !regions.some(item => item.id === region.id)).map(region => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label>
+                <label className="flex items-center justify-end gap-2 text-[12px] text-slate-400">다른 시도 선택<select aria-label="다른 시도 선택" value={regions.some(region => region.id === selectedId) ? '' : selectedId} onChange={event => { if (event.target.value) setSelectedId(event.target.value) }} className="min-h-10 max-w-[190px] rounded-lg border border-white/10 bg-[#0B1528] px-2 text-slate-200"><option value="">전체 시도 목록</option>{tourismProvinces.filter(region => !regions.some(item => item.id === region.id)).map(region => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label>
                 <SelectedRegionCard region={selectedRegion} onEnter={enterRegion} onUnavailable={showUnavailableNotice} />
               </motion.div>
             ) : (
               <motion.div key="district-controls" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="relative z-30 mt-3 flex w-full max-w-[610px] items-center gap-3 rounded-2xl border border-white/[.1] bg-[#0B1528]/82 px-4 py-3 shadow-[0_20px_55px_rgba(0,0,0,.25)] backdrop-blur-xl">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#F4C57A]/20 bg-[#F4C57A]/10 text-[#FFD89A]"><Sparkles size={16} /></span>
-                <div><p className="text-xs font-bold text-[#FFF9EE]">{selectedRegion.nameKo} {districtsForRegion(selectedRegion.id).length}개 시군구</p><p className="mt-1 text-[10px] text-[#78849A]">지도에서 시군구를 선택하면 지역 현황 대시보드로 이동합니다.</p></div>
-                <button type="button" onClick={showKoreaMap} className="ml-auto hidden min-h-10 shrink-0 rounded-xl px-3 text-[10px] font-semibold text-[#AAB4C5] outline-none transition hover:bg-white/[.05] hover:text-white focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70 sm:block">이전 지도</button>
+                <div><p className="text-xs font-bold text-[#FFF9EE]">{selectedRegion.nameKo} {districtsForRegion(selectedRegion.id).length}개 시군구</p><p className="mt-1 text-[12px] text-[#78849A]">지도에서 시군구를 선택하면 지역 현황 대시보드로 이동합니다.</p></div>
+                <button type="button" onClick={showKoreaMap} className="ml-auto hidden min-h-10 shrink-0 rounded-xl px-3 text-[12px] font-semibold text-[#AAB4C5] outline-none transition hover:bg-white/[.05] hover:text-white focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70 sm:block">이전 지도</button>
               </motion.div>
             )}
           </AnimatePresence>
         </section>
       </div>
 
-      <div className="pointer-events-none absolute bottom-5 right-5 z-20 hidden items-center gap-4 text-[9px] text-[#78849A] sm:flex lg:right-10">
+      <div className="pointer-events-none absolute bottom-5 right-5 z-20 hidden items-center gap-4 text-[12px] text-[#78849A] sm:flex lg:right-10">
         <span>{mapMode === 'korea' ? '대한민국 지도 © MapSVG · CC BY 4.0' : '시군구 경계 · 통계청 SGIS'}</span><span>AI 지역 관광전략 수립 플랫폼</span><span className="h-px w-8 bg-[#F4C57A]/35" /><strong className="text-xs font-medium tracking-[-.02em] text-[#D9C7AC]">ON<span className="text-[#F4C57A]">:</span>GIL</strong>
       </div>
 

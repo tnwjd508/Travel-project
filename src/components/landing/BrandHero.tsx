@@ -9,7 +9,7 @@ const fadeUp = {
 export function BrandHero() {
   return (
     <motion.section initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: .13, delayChildren: .18 } } }} className="relative z-10 flex max-w-[700px] flex-col justify-center pt-8 lg:min-h-[720px] lg:pt-0">
-      <motion.div variants={fadeUp} transition={{ duration: .65 }} className="mb-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[.28em] text-[#AAB4C5] sm:mb-8">
+      <motion.div variants={fadeUp} transition={{ duration: .65 }} className="mb-6 flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.28em] text-[#AAB4C5] sm:mb-8">
         <span className="h-px w-9 bg-gradient-to-r from-[#F4C57A] to-transparent" />
         AI Regional Tourism Strategy
       </motion.div>
@@ -30,7 +30,7 @@ export function BrandHero() {
       </motion.div>
 
       <motion.div variants={fadeUp} transition={{ duration: .6 }} className="mt-8 flex items-center gap-4 sm:mt-10">
-        <div className="inline-flex min-h-11 items-center gap-3 text-[11px] font-semibold uppercase tracking-[.23em] text-[#F4C57A]">
+        <div className="inline-flex min-h-11 items-center gap-3 text-[12px] font-semibold uppercase tracking-[.23em] text-[#F4C57A]">
           Explore Korea
           <span className="grid h-10 w-10 place-items-center rounded-full border border-[#F4C57A]/45">
             <ArrowDownRight size={16} />

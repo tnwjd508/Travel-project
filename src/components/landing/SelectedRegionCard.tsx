@@ -30,7 +30,7 @@ export function SelectedRegionCard({ region, onEnter, onUnavailable }: SelectedR
               <h3 className="text-[17px] font-semibold tracking-[-.035em] text-[#FFF9EE]">{region.nameKo}</h3>
               <span className={`rounded-full border px-2 py-0.5 text-[8px] font-bold uppercase tracking-[.12em] ${available ? 'border-emerald-300/20 bg-emerald-300/[.08] text-emerald-300' : 'border-white/10 bg-white/[.04] text-[#78849A]'}`}>{available ? 'Data ready' : 'Coming soon'}</span>
             </div>
-            <p className="mt-1.5 text-[11px] leading-5 text-[#AAB4C5]">{region.description}</p>
+            <p className="mt-1.5 text-[12px] leading-5 text-[#AAB4C5]">{region.description}</p>
           </div>
         </div>
 
