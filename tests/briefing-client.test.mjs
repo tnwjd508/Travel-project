@@ -8,9 +8,10 @@ const month = '2026-08'
 const data = { ...fixture({ district: '11110', month }), storage: { savedAt: new Date().toISOString() } }
 const invoke = (responses, options = {}) => {
   const methods = []
-  return { methods, result: loadMonthlyBriefing(selection, month, {
+  const urls = []
+  return { methods, urls, result: loadMonthlyBriefing(selection, month, {
     signal: new AbortController().signal, allowCreate: true, wait: async () => {},
-    fetcher: async (_url, init) => { methods.push(init.method); const next = responses.shift(); if (!next) throw new Error('불필요한 추가 호출'); return Response.json(next.body, { status: next.status }) },
+    fetcher: async (url, init) => { urls.push(String(url)); methods.push(init.method); const next = responses.shift(); if (!next) throw new Error('불필요한 추가 호출'); return Response.json(next.body, { status: next.status }) },
     ...options,
   }) }
 }
@@ -18,9 +19,10 @@ const missing = { status: 404, body: { state: 'missing', code: 'NOT_GENERATED', 
 const generating = { status: 202, body: { state: 'generating', code: 'GENERATING', message: '생성 중' } }
 
 test('저장된 브리핑은 GET 한 번으로 종료한다', async () => {
-  const { result, methods } = invoke([{ status: 200, body: data }])
+  const { result, methods, urls } = invoke([{ status: 200, body: data }])
   assert.deepEqual((await result).data, data)
   assert.deepEqual(methods, ['GET'])
+  assert.deepEqual(urls, ['/api/monthly-briefing?regionId=seoul&district=11110&month=2026-08'])
 })
 test('처음에만 POST하고 생성 중 상태는 GET으로 조회한다', async () => {
   const { result, methods } = invoke([missing, generating, generating, { status: 200, body: data }])

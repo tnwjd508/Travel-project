@@ -1,5 +1,5 @@
 import { BrainCircuit, ChartNoAxesCombined, FileText, FlaskConical, GitCompareArrows, House, type LucideIcon } from 'lucide-react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
@@ -27,18 +27,11 @@ export function getDashboardMenuItems(district: string, regionId = 'gwangju'): D
 }
 
 export function DashboardNavigation() {
-  const location = useLocation()
   const district = useDashboardRegion()
   const dashboardMenuItems = getDashboardMenuItems(district.slug, district.regionId)
   return <nav className="sticky top-[76px] z-30 hidden border-b border-slate-200/70 bg-white/85 backdrop-blur-xl lg:block" aria-label={`${district.regionName} 관광전략 카테고리`}>
     <div className="mx-auto flex h-[58px] max-w-[1580px] items-stretch gap-1 px-8">
-      {dashboardMenuItems.map(({ label, path, icon: Icon }) => <NavLink key={path} to={path + reviewSearch(location.search)} className={({ isActive }) => cn('group relative flex items-center gap-2 rounded-lg px-4 text-xs font-bold transition-colors', isActive ? 'bg-blue-50/70 text-blue-600' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-700')}>{({ isActive }) => <><Icon size={15} className="transition-transform group-hover:scale-110"/>{label}<span className={cn('absolute inset-x-4 bottom-0 h-0.5 origin-center rounded-full bg-blue-600 transition-transform', isActive ? 'scale-x-100' : 'scale-x-0')}/></>}</NavLink>)}
+      {dashboardMenuItems.map(({ label, path, icon: Icon }) => <NavLink key={path} to={path} className={({ isActive }) => cn('group relative flex items-center gap-2 rounded-lg px-4 text-xs font-bold transition-colors', isActive ? 'bg-blue-50/70 text-blue-600' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-700')}>{({ isActive }) => <><Icon size={15} className="transition-transform group-hover:scale-110"/>{label}<span className={cn('absolute inset-x-4 bottom-0 h-0.5 origin-center rounded-full bg-blue-600 transition-transform', isActive ? 'scale-x-100' : 'scale-x-0')}/></>}</NavLink>)}
     </div>
   </nav>
-}
-
-export function reviewSearch(search: string) {
-  const source = new URLSearchParams(search), result = new URLSearchParams()
-  for (const key of ['organization', 'scenario', 'review']) if (source.has(key)) result.set(key, source.get(key)!)
-  return result.size ? `?${result}` : ''
 }

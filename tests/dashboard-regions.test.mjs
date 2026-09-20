@@ -23,7 +23,9 @@ test('동명 자치구도 선택한 시도의 대시보드·재선택·API 경�
 test('광주의 기존 별칭 및 전국 코드 모두 같은 기존 대시보드로 연결된다', () => {
   const old = resolveDashboardRegion('gwangju', 'gwangsangu')
   const canonical = resolveDashboardRegion('gwangju', '12330')
-  assert.equal(old.dashboardPath, '/dashboard/gwangju/gwangsangu/overview')
+  assert.equal(old.dashboardPath, '/dashboard/gwangju/12330/overview')
+  assert.equal(old.basePath, '/dashboard/gwangju/12330')
+  assert.deepEqual(old.selection, { regionId: 'gwangju', district: '12330' })
   assert.deepEqual(old, canonical)
   assert.equal(old.legacy.slug, 'gwangsangu')
 })

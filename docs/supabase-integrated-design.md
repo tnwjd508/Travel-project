@@ -2,7 +2,7 @@
 
 > 2026-09-20 갱신: 이 문서는 9월 19일 로컬 구현 기록이다. 최신 GitHub 반영 DB 설계는 [데이터베이스 재설계](supabase-database-design.md)를 우선한다. SJbranch에 추가된 과거 축제 통계와 검토 결과 보존을 위한 3개 테이블은 새 설계에 있다. 아래의 “구현”은 로컬 변경이며 master 배포 완료를 뜻하지 않는다.
 
-2026-09-19. 월간 브리핑과 기관 시나리오를 **하나의 Supabase 프로젝트**에 저장한다. React 로그인·FastAPI 저장/조회·SQL을 연결했다. 원격 프로젝트 생성, 운영 DB 마이그레이션 적용, 실제 계정으로 저장하는 배포 검증은 아직 수행하지 않았다.
+2026-09-19 작성한 향후 운영 확장 설계다. 현재 공모전 화면은 로그인을 사용하지 않으며, 지도에서 선택한 정규 지자체 ID와 월을 기준으로 월간 브리핑만 분리해 조회한다. 이 문서의 기관 로그인·공동 저장 흐름은 현재 React 화면에서 사용하지 않는다.
 
 ## 무엇을 합쳤는가
 
@@ -96,7 +96,7 @@ SUPABASE_SECRET_KEY=sb_secret_...
 - `npm test`: PGlite의 실제 PostgreSQL 엔진으로 브리핑 및 통합 마이그레이션의 제약·RLS·RPC·멱등성을 검증한다. 원격 Supabase 프로젝트 검증과는 별개다.
 - `.venv/Scripts/python.exe -m pytest backend/tests -q`: FastAPI 사용자 인증, 권한, 입력·단위·지역 검증, 오류 비밀값 제거, 저장·조회 계약과 기존 관광 API 회귀 검사. HTTP 외부 호출은 테스트 transport로 대체한다.
 - `npm run test:briefing`, `npm run build`: 브리핑 엔진 테스트와 앱/서버 타입·빌드 검사.
-- `node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5179` 실행 후 `.venv/Scripts/python.exe scripts/check_scenario_ui.py`: 헤드리스 Edge에서 로그인, 응답 유실 후 같은 키로 저장 재시도, 저장 URL 새로고침, 기관 전환·뒤로/앞으로, 로그아웃, viewer, 모바일 화면을 확인한다. 브라우저 HTTP는 테스트 응답이며 운영 Supabase 로그인 검증이 아니다. 개발 의존성은 backend/requirements-dev.txt에 있다.
+- 현재 공모전 화면은 `.venv/Scripts/python.exe scripts/check_public_municipality_ui.py --url http://127.0.0.1:8000`으로 정규 지자체 ID 이동, 과거 별칭 주소 변환, 로그인 UI 비노출을 확인한다. 개발 의존성은 backend/requirements-dev.txt에 있다.
 
 월간 저장 기준: [PR #11](https://github.com/tnwjd508/Travel-project/pull/11), 커밋 `ad4f6b9`. 월간 저장과 직접 관련된 코드만 가져왔으며 전국 지도·라우트 전체 변경을 병합하지 않았다. 시나리오 검토 기준: SJbranch `436bbd2`의 UI/스토어 수정분. 두 브랜치를 통째로 merge하거나 원격 PR을 변경하지 않았다.
 
