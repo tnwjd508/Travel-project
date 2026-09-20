@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw } from 'lucide-react'
+import { Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { geoContains, geoMercator, geoPath } from 'd3-geo'
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
@@ -407,14 +407,15 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
           )}
         </AnimatePresence>
 
-        <motion.div className="absolute bottom-5 left-5 z-20 h-28 overflow-y-auto min-w-[245px] max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-4 shadow-xl backdrop-blur">
+        <motion.div className="absolute bottom-5 left-5 z-20 max-h-28 overflow-y-auto max-w-[calc(100%-2.5rem)] rounded-2xl border border-white bg-white/90 p-3 shadow-xl backdrop-blur">
           {focusedArea ? (
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className="text-[12px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</span>
-                <h4 className="mt-1 text-sm font-bold text-slate-800">{focusedArea.properties.districtName} · {focusedArea.properties.name}</h4>
-
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-950 text-[12px] font-bold text-white">{boundaryKind.slice(-1)}</span>
+              <span className="min-w-0">
+                <b className="block truncate text-sm font-bold text-slate-800">{focusedArea.properties.name}</b>
+                <span className="block text-[12px] text-slate-500">{focusedArea.properties.districtName} · {selected ? `관광지 ${areaHotspots.length}곳` : '클릭하면 선택 고정'}</span>
+              </span>
+              {selected && <button type="button" onClick={() => setSelected(null)} aria-label="선택 해제" className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200"><X size={14}/></button>}
             </div>
           ) : activeAttraction ? (
             <div className="flex items-start justify-between gap-4">
