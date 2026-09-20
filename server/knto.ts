@@ -20,6 +20,7 @@ const operations = {
   'AreaTarResDemService/areaTarSvcDemList': ['baseYm', 'areaCd', 'signguCd', 'tarSvcDemIxCd'],
   'AreaTarResDemService/areaCulResDemList': ['baseYm', 'areaCd', 'signguCd', 'culResDemIxCd'],
   'TarRlteTarService1/areaBasedList1': ['baseYm', 'areaCd', 'signguCd'],
+  'LocgoHubTarService1/areaBasedList1': ['baseYm', 'areaCd', 'signguCd'],
 } as const
 export type Operation = keyof typeof operations
 

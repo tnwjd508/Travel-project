@@ -143,6 +143,7 @@ def parse_envelope(text):
 OPERATIONS = {
     'DataLabService/locgoRegnVisitrDDList': {'startYmd', 'endYmd'},
     'TarRlteTarService1/areaBasedList1': {'baseYm', 'areaCd', 'signguCd'},
+    'LocgoHubTarService1/areaBasedList1': {'baseYm', 'areaCd', 'signguCd'},
 }
 for service, operation, name in [
     ('AreaTarDemDsService', 'areaTarSjrnDsList', 'tarSjrnDsIx'),

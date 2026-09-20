@@ -31,6 +31,10 @@ const ZOOM_LEVELS = [1, 1.25, 1.55, 1.9]
 // viewBox 픽셀² 기준. 이보다 작은 동은 hover 나 선택 중일 때만 이름을 표시해 겹침을 줄인다.
 const LABEL_MIN_AREA = 900
 const neighborhoodFills = ['#BFDBFE', '#C7D2FE', '#BAE6FD', '#DDD6FE', '#CCFBF1', '#E0E7FF']
+const HOTSPOT_PREVIEW = 10
+// 중심 관광지와 관광 콘텐츠는 별개 목록이다. 좌표로 맞추면 같은 건물의 다른 매장에 순위가 붙으므로
+// 표기 차이(공백·가운뎃점·슬래시)만 지운 뒤 이름이 같을 때만 순위를 표시한다.
+const simplifyName = (value: string) => value.replace(/[\s/()·.-]/g, '')
 
 export function TourismMap() {
   const district = useActiveDistrict()
@@ -44,6 +48,8 @@ export function TourismMap() {
   const [zoomIndex, setZoomIndex] = useState(0)
   const [showBoundaries, setShowBoundaries] = useState(true)
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null)
+  const [showAllHotspots, setShowAllHotspots] = useState(false)
+  const hubState = useDistrictResource('hubs', { district: district.slug })
 
   const districtFeature = useMemo<DistrictFeature | null>(
     () => districts.features.find((feature) => feature.properties.code === district.code) ?? null,
@@ -78,6 +84,24 @@ export function TourismMap() {
     () => (districtFeature ? attractions.filter((attraction) => geoContains(districtFeature, [attraction.lng, attraction.lat])) : []),
     [districtFeature, attractions],
   )
+
+  // 중심 관광지 순위를 관광지 목록에 붙인다. 순위 하나에 관광지 하나만 짝지어 같은 순위가 중복되지 않게 한다.
+  const rankedAttractions = useMemo(() => {
+    const ranks = new Map<string, number>()
+    const taken = new Set<string>()
+    const keyOf = (attraction: Attraction) => attraction.id ?? attraction.name
+    for (const hub of hubState.data?.items ?? []) {
+      const match = districtAttractions.find((attraction) => !taken.has(keyOf(attraction)) && simplifyName(attraction.name) === simplifyName(hub.name))
+      if (!match) continue
+      ranks.set(keyOf(match), hub.rank)
+      taken.add(keyOf(match))
+    }
+    return districtAttractions
+      .map((attraction) => ({ attraction, rank: ranks.get(keyOf(attraction)) ?? null }))
+      .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity))
+  }, [districtAttractions, hubState.data])
+  const rankedCount = rankedAttractions.filter((item) => item.rank !== null).length
+  const visibleAttractions = showAllHotspots ? rankedAttractions : rankedAttractions.slice(0, HOTSPOT_PREVIEW)
 
   useEffect(() => {
     setZoomIndex(0)
@@ -154,10 +178,13 @@ export function TourismMap() {
         </div>
 
         <div className="mt-5 border-t border-slate-100 pt-4">
-          <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{district.nameKo} {districtAttractions.length}곳</span>
+          </div>
           {districtAttractions.length > 0 ? (
             <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
-              {districtAttractions.map((attraction) => (
+              {visibleAttractions.map(({ attraction, rank }) => (
                 <button
                   key={attraction.id ?? attraction.name}
                   type="button"
@@ -166,17 +193,26 @@ export function TourismMap() {
                   onClick={() => setActiveAttraction(attraction)}
                   className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${activeAttraction?.name === attraction.name ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-transparent bg-slate-50 hover:border-slate-200'}`}
                 >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
+                  {rank === null
+                    ? <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
+                    : <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-blue-600 text-[10px] font-bold text-white" title="중심 관광지 순위">{rank}</span>}
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-xs text-slate-700">{attraction.name}</b>
                     <span className="text-[10px] text-slate-400">{attraction.category}</span>
                   </span>
                 </button>
               ))}
+              {rankedAttractions.length > HOTSPOT_PREVIEW && (
+                <button type="button" onClick={() => setShowAllHotspots((value) => !value)} className="min-h-11 w-full rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 transition hover:border-blue-200 hover:text-blue-600">
+                  {showAllHotspots ? '접기' : `더 보기 (${rankedAttractions.length - HOTSPOT_PREVIEW}곳)`}
+                </button>
+              )}
             </div>
           ) : (
             <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{district.nameKo}에 표시할 관광지 좌표가 없습니다.</p>
           )}
+          {rankedCount > 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">숫자는 한국관광공사 중심 관광지 순위(기준월 {hubState.data?.baseYm.slice(0, 4)}.{hubState.data?.baseYm.slice(4)})입니다. 다른 관광지와의 연결 건수 기준이며 방문객 수 순위가 아닙니다. 순위 {hubState.data?.totalCount}곳 중 이름이 일치하는 {rankedCount}곳에만 표시하며, 백화점·영화관처럼 관광 콘텐츠 목록에 없는 곳은 순위가 붙지 않습니다.</p>}
+          {hubState.status === 'live' && rankedCount === 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">중심 관광지 순위 자료를 불러오지 못해 순위 없이 표시합니다.</p>}
           <DataNotice state={contentState}/>
           {contentState.data && <SourceNote data={contentState.data}/>}
         </div>
