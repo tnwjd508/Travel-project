@@ -14,6 +14,8 @@ def test_readiness_is_read_only_and_origin_protected():
             return httpx.Response(200,json={'state':'missing'})
         if request.url.path.endswith('rpc/visitor_months_get'):
             return httpx.Response(200,json=[])
+        if request.url.path.endswith('rpc/visitor_collection_get'):
+            return httpx.Response(200,json=[{'month':'200001','state':'missing','attemptCount':0,'retryAfter':None,'errorCode':None}])
         if request.url.path.endswith('rpc/tourism_cache_get'):
             return httpx.Response(200,json={'state':'missing'})
         assert request.method=='GET'

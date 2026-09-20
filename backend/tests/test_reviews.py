@@ -1,4 +1,5 @@
 import copy
+import calendar
 import json
 from uuid import uuid4
 
@@ -55,7 +56,14 @@ class DatabaseFixture:
             identifier=params.get('release_id','eq.'+RELEASE).removeprefix('eq.')
             return httpx.Response(200,json=[stat_row(release=identifier)])
         if path.endswith('rpc/visitor_months_get'):
-            return httpx.Response(200,json=[])
+            args=json.loads(request.content)
+            rows=[]
+            for value in args['p_months']:
+                ym=value[:7].replace('-','')
+                days=calendar.monthrange(int(ym[:4]),int(ym[4:]))[1]
+                rows.append(dict(ym=ym,total=days*30,local=days*10,outside=days*10,foreign=days*10,
+                    complete=True,observedDays=days,expectedDays=days,through=f'{ym}{days:02}',sourceFetchedAt='2026-09-20T00:00:00Z'))
+            return httpx.Response(200,json=rows)
         if path.endswith('rpc/visitor_months_store'):
             return httpx.Response(200,json=len(json.loads(request.content)['p_rows']))
         if path.endswith('rpc/tourism_cache_get'):

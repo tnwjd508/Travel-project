@@ -58,7 +58,7 @@ def test_invalid_stored_month_is_rejected():
 
 class Stored:
     def __init__(self, rows):
-        self.rows, self.saved = rows, []
+        self.rows, self.saved, self.state = rows, [], {}
 
     async def get_many(self, _district, months):
         return {month: self.rows[month] for month in months if month in self.rows}
@@ -66,6 +66,22 @@ class Stored:
     async def store_month(self, ym, values, fetched_at):
         self.saved.append((ym, values, fetched_at))
         return len(values)
+
+    async def collection_status(self, months):
+        return {month: self.state.get(month, {'month': month, 'state': 'missing', 'attemptCount': 0}) for month in months}
+
+    async def claim(self, ym, owner):
+        self.state[ym] = {'month': ym, 'state': 'generating', 'owner': owner}
+        return {'month': ym, 'state': 'claimed'}
+
+    async def finish(self, ym, owner, values, fetched_at):
+        self.state[ym] = {'month': ym, 'state': 'completed'}
+        self.rows[ym] = values['12210']
+        return {'month': ym, 'state': 'completed', 'storedRows': len(values)}
+
+    async def fail(self, ym, owner, code, retry_seconds):
+        self.state[ym] = {'month': ym, 'state': 'failed', 'errorCode': code}
+        return self.state[ym]
 
 
 class Source:
@@ -86,13 +102,13 @@ def test_visitors_return_persisted_months_when_upstream_is_unavailable():
     service = DistrictService(Source(fail=True), store)
     token = trace.set(Freshness())
     try:
-        series, previous, warnings = asyncio.run(service.visitors('12210', '202607', 2))
+        series, previous, warnings, collection = asyncio.run(service.visitors('12210', '202607', 2))
     finally:
         trace.reset(token)
     assert series[-1] == complete_month()
     assert series[0] == empty_visitors('202606') and all(not row['complete'] for row in previous)
-    assert any('저장된 월만' in warning for warning in warnings)
-    assert len(service.client.calls) == 1
+    assert any('3개월' in warning for warning in warnings)
+    assert collection['status'] == 'missing' and len(service.client.calls) == 0
 
 
 def test_successful_month_is_aggregated_once_and_persisted_for_every_district():
@@ -102,7 +118,7 @@ def test_successful_month_is_aggregated_once_and_persisted_for_every_district():
     assert result['12210'] == dict(ym='202607', total=93.0, local=31.0, outside=31.0, foreign=31.0,
         complete=True, observedDays=31, expectedDays=31, through='20260731')
     assert len(result) == len(BY_ID)
-    assert source.calls[0][2:] == (0, 1000)
+    assert source.calls[0][2:] == (2592000, 1000)
     assert store.saved[0][0] == '202607' and len(store.saved[0][1]) == len(BY_ID)
 
 
@@ -111,10 +127,18 @@ def test_public_series_fills_only_one_missing_nationwide_month_per_request():
     service = DistrictService(source, store)
     token = trace.set(Freshness())
     try:
-        series, previous, warnings = asyncio.run(service.visitors('12210', '202607', 2))
+        series, previous, warnings, collection = asyncio.run(service.visitors('12210', '202607', 2))
     finally:
         trace.reset(token)
-    assert len(source.calls) == 1
-    assert series[-1]['complete'] is True and series[0] == empty_visitors('202606')
+    assert len(source.calls) == 0
+    assert series[-1] == empty_visitors('202607') and series[0] == empty_visitors('202606')
     assert all(not row['complete'] for row in previous)
-    assert any('3개월' in warning for warning in warnings)
+    assert any('4개월' in warning for warning in warnings) and collection['status'] == 'missing'
+
+
+def test_collection_claims_and_fills_one_missing_month():
+    source, store = Source(), Stored({})
+    service = DistrictService(source, store)
+    result = asyncio.run(service.collect_next_visitor_month('12210', '202607', 2))
+    assert result['state'] == 'completed' and result['month'] == '202607'
+    assert len(source.calls) == 1 and store.rows['202607']['complete'] is True

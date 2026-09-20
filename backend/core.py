@@ -70,7 +70,7 @@ class Cache:
     def __init__(self, capacity=256):
         self.capacity, self.values, self.pending = capacity, OrderedDict(), {}
 
-    async def get(self, key, ttl, load):
+    async def get(self, key, ttl, load, timeout=25):
         found = self.values.get(key)
         if found and found[1].expires > time.time():
             self.values.move_to_end(key)
@@ -86,7 +86,7 @@ class Cache:
                 fresh = Freshness(expires=time.time() + min(ttl or 86400, 86400))
                 token = trace.set(fresh)
                 try:
-                    async with asyncio.timeout(25):
+                    async with asyncio.timeout(timeout):
                         value = await load()
                     if ttl:
                         self.values[key] = (value, fresh)
@@ -193,9 +193,6 @@ class KntoClient:
             raise ApiError(400, 'INVALID_OPERATION', '지원하지 않는 API입니다.')
         if set(params) - (OPERATIONS[operation] | {'pageNo', 'numOfRows'}):
             raise ApiError(400, 'INVALID_PARAMETER', '허용되지 않는 파라미터입니다.')
-        if not self.key:
-            raise ApiError(503, 'MISSING_KEY', 'TOUR_API_SERVICE_KEY 환경변수가 필요합니다.')
-
         async def load():
             cached = None
             if self.store:
@@ -208,6 +205,8 @@ class KntoClient:
                 return cached['items'], cached['total']
 
             async def upstream():
+                if not self.key:
+                    raise ApiError(503, 'MISSING_KEY', 'TOUR_API_SERVICE_KEY 환경변수가 필요합니다.')
                 context = budget.get() or Budget()
                 remaining = context.deadline - time.monotonic()
                 if remaining <= 0:
