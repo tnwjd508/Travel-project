@@ -1,5 +1,5 @@
 import { useMunicipalityData } from '@/hooks/useMunicipalityData'
-import { KpiGrid } from './KpiGrid'
+import { TourismIndicators } from './OverviewTourismIndicators'
 import * as Slider from '@radix-ui/react-slider'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, CircleDollarSign, ClipboardList, Clock3, FlaskConical, Info, Users, Zap } from 'lucide-react'
@@ -52,7 +52,7 @@ export function Simulation() {
     : null
 
   return <section>
-    <div className="mb-5"><KpiGrid state={summaryState}/></div>
+    <div className="mb-5"><TourismIndicators state={summaryState}/></div>
     <div className="grid gap-5 xl:grid-cols-[.92fr_1.08fr]">
       <Card className="relative overflow-hidden p-6 sm:p-8"><div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/50 blur-3xl"/><div className="relative"><div className="mb-6 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white"><FlaskConical size={22}/></div><div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">Policy Lab</p><h3 className="text-xl font-bold tracking-tight">정책 조건을 설계하세요</h3></div></div>
         <label className="mb-2 block text-xs font-bold text-slate-600">정책 시나리오</label><SelectField value={selectedPolicy} onValueChange={(value) => setSelectedPolicy(value as PolicyId)} options={[...policyOptions]}/>

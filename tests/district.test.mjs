@@ -33,8 +33,18 @@ test('national rank excludes province totals and uses competition ties', () => {
   const rows = [['0',100],['12210',70],['11110',80],['11120',70]].map(([signguCd,xVal]) => ({ signguCd, baseYm:'202608',xCd:'21',xVal }))
   const result = rankRows(rows,'x','21','202608','12210')
   assert.equal(result.total,3); assert.equal(result.rank,2)
+  assert.equal(result.value,70); assert.equal(result.tieCount,2)
+  assert.equal(result.mean,220/3); assert.equal(result.median,70)
   assert.equal(nationalAreas('202607','AreaTarResDemService').length,17)
   assert.equal(nationalAreas('202608','AreaTarResDemService').length,16)
+})
+
+test('national comparison handles even samples, outliers and a missing target', () => {
+  const rows = [['12210',10],['11110',20],['11120',30],['11130',1000]].map(([signguCd,xVal]) => ({signguCd,baseYm:'202608',xCd:'21',xVal}))
+  const result = rankRows([...rows, rows[0]],'x','21','202608','12210')
+  assert.equal(result.total,4); assert.equal(result.mean,265); assert.equal(result.median,25)
+  const missing = rankRows(rows,'x','21','202608','99999')
+  assert.equal(missing.rank,null); assert.equal(missing.mean,null); assert.equal(missing.median,null)
 })
 test('nested cache and CDN cannot renew the source TTL', async () => {
   const source = new MemoCache(); const composite = new MemoCache()

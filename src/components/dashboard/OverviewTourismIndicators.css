@@ -1,0 +1,166 @@
+/* 지역현황·정책 시뮬레이션·보고서의 공통 핵심 관광지표에만 적용합니다. */
+.overview-indicators {
+  --ovi-surface: #fff;
+  --ovi-raised: #f8fafc;
+  --ovi-text: #0f172a;
+  --ovi-muted: #64748b;
+  --ovi-border: #e2e8f0;
+  --ovi-blue: #2563eb;
+  --ovi-soft: #eff6ff;
+  --ovi-track: #e8edf4;
+  --ovi-info: #8794a6;
+  color: var(--ovi-text);
+}
+html[data-theme='dark'] .overview-indicators {
+  --ovi-surface: #111c2e;
+  --ovi-raised: #1b2940;
+  --ovi-text: #edf2fa;
+  --ovi-muted: #a5b4ca;
+  --ovi-border: #2c3c54;
+  --ovi-blue: #82b1ff;
+  --ovi-soft: #1b3050;
+  --ovi-track: #27384e;
+  --ovi-info: #7e8da3;
+}
+.overview-indicators .ovi-heading { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.overview-indicators .ovi-heading h2 { font-size:14px; font-weight:700; letter-spacing:-.02em; }
+.overview-indicators .ovi-heading p { font-size:11px; color:var(--ovi-muted); }
+.overview-indicators .ovi-content { position:relative; }
+.overview-indicators .ovi-visitors { display:flex; align-items:center; gap:12px 20px; flex-wrap:wrap; border:1px solid var(--ovi-border); border-radius:16px; padding:16px 20px; margin-bottom:18px; background:var(--ovi-surface); }
+.overview-indicators .ovi-visitor-label { display:flex; align-items:center; gap:8px; color:var(--ovi-muted); font-size:12px; }
+.overview-indicators .ovi-visitors strong { font-size:23px; font-weight:800; font-variant-numeric:tabular-nums; }
+.overview-indicators .ovi-visitors > span:last-child { margin-left:auto; font-size:11px; color:var(--ovi-muted); }
+.overview-indicators .ovi-toolbar { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:12px; color:var(--ovi-muted); font-size:11px; }
+.overview-indicators .ovi-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:start; gap:14px; }
+.overview-indicators .ovi-card { min-width:0; border:1px solid var(--ovi-border); border-radius:20px; background:var(--ovi-surface); overflow:hidden; box-shadow:0 2px 5px #02061703; transition:border-color .18s,box-shadow .18s,transform .18s; }
+.overview-indicators .ovi-card-trigger { width:100%; display:block; text-align:left; padding:22px 20px; border-radius:20px; color:inherit; }
+.overview-indicators button:focus-visible, .overview-indicators summary:focus-visible { outline:2px solid var(--ovi-blue); outline-offset:3px; }
+.overview-indicators .ovi-card-trigger:focus-visible { outline-offset:-3px; }
+.overview-indicators .ovi-card-trigger:active { background:var(--ovi-soft); }
+.overview-indicators .ovi-card-title { display:flex; align-items:center; gap:8px; margin-bottom:20px; font-size:13px; font-weight:750; }
+.overview-indicators .ovi-card-title > span:nth-child(2) { flex:1; min-width:0; }
+.overview-indicators .ovi-icon { display:grid; place-items:center; flex-shrink:0; width:30px; height:30px; border-radius:9px; color:var(--ovi-blue); background:var(--ovi-soft); }
+.overview-indicators .ovi-chevron { display:grid; place-items:center; flex-shrink:0; width:26px; height:26px; border-radius:50%; color:var(--ovi-blue); background:var(--ovi-soft); }
+.overview-indicators .ovi-chevron svg { transition:transform .2s; }
+.overview-indicators .ovi-card[data-expanded='true'] { border-color:var(--ovi-blue); }
+.overview-indicators .ovi-card[data-expanded='true'] .ovi-chevron { background:var(--ovi-blue); color:var(--ovi-surface); }
+.overview-indicators .ovi-card[data-expanded='true'] .ovi-chevron svg { transform:rotate(180deg); }
+.overview-indicators .ovi-rank-line { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px; min-height:47px; }
+.overview-indicators .ovi-rank-line strong { font-size:39px; line-height:1.2; font-weight:800; letter-spacing:-1.5px; font-variant-numeric:tabular-nums; }
+.overview-indicators .ovi-rank-line > span { font-size:17px; font-weight:650; }
+.overview-indicators .ovi-rank-line .ovi-tied { font-size:12px; color:var(--ovi-muted); }
+.overview-indicators .ovi-rank-line small { font-size:11px; color:var(--ovi-muted); margin-left:3px; white-space:nowrap; }
+.overview-indicators .ovi-rank-line .ovi-rank-empty { font-size:16px; color:var(--ovi-muted); font-weight:500; }
+.overview-indicators .ovi-percent { display:inline-block; font-size:11px; font-weight:650; color:var(--ovi-blue); background:var(--ovi-soft); padding:3px 8px; border-radius:6px; margin-top:10px; }
+.overview-indicators .ovi-position { display:block; margin:24px 5px 0; }
+.overview-indicators .ovi-rail { display:block; height:6px; border-radius:8px; position:relative; background:var(--ovi-track); }
+.overview-indicators .ovi-rail::after { content:''; position:absolute; left:50%; top:-3px; width:1px; height:12px; background:var(--ovi-muted); opacity:.3; }
+.overview-indicators .ovi-point { position:absolute; top:-4px; width:14px; height:14px; border-radius:50%; background:var(--ovi-blue); transform:translateX(-50%); box-shadow:0 0 0 3px var(--ovi-surface); z-index:1; }
+.overview-indicators .ovi-ends { display:flex; justify-content:space-between; gap:6px; margin-top:9px; font-size:11px; color:var(--ovi-muted); }
+.overview-indicators .ovi-detail { padding:0 24px 24px; }
+.overview-indicators [hidden] { display:none; }
+.overview-indicators .ovi-statistics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding-top:18px; border-top:1px solid var(--ovi-border); }
+.overview-indicators .ovi-statistics dt { font-size:11px; color:var(--ovi-muted); }
+.overview-indicators .ovi-statistics dd { font-size:23px; margin-top:4px; font-weight:750; letter-spacing:-.5px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.overview-indicators .ovi-own dt, .overview-indicators .ovi-own dd { color:var(--ovi-blue); }
+.overview-indicators .ovi-differences { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:12px; margin-top:18px; background:var(--ovi-raised); border-radius:10px; font-size:11px; color:var(--ovi-muted); }
+.overview-indicators .ovi-differences strong { display:block; margin-top:3px; color:var(--ovi-text); font-size:12px; font-weight:650; }
+.overview-indicators .ovi-detail-note { margin-top:12px; font-size:11px; line-height:1.7; color:var(--ovi-muted); }
+.overview-indicators .ovi-saved-value { display:block; }
+.overview-indicators .ovi-children { margin-top:19px; border-top:1px solid var(--ovi-border); padding-top:17px; }
+.overview-indicators .ovi-children-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; font-size:11px; color:var(--ovi-muted); }
+.overview-indicators .ovi-children-heading h3 { font-size:12px; color:var(--ovi-text); font-weight:700; }
+.overview-indicators .ovi-children-heading h3 span { color:var(--ovi-muted); font-size:11px; font-weight:400; }
+.overview-indicators .ovi-groups { display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:16px; }
+.overview-indicators .ovi-groups[data-single='true'] .ovi-group dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:22px; }
+.overview-indicators .ovi-group h4 { color:var(--ovi-blue); font-size:11px; font-weight:650; min-height:36px; display:flex; align-items:center; line-height:1.5; }
+.overview-indicators .ovi-child-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:baseline; padding:8px 0; border-bottom:1px solid color-mix(in srgb,var(--ovi-border) 55%,transparent); }
+.overview-indicators .ovi-child-row dt { display:flex; align-items:baseline; gap:5px; font-size:11px; color:var(--ovi-muted); line-height:1.6; word-break:keep-all; overflow-wrap:anywhere; }
+.overview-indicators .ovi-child-row dd { font-size:12px; font-weight:650; font-variant-numeric:tabular-nums; }
+/* 보이는 아이콘은 9px, 기본 클릭 영역은 24px로 구분합니다. */
+.overview-indicators .ovi-info { position:relative; top:2px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:14px; height:16px; border-radius:4px; color:var(--ovi-info); }
+.overview-indicators .ovi-info svg { width:9px; height:9px; }
+.overview-indicators .ovi-info::before { content:''; position:absolute; inset:-4px -5px; }
+.overview-indicators .ovi-info:hover, .overview-indicators .ovi-info[aria-expanded='true'] { color:var(--ovi-muted); }
+.overview-indicators .ovi-note { display:flex; align-items:flex-start; gap:8px; margin-top:18px; color:var(--ovi-muted); font-size:11px; line-height:1.8; }
+.overview-indicators .ovi-note svg { flex-shrink:0; margin-top:3px; }
+.overview-indicators .ovi-guide { margin-top:20px; border-top:1px solid var(--ovi-border); padding-top:15px; font-size:11px; color:var(--ovi-muted); line-height:1.8; }
+.overview-indicators .ovi-guide summary { cursor:pointer; color:var(--ovi-text); font-weight:650; width:fit-content; }
+.overview-indicators .ovi-guide p { margin-top:8px; }
+.overview-indicators .ovi-retry { padding:0 16px 16px; color:var(--ovi-muted); font-size:11px; line-height:1.7; }
+.overview-indicators .ovi-retry button { margin-top:8px; min-height:40px; padding:0 12px; border-radius:8px; background:var(--ovi-soft); color:var(--ovi-blue); font-weight:650; }
+/* 상세 카드는 넓게, 나머지 두 카드는 오른쪽에 유지합니다. */
+.overview-indicators .ovi-grid[data-focused='true'] { grid-template-columns:minmax(0,1fr) 190px; grid-template-rows:min-content 1fr; }
+.overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='true'] { grid-column:1; grid-row:1 / span 2; }
+.overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] { grid-column:2; }
+.overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-card-trigger { padding:16px 13px; }
+.overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-icon { display:none; }
+.overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-card-title { font-size:12px; margin-bottom:13px; }
+.overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-rank-line strong { font-size:30px; }
+.overview-indicators .ovi-card[data-expanded='true'] .ovi-card-trigger { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:16px; padding:24px 24px 20px; }
+.overview-indicators .ovi-card[data-expanded='true'] .ovi-card-title { grid-column:1 / -1; font-size:15px; }
+.overview-indicators .ovi-card[data-expanded='true'] .ovi-percent { justify-self:end; margin:0; }
+.overview-indicators .ovi-card[data-expanded='true'] .ovi-position { grid-column:1 / -1; }
+/* 말풍선은 목록 높이를 바꾸지 않는 별도의 레이어입니다. */
+.overview-indicators .ovi-bubble { position:absolute; z-index:45; width:min(300px,calc(100% - 16px)); padding:18px; border:1px solid var(--ovi-border); border-radius:16px; background:var(--ovi-surface); box-shadow:0 12px 36px color-mix(in srgb,var(--ovi-text) 18%,transparent); }
+.overview-indicators .ovi-bubble::after { content:''; position:absolute; width:10px; height:10px; left:var(--ovi-arrow); bottom:-6px; background:var(--ovi-surface); border-right:1px solid var(--ovi-border); border-bottom:1px solid var(--ovi-border); transform:rotate(45deg); }
+.overview-indicators .ovi-bubble[data-below='true']::after { top:-6px; bottom:auto; border:0; border-left:1px solid var(--ovi-border); border-top:1px solid var(--ovi-border); }
+.overview-indicators .ovi-bubble-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.overview-indicators .ovi-bubble h3 { padding-top:3px; font-size:13px; font-weight:750; line-height:1.6; }
+.overview-indicators .ovi-bubble-heading button { display:grid; place-items:center; width:28px; height:28px; flex-shrink:0; border-radius:8px; color:var(--ovi-muted); background:var(--ovi-raised); }
+.overview-indicators .ovi-bubble p { font-size:12px; line-height:1.8; word-break:keep-all; overflow-wrap:anywhere; }
+.overview-indicators .ovi-bubble .ovi-caution { font-size:11px; margin-top:12px; padding-top:10px; border-top:1px solid var(--ovi-border); color:var(--ovi-blue); }
+@media(hover:hover) and (pointer:fine) {
+  .overview-indicators .ovi-card:has(>.ovi-card-trigger:hover) { border-color:var(--ovi-blue); box-shadow:0 8px 22px color-mix(in srgb,var(--ovi-blue) 12%,transparent); transform:translateY(-3px); }
+  .overview-indicators .ovi-card-trigger:hover .ovi-chevron { background:var(--ovi-blue); color:var(--ovi-surface); }
+}
+@media(max-width:1100px) and (min-width:641px) {
+  .overview-indicators .ovi-card-trigger { padding:18px 13px; }
+  .overview-indicators .ovi-grid[data-focused='true'] { grid-template-columns:minmax(0,1fr) 165px; }
+  .overview-indicators .ovi-card-title { font-size:12px; gap:6px; }
+  .overview-indicators .ovi-icon { width:25px; height:25px; }
+  .overview-indicators .ovi-card[data-expanded='true'] .ovi-card-trigger { padding:20px 18px 17px; }
+  .overview-indicators .ovi-detail { padding:0 18px 20px; }
+}
+@media(max-width:640px) {
+  .overview-indicators .ovi-grid { grid-template-columns:minmax(0,1fr); }
+  .overview-indicators .ovi-visitors { gap:8px 12px; }
+  .overview-indicators .ovi-visitors > span:last-child { width:100%; margin:0; }
+  .overview-indicators .ovi-grid[data-focused='true'] { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto auto; gap:12px; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='true'] { grid-column:1 / -1; grid-row:1; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] { grid-column:auto; grid-row:2; }
+  .overview-indicators .ovi-card[data-expanded='true'] .ovi-card-trigger { padding:20px 16px 17px; column-gap:10px; }
+  .overview-indicators .ovi-detail { padding:0 16px 20px; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-card-trigger { padding:16px 10px; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-rank-line strong { font-size:27px; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-rank-line { gap:2px; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-chevron { width:20px; height:20px; }
+  .overview-indicators .ovi-grid[data-focused='true'] .ovi-card[data-expanded='false'] .ovi-card-title { gap:4px; }
+  .overview-indicators .ovi-statistics { gap:8px; }
+  .overview-indicators .ovi-statistics dd { font-size:21px; }
+  .overview-indicators .ovi-groups { grid-template-columns:repeat(auto-fit,minmax(118px,1fr)); }
+  .overview-indicators .ovi-groups[data-single='true'] .ovi-group dl { column-gap:14px; }
+}
+@media(pointer:coarse) {
+  .overview-indicators .ovi-child-row { min-height:44px; align-items:center; }
+  .overview-indicators .ovi-info::before { inset:-14px -15px; }
+  .overview-indicators .ovi-bubble-heading button { width:44px; height:44px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .overview-indicators .ovi-card, .overview-indicators .ovi-chevron svg { transition:none; }
+  .overview-indicators .ovi-card:has(>.ovi-card-trigger:hover) { transform:none; }
+}
+/* 인쇄에는 세 카드의 상세를 모두 포함하고 조작용 요소는 제외합니다. */
+@media print {
+  .print-report .overview-indicators { --ovi-surface:#fff; --ovi-raised:#f8fafc; --ovi-text:#0f172a; --ovi-muted:#475569; --ovi-border:#cbd5e1; --ovi-blue:#1d4ed8; --ovi-soft:#eff6ff; --ovi-track:#e2e8f0; }
+  .print-report .overview-indicators .ovi-grid { display:block; }
+  .print-report .overview-indicators .ovi-card { margin-bottom:16px; break-inside:avoid; box-shadow:none; transform:none; border-color:var(--ovi-border); overflow:visible; }
+  .print-report .overview-indicators .ovi-detail[hidden] { display:block; }
+  .print-report .overview-indicators .ovi-card-trigger { display:block; padding:16px 20px; }
+  .print-report .overview-indicators .ovi-card-title { font-size:14px; }
+  .print-report .overview-indicators .ovi-detail { padding:0 20px 20px; }
+  .print-report .overview-indicators .ovi-groups { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .print-report .overview-indicators .ovi-groups[data-single='true'] { grid-template-columns:1fr; }
+  .print-report .overview-indicators .ovi-child-row { break-inside:avoid; }
+  .print-report .overview-indicators :is(.ovi-info,.ovi-chevron,.ovi-bubble,.ovi-guide,.ovi-retry) { display:none; }
+}

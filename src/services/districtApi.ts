@@ -1,4 +1,4 @@
-import type { SummaryResponse, VisitorsResponse, IndicesResponse, ContentsResponse, FestivalsResponse, RelatedResponse, RankResponse, DiagnosisResponse, HubsResponse } from '@/types/district'
+import type { SummaryResponse, VisitorsResponse, IndicesResponse, ContentsResponse, FestivalsResponse, RelatedResponse, RankResponse, DiagnosisResponse, HubsResponse } from '../types/district.js'
 
 export interface DistrictResources {
   summary: SummaryResponse; visitors: VisitorsResponse; indices: IndicesResponse; contents: ContentsResponse
