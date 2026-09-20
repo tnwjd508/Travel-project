@@ -26,7 +26,9 @@ export async function loadMonthlyBriefing(selection: RegionSelection, month: str
     const response = await fetcher(url, { method, signal: options.signal, cache: 'no-store' })
     const payload = await response.json() as MonthlyBriefingData | BriefingStatusResponse
     if (response.status === 200 && 'district' in payload) {
-      if (payload.district !== selection.district || payload.month !== month || !Array.isArray(payload.sources) || !payload.storage?.savedAt) throw new Error('저장된 브리핑 응답을 확인할 수 없습니다.')
+      // 저장소(Supabase)가 설정되지 않은 환경에서도 이번 조회 결과는 그대로 보여준다.
+      // 저장 여부는 storage 유무로 화면에 표시한다.
+      if (payload.district !== selection.district || payload.month !== month || !Array.isArray(payload.sources)) throw new Error('브리핑 응답을 확인할 수 없습니다.')
       return { data: payload }
     }
     if (!('state' in payload)) throw new Error('브리핑 응답을 확인할 수 없습니다.')

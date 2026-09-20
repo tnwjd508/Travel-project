@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { parseDistrictQuery, districtConfig } from '../.test-build/server/district.js'
 import { handleDistrictHttp } from '../.test-build/server/districtHttp.js'
 import { aggregateRelated } from '../.test-build/server/aggregate/related.js'
+import { getHubs } from '../.test-build/server/aggregate/hubs.js'
 import { rankRows, nationalAreas } from '../.test-build/server/aggregate/rank.js'
 import { MemoCache, withFreshness } from '../.test-build/server/knto.js'
 import { diagnose } from '../.test-build/server/diagnosis.js'
@@ -62,4 +63,21 @@ test('production function adapter preserves duplicate query validation and HTTP 
   assert.equal(headers['Cache-Control'], 'no-store')
   await handler({ method: 'POST', query: { resource: 'contents' } }, response)
   assert.equal(status, 405); assert.equal(headers.Allow, 'GET')
+})
+
+test('hub ranking falls back to an earlier month and sorts by rank', async () => {
+  const rows = { 202606: [
+    { baseYm: '202606', signguCd: '29110', hubRank: '2', hubTatsNm: '국립아시아문화전당', hubCtgryMclsNm: '문화관광', mapX: '126.92', mapY: '35.14' },
+    { baseYm: '202606', signguCd: '29110', hubRank: '1', hubTatsNm: '롯데백화점/광주점', hubCtgryMclsNm: '쇼핑', mapX: '126.91', mapY: '35.15' },
+  ] }
+  const requested = []
+  const client = { all: async (_operation, params) => { requested.push(params.baseYm); return rows[params.baseYm] ?? [] } }
+  const result = await getHubs(client, 'donggu', '202608')
+  assert.deepEqual(requested, ['202608', '202607', '202606'])
+  assert.equal(result.baseYm, '202606')
+  assert.deepEqual(result.items.map(item => item.rank), [1, 2])
+  assert.equal(result.totalCount, 2)
+  const empty = await getHubs({ all: async () => [] }, 'donggu', '202608')
+  assert.equal(empty.missing, true)
+  assert.deepEqual(empty.items, [])
 })

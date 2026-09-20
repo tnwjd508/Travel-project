@@ -59,6 +59,10 @@ export interface RelatedResponse extends DistrictMeta {
   top3Share: number | null
   categoryMix: { category: string; count: number; pct: number }[]
 }
+export interface HubsResponse extends DistrictMeta {
+  district: DistrictSlug; metric: 'hub_link_centrality_rank'; totalCount: number
+  items: { rank: number; name: string; category: string | null; lng: number | null; lat: number | null }[]
+}
 export interface RankResponse extends DistrictMeta {
   district: DistrictSlug; metric: string; rank: number | null; total: number
   percentile: number | null; topPct: number | null; complete: boolean

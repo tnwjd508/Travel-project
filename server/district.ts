@@ -1,4 +1,4 @@
-import type { AllSummaryResponse, ContentsResponse, DistrictMeta, FestivalsResponse, IndicesResponse, RankResponse, RelatedResponse, SummaryResponse, VisitorsResponse } from '../src/types/district.js'
+import type { AllSummaryResponse, ContentsResponse, DistrictMeta, FestivalsResponse, HubsResponse, IndicesResponse, RankResponse, RelatedResponse, SummaryResponse, VisitorsResponse } from '../src/types/district.js'
 import { ApiError, KntoClient, MemoCache, sourceFetchedAt } from './knto.js'
 import { DISTRICTS, isDistrict, type DistrictSlug } from './regionCodes.js'
 import { requireTourismDistrict } from '../src/data/tourismRegions.js'
@@ -6,11 +6,12 @@ import { changePct, monthDays, shiftMonth, visitorMonth } from './aggregate/visi
 import { DIAGNOSTIC_CODES, getIndex, getIndices, indexDefinition } from './aggregate/indices.js'
 import { getContents, getFestivals } from './aggregate/contents.js'
 import { getRelated } from './aggregate/related.js'
+import { getHubs } from './aggregate/hubs.js'
 import { getRank } from './aggregate/rank.js'
 import { diagnose } from './diagnosis.js'
 
 export const SOURCE = '출처: ⓒ한국관광공사' as const
-export const RESOURCE_TTL = { summary: 21600, visitors: 86400, indices: 86400, contents: 3600, festivals: 3600, related: 86400, rank: 86400, diagnosis: 21600 } as const
+export const RESOURCE_TTL = { summary: 21600, visitors: 86400, indices: 86400, contents: 3600, festivals: 3600, related: 86400, rank: 86400, diagnosis: 21600, hubs: 86400 } as const
 export type Resource = keyof typeof RESOURCE_TTL
 export interface DistrictConfig { indexBaseYm: string; visitorBaseYm: string }
 // Explicit last-verified snapshots, not a claim of automatic latest-month discovery.
@@ -25,7 +26,7 @@ export function parseDistrictQuery(resource: string, params: URLSearchParams, co
   if (!Object.hasOwn(RESOURCE_TTL, resource)) throw new ApiError(404, 'UNKNOWN_RESOURCE', '지원하지 않는 관광 리소스입니다.')
   const permitted: Record<Resource, string[]> = {
     summary: ['district', 'baseYm', 'visitorYm'], visitors: ['district', 'baseYm', 'months'], indices: ['district', 'baseYm'],
-    contents: ['district', 'contentTypeId'], festivals: ['district', 'from'], related: ['district', 'baseYm'], rank: ['district', 'metric', 'baseYm'], diagnosis: ['district', 'baseYm', 'visitorYm'],
+    contents: ['district', 'contentTypeId'], festivals: ['district', 'from'], related: ['district', 'baseYm'], rank: ['district', 'metric', 'baseYm'], diagnosis: ['district', 'baseYm', 'visitorYm'], hubs: ['district', 'baseYm'],
   }
   for (const key of params.keys()) if ((!permitted[resource as Resource].includes(key) && key !== 'regionId') || params.getAll(key).length !== 1) throw new ApiError(400, 'INVALID_PARAMETER', '알 수 없거나 중복된 파라미터입니다.')
   const district = params.get('district') ?? (params.has('regionId') ? '' : 'donggu')
@@ -77,6 +78,13 @@ export class DistrictService {
     const result = await getRelated(this.client, district, ym)
     return { ...this.meta(ym, ['연관 관광지 연결 건수의 구성비이며 방문객 집중률이 아닙니다.']), district, ...result }
   }
+  async hubs(district: DistrictSlug, ym: string): Promise<HubsResponse> {
+    const { baseYm, missing, ...result } = await getHubs(this.client, district, ym)
+    const notes = ['중심 관광지 순위는 다른 관광지와의 연결 건수를 기준으로 한 순위이며 방문객 수 순위가 아닙니다.']
+    if (missing) notes.push('최근 4개월 동안 중심 관광지 자료가 제공되지 않았습니다.')
+    else if (baseYm !== ym) notes.push(`${ym.slice(0, 4)}년 ${ym.slice(4)}월 중심 관광지 자료가 없어 ${baseYm.slice(0, 4)}년 ${baseYm.slice(4)}월 자료를 표시합니다.`)
+    return { ...this.meta(baseYm, notes), district, ...result }
+  }
   async rank(district: DistrictSlug, ym: string, metric: string): Promise<RankResponse> {
     const result = await getRank(this.client, district, ym, metric)
     return { ...this.meta(ym, ['전국 관측 시군구 내 순위이며 행정구역 모집단 전체와 대조하지 않았습니다.', ...(result.complete ? [] : ['전국 비교 데이터가 부족하여 순위를 표시하지 않습니다.'])]), district, ...result }
@@ -93,6 +101,7 @@ export class DistrictService {
         case 'summary': return this.summary(district, ym, visitorYm)
         case 'indices': return this.indices(district, ym)
         case 'related': return this.related(district, ym)
+        case 'hubs': return this.hubs(district, ym)
         case 'rank': return this.rank(district, ym, query.metric)
         case 'contents': {
           const result = await getContents(this.client, district, ym, query.contentTypeId)

@@ -17,7 +17,8 @@ DISTRICTS = {
     'bukgu': ('북구', '12300', '29170', '300'),
     'gwangsangu': ('광산구', '12330', '29200', '330'),
 }
-TTL = dict(summary=21600, visitors=86400, indices=86400, contents=3600, festivals=3600, related=86400, rank=86400, diagnosis=21600)
+TTL = dict(summary=21600, visitors=86400, indices=86400, contents=3600, festivals=3600, related=86400, rank=86400, diagnosis=21600, hubs=86400)
+HUB_LOOKBACK = 4  # 중심 관광지는 매월 8일 갱신이고 통합 코드 전환 중 빈 달이 있어 이전 달까지 거슬러 찾는다.
 
 
 def shift_month(ym, offset):
@@ -69,6 +70,7 @@ def parse_query(resource, pairs, env):
         'indices': {'district', 'baseYm'}, 'contents': {'district', 'contentTypeId'},
         'festivals': {'district', 'from'}, 'related': {'district', 'baseYm'},
         'rank': {'district', 'metric', 'baseYm'}, 'diagnosis': {'district', 'baseYm', 'visitorYm'},
+        'hubs': {'district', 'baseYm'},
     }[resource]
     params = dict(pairs)
     if len(params) != len(pairs) or set(params) - (allowed | {'regionId'}):
@@ -253,6 +255,23 @@ class DistrictService:
         return dict(meta(ym, ['연관 관광지 연결 건수의 구성비이며 방문객 집중률이 아닙니다.']), district=district,
             **related_rows([r for r in rows if str(r.get('baseYm')) == ym and str(r.get('signguCd')) == signgu]))
 
+    async def hubs(self, district, ym):
+        """기초지자체 중심 관광지 순위. 연결 중심성 순위이며 방문객 수 순위가 아니다."""
+        warning = '중심 관광지 순위는 다른 관광지와의 연결 건수를 기준으로 한 순위이며 방문객 수 순위가 아닙니다.'
+        for offset in range(HUB_LOOKBACK):
+            month = shift_month(ym, -offset)
+            area, signgu = region_codes(district, month, 'LocgoHubTarService1')
+            rows = [r for r in await self.client.all('LocgoHubTarService1/areaBasedList1', dict(baseYm=month, areaCd=area, signguCd=signgu))
+                    if str(r.get('signguCd')) == signgu and str(r.get('baseYm')) == month]
+            if not rows:
+                continue
+            items = sorted((dict(rank=int(numeric(r.get('hubRank')) or 0), name=text(r.get('hubTatsNm')), category=text(r.get('hubCtgryMclsNm')) or None,
+                                 lng=numeric(r.get('mapX')), lat=numeric(r.get('mapY'))) for r in rows if numeric(r.get('hubRank'))), key=lambda i: i['rank'])
+            extra = [] if month == ym else [f'{ym[:4]}년 {ym[4:]}월 중심 관광지 자료가 없어 {month[:4]}년 {month[4:]}월 자료를 표시합니다.']
+            return dict(meta(month, [warning] + extra), district=district, metric='hub_link_centrality_rank', items=items, totalCount=len(items))
+        return dict(meta(ym, [warning, '최근 4개월 동안 중심 관광지 자료가 제공되지 않았습니다.']), district=district,
+                    metric='hub_link_centrality_rank', items=[], totalCount=0)
+
     async def rank(self, district, ym, code):
         operation, field, _ = definition(code)
         merged = ym >= ('202608' if operation.startswith('AreaTarResDemService/') else '202607')
@@ -303,6 +322,8 @@ class DistrictService:
                 return await self.festivals(district, ym, query['from'])
             if resource == 'related':
                 return await self.related(district, ym)
+            if resource == 'hubs':
+                return await self.hubs(district, ym)
             if resource == 'rank':
                 return await self.rank(district, ym, query['metric'])
             if resource == 'visitors':

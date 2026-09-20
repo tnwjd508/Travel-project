@@ -91,6 +91,19 @@ npm ci
 npm run dev -- --key-file 'C:/Users/subin/OneDrive/바탕 화면/env.txt'
 ```
 
+Windows에서 `python`을 입력했을 때 Microsoft Store 안내가 뜨면 파이썬이 설치되지 않은 상태입니다.
+python.org 설치본을 사용하고, 설치 시 `Add python.exe to PATH`를 켭니다.
+가상환경을 `backend/.venv`에 만들어도 `npm run dev`가 자동으로 찾습니다.
+
+인증키 없이도 화면과 테스트는 실행됩니다. 관광 API 키가 없으면 데이터 영역에 안내 문구가 표시되고,
+VWorld 키가 없으면 행정동 경계 대신 포함된 정적 경계를 사용하며, Gemini 키가 없으면 월간 브리핑의
+AI 요약 없이 수집 근거만 표시됩니다. Supabase 설정은 브리핑 저장용이며 없어도 조회 결과는 표시됩니다.
+
+```powershell
+npm ci; npm run build; npm test                              # 프론트·서버 테스트
+& .venv/Scripts/python.exe -m pytest backend/tests -q        # FastAPI 테스트
+```
+
 인증키 파일 대신 서버 환경 파일을 사용할 경우 다음처럼 복사한 후 실제 값을 설정하고 `npm run dev`를 실행합니다. 실제 키는 공유 폴더에 복사하지 않는 방식을 권장합니다.
 
 ```powershell
