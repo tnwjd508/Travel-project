@@ -1,9 +1,7 @@
-# Match the Docker build inputs; include Vercel's deployment configuration as well.
+# Allow only application/build inputs into the Docker build context.
 **
-!vercel.json
 !Dockerfile.vercel
 !.dockerignore
-!.vercelignore
 !package.json
 !package-lock.json
 !index.html
@@ -26,6 +24,7 @@
 !scripts/
 !scripts/export_regions.ts
 
+# These exclusions win even inside an allowed source directory.
 **/.env
 **/.env.*
 **/env.txt

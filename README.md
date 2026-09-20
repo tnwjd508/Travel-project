@@ -228,15 +228,9 @@ React UI
 
 ## 배포
 
-Vercel 분리 배포는 별도 FastAPI 서버가 필요합니다. Vercel에 다음 환경 변수를 등록하고, FastAPI에는 관광공사 인증키와 같은 `FASTAPI_PROXY_TOKEN`을 설정합니다.
+현재 Vercel 설정은 React 빌드와 Python/FastAPI·Node.js 브리핑을 **하나의 컨테이너**로 배포한다. `Dockerfile.vercel`, `.dockerignore`, `.vercelignore`, `backend/container.py`를 사용하며 기존 TypeScript/LangGraph 구현을 유지한다.
 
-```text
-FASTAPI_BASE_URL
-FASTAPI_PROXY_TOKEN
-```
-
-Production, Preview, Development 환경에 필요한 값을 설정하고 재배포해야 합니다. 인증키가 포함된 `.env.local`은 Git에 커밋하지 않습니다. FastAPI 단독 서빙과 운영 한계는 [FASTAPI_REACT.md](FASTAPI_REACT.md)를 참고하세요.
-# Supabase 공동 저장
+배포 파일은 준비했으며 실제 Linux 이미지 빌드·Vercel 업로드는 별도 검증 단계다. [컨테이너 배포 안내](docs/vercel-container-deployment.md)와 [환경변수 설정](VERCEL_ENV_SETUP.md)을 따른다. 현재 구성에는 외부 서버용 FASTAPI_BASE_URL / FASTAPI_PROXY_TOKEN을 설정하지 않는다.
 
 최신 master·SJbranch를 함께 반영한 로컬 상태와 다음 백엔드 구현은 [FastAPI 구현 방향](docs/fastapi-implementation-plan.md)에 정리돼 있습니다.
 
