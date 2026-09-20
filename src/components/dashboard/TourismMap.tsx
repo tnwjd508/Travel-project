@@ -202,13 +202,16 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
             <span className="text-[12px] font-extrabold uppercase tracking-[.12em] text-slate-400">Administrative areas</span>
             <span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] font-bold text-blue-600">{district.nameKo} · {neighborhoods.length}개 동</span>
           </div>
-          <div aria-label="행정구역 선택 정보" className="flex h-20 flex-col justify-center overflow-y-auto rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <div aria-label="행정구역 선택 정보" className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
             {focusedArea ? (
-              <>
-                <p className="text-[12px] font-bold uppercase tracking-wider text-blue-600">{selected ? 'Selected' : 'Hovered'} {boundaryKind}</p>
-                <p className="mt-0.5 truncate text-sm font-bold text-slate-800" title={focusedArea.properties.name}>{focusedArea.properties.name}</p>
-
-              </>
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-950 text-[12px] font-bold text-white">{boundaryKind.slice(-1)}</span>
+                <span className="min-w-0 flex-1">
+                  <b className="block truncate text-sm font-bold text-slate-800" title={focusedArea.properties.name}>{focusedArea.properties.name}</b>
+                  <span className="block text-[12px] text-slate-500">{selected ? `관광지 ${areaHotspots.length}곳` : '클릭하면 선택 고정'}</span>
+                </span>
+                {selected && <button type="button" onClick={() => setSelected(null)} aria-label="선택 해제" className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white text-slate-500 transition hover:bg-slate-200"><X size={14}/></button>}
+              </div>
             ) : (
               <p className="text-[12px] leading-5 text-slate-500">{district.nameKo}의 {boundaryKind} 경계가 표시됩니다. 동을 클릭하면 선택이 고정됩니다.</p>
             )}
