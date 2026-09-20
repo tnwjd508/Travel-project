@@ -55,7 +55,8 @@ export interface FestivalsResponse extends DistrictMeta {
 }
 export interface RelatedResponse extends DistrictMeta {
   district: DistrictSlug; metric: 'related_link_share'
-  hubs: { tAtsCd: string; name: string; relatedCount: number; share: number }[]
+  hubs: { tAtsCd: string; name: string; relatedCount: number; share: number
+    top: { rank: number; name: string; category: string | null; district: string | null }[] }[]
   top3Share: number | null
   categoryMix: { category: string; count: number; pct: number }[]
 }
