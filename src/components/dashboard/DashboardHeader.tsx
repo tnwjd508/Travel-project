@@ -12,8 +12,8 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
         <button type="button" onClick={onMenuClick} className="grid h-11 w-11 place-items-center rounded-xl text-slate-600 outline-none transition hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden" aria-label="대시보드 메뉴 열기"><Menu size={20} /></button>
 
         <button type="button" onClick={() => navigate(district.dashboardPath)} className="mr-auto min-w-0 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-          <div className="flex items-center gap-2"><span className="text-xl font-extrabold tracking-[-.06em] text-slate-950">ON<span className="text-blue-600">:</span>GIL</span><span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-[.08em] text-blue-600">AI</span></div>
-          <p className="hidden text-[10px] font-medium text-slate-400 sm:block">AI 지역 관광전략 수립 플랫폼</p>
+          <div className="flex items-center gap-2"><span className="text-xl font-extrabold tracking-[-.06em] text-slate-950">ON<span className="text-blue-600">:</span>GIL</span><span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] font-extrabold uppercase tracking-[.08em] text-blue-600">AI</span></div>
+          <p className="hidden text-[12px] font-medium text-slate-400 sm:block">AI 지역 관광전략 수립 플랫폼</p>
         </button>
 
         <div className="hidden items-center gap-2 text-xs font-medium text-slate-500 md:flex"><CalendarDays size={15} className="text-slate-400" aria-hidden="true" />{new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}</div>
@@ -22,8 +22,8 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
 
         <div className="hidden items-center gap-2.5 border-l border-slate-200 pl-4 xl:flex">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-[10px] font-bold text-white">{district.nameKo}</div>
-          <div className="leading-tight"><p className="text-xs font-bold text-slate-800">지자체 대시보드</p><p className="mt-0.5 text-[10px] text-slate-400">{district.regionName} {district.nameKo}</p></div>
+          <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-[12px] font-bold text-white">{district.nameKo}</div>
+          <div className="leading-tight"><p className="text-xs font-bold text-slate-800">지자체 대시보드</p><p className="mt-0.5 text-[12px] text-slate-400">{district.regionName} {district.nameKo}</p></div>
         </div>
       </div>
     </header>

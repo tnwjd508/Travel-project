@@ -50,10 +50,10 @@ export function GwangjuDistrictSelectPage() {
         <div className="mx-auto flex h-[72px] max-w-[1540px] items-center gap-3 px-4 sm:px-7 lg:px-10">
           <button type="button" onClick={() => navigate('/')} className="grid h-11 w-11 place-items-center rounded-xl text-slate-500 outline-none transition hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="대한민국 지역 선택으로 돌아가기"><ArrowLeft size={19} /></button>
           <button type="button" onClick={() => navigate('/')} className="mr-auto rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-            <div className="flex items-center gap-2"><span className="text-xl font-extrabold tracking-[-.06em]">ON<span className="text-blue-600">:</span>GIL</span><span className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-extrabold text-blue-600">AI</span></div>
-            <p className="hidden text-[10px] font-medium text-slate-400 sm:block">AI 지역 관광전략 수립 플랫폼</p>
+            <div className="flex items-center gap-2"><span className="text-xl font-extrabold tracking-[-.06em]">ON<span className="text-blue-600">:</span>GIL</span><span className="rounded-full bg-blue-50 px-2 py-1 text-[12px] font-extrabold text-blue-600">AI</span></div>
+            <p className="hidden text-[12px] font-medium text-slate-400 sm:block">AI 지역 관광전략 수립 플랫폼</p>
           </button>
-          <span className="hidden items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-bold text-blue-700 sm:flex"><Compass size={13} />광주광역시 자치구 탐색</span>
+          <span className="hidden items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-[12px] font-bold text-blue-700 sm:flex"><Compass size={13} />광주광역시 자치구 탐색</span>
         </div>
       </header>
 
@@ -61,7 +61,7 @@ export function GwangjuDistrictSelectPage() {
         <RegionBreadcrumb />
         <div className="mt-6 grid gap-7 lg:grid-cols-[minmax(300px,.34fr)_minmax(0,.66fr)] lg:items-start xl:gap-11">
           <motion.section initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5 }} className="lg:sticky lg:top-8">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.15em] text-blue-700"><Sparkles size={12} />Gwangju tourism map</span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[12px] font-extrabold uppercase tracking-[.15em] text-blue-700"><Sparkles size={12} />Gwangju tourism map</span>
             <h1 className="mt-5 text-[34px] font-extrabold leading-[1.16] tracking-[-.055em] text-slate-950 sm:text-[42px] lg:text-[38px] xl:text-[46px]">
               광주광역시의<br /><span className="text-blue-600">관광 가능성</span>을<br />탐색하세요.
             </h1>
@@ -71,8 +71,8 @@ export function GwangjuDistrictSelectPage() {
               {progress.map((item, index) => (
                 <li key={item.label} aria-current={item.state === 'current' ? 'step' : undefined} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${item.state === 'current' ? 'bg-blue-50 text-blue-700' : 'text-slate-400'}`}>
                   <span className={`grid h-7 w-7 place-items-center rounded-full ${item.state === 'complete' ? 'bg-emerald-500 text-white' : item.state === 'current' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{item.state === 'complete' ? <Check size={13} /> : item.state === 'current' ? <CircleDot size={13} /> : index + 1}</span>
-                  <span className="text-[11px] font-bold">{item.label}</span>
-                  <span className="ml-auto text-[9px] font-bold">{item.state === 'complete' ? '완료' : item.state === 'current' ? '현재 단계' : '다음'}</span>
+                  <span className="text-[12px] font-bold">{item.label}</span>
+                  <span className="ml-auto text-[12px] font-bold">{item.state === 'complete' ? '완료' : item.state === 'current' ? '현재 단계' : '다음'}</span>
                 </li>
               ))}
             </ol>
@@ -85,7 +85,7 @@ export function GwangjuDistrictSelectPage() {
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[20px] border border-dashed border-slate-300 bg-white/60 px-5 py-6 text-center">
                     <span className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600"><Compass size={19} /></span>
                     <p className="mt-3 text-xs font-bold text-slate-700">지도에서 원하는 자치구를 선택해 주세요.</p>
-                    <p className="mt-1 text-[10px] leading-5 text-slate-400">자치구 모양을 클릭하면 해당 지역 현황으로 이동합니다.</p>
+                    <p className="mt-1 text-[12px] leading-5 text-slate-400">자치구 모양을 클릭하면 해당 지역 현황으로 이동합니다.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -94,8 +94,8 @@ export function GwangjuDistrictSelectPage() {
 
           <motion.section initial={{ opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .58, delay: .12, ease: [0.16, 1, 0.3, 1] }} aria-labelledby="district-map-title">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3 px-1">
-              <div><p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Administrative districts</p><h2 id="district-map-title" className="mt-1 text-xl font-extrabold tracking-[-.035em] text-slate-900">광주 5개 자치구 선택 지도</h2></div>
-              <p className="text-[10px] font-medium text-slate-400">동구 · 서구 · 남구 · 북구 · 광산구</p>
+              <div><p className="text-[12px] font-bold uppercase tracking-[.16em] text-slate-400">Administrative districts</p><h2 id="district-map-title" className="mt-1 text-xl font-extrabold tracking-[-.035em] text-slate-900">광주 5개 자치구 선택 지도</h2></div>
+              <p className="text-[12px] font-medium text-slate-400">동구 · 서구 · 남구 · 북구 · 광산구</p>
             </div>
             <GwangjuDistrictMap selectedDistrict={selectedDistrict} onSelectDistrict={selectDistrict} onConfirmDistrict={confirmDistrict} />
           </motion.section>
