@@ -1,8 +1,8 @@
-import type { SummaryResponse, VisitorsResponse, IndicesResponse, ContentsResponse, FestivalsResponse, RelatedResponse, RankResponse, DiagnosisResponse } from '@/types/district'
+import type { SummaryResponse, VisitorsResponse, IndicesResponse, ContentsResponse, FestivalsResponse, RelatedResponse, RankResponse, DiagnosisResponse, HubsResponse } from '@/types/district'
 
 export interface DistrictResources {
   summary: SummaryResponse; visitors: VisitorsResponse; indices: IndicesResponse; contents: ContentsResponse
-  festivals: FestivalsResponse; related: RelatedResponse; rank: RankResponse; diagnosis: DiagnosisResponse
+  festivals: FestivalsResponse; related: RelatedResponse; rank: RankResponse; diagnosis: DiagnosisResponse; hubs: HubsResponse
 }
 export type DistrictResource = keyof DistrictResources
 export class DistrictApiError extends Error {

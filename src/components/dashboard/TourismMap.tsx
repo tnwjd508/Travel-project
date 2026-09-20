@@ -33,6 +33,20 @@ const ZOOM_LEVELS = [1, 1.25, 1.55, 1.9]
 // viewBox 픽셀² 기준. 이보다 작은 동은 hover 나 선택 중일 때만 이름을 표시해 겹침을 줄인다.
 const LABEL_MIN_AREA = 900
 const neighborhoodFills = ['#BFDBFE', '#C7D2FE', '#BAE6FD', '#DDD6FE', '#CCFBF1', '#E0E7FF']
+const HOTSPOT_PREVIEW = 10
+// 중심 관광지와 관광 콘텐츠는 별개 목록이다. 좌표로 맞추면 같은 건물의 다른 매장에 순위가 붙으므로
+// 표기 차이(공백·가운뎃점·슬래시)만 지운 뒤 이름이 같을 때만 순위를 표시한다.
+const simplifyName = (value: string) => value.replace(/[\s/()·.-]/g, '')
+const HUB_ACCENT = '#7C3AED'
+
+// 지도 옆 목록 항목. 관광 콘텐츠 목록과 중심 관광지 순위를 한 목록으로 합친다.
+interface Hotspot extends Attraction {
+  districtRank: number | null
+  fromHub: boolean
+}
+interface RankedHotspot extends Hotspot {
+  areaRank: number | null
+}
 
 export function TourismMap() {
   const district = useActiveDistrict()
@@ -51,6 +65,9 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
   const [zoomIndex, setZoomIndex] = useState(0)
   const [showBoundaries, setShowBoundaries] = useState(true)
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null)
+  const [showAllHotspots, setShowAllHotspots] = useState(false)
+  const [hotspotTab, setHotspotTab] = useState<'rank' | 'content'>('rank')
+  const hubState = useDistrictResource('hubs', { district: district.slug })
 
   const districtFeature = useMemo<DistrictFeature | null>(
     () => districts.features.find((feature) => feature.properties.code === district.code) ?? null,
@@ -86,10 +103,48 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
     [districtFeature, attractions],
   )
 
+  // 관광 콘텐츠와 중심 관광지 순위를 합친다. 순위 목록에만 있는 장소(백화점·영화관 등)도 순위와 함께 남긴다.
+  const hotspots = useMemo<Hotspot[]>(() => {
+    const keyOf = (attraction: Attraction) => attraction.id ?? attraction.name
+    const ranks = new Map<string, number>()
+    const matchedHubs = new Set<number>()
+    const hubs = (hubState.data?.items ?? []).filter((hub) => hub.lng !== null && hub.lat !== null
+      && (!districtFeature || geoContains(districtFeature, [hub.lng, hub.lat])))
+    for (const hub of hubs) {
+      const match = districtAttractions.find((attraction) => !ranks.has(keyOf(attraction)) && simplifyName(attraction.name) === simplifyName(hub.name))
+      if (!match) continue
+      ranks.set(keyOf(match), hub.rank)
+      matchedHubs.add(hub.rank)
+    }
+    const fromContents: Hotspot[] = districtAttractions.map((attraction) => ({ ...attraction, districtRank: ranks.get(keyOf(attraction)) ?? null, fromHub: false }))
+    const hubOnly: Hotspot[] = hubs.filter((hub) => !matchedHubs.has(hub.rank)).map((hub) => ({
+      id: `hub-${hub.rank}`, name: hub.name, category: hub.category ?? '중심 관광지', lng: hub.lng!, lat: hub.lat!,
+      visitors: '', accent: HUB_ACCENT, districtRank: hub.rank, fromHub: true,
+    }))
+    return [...fromContents, ...hubOnly].sort((a, b) => (a.districtRank ?? Infinity) - (b.districtRank ?? Infinity))
+  }, [districtAttractions, districtFeature, hubState.data])
+
+  // 동을 클릭해 고정하면 그 동 안의 장소만 남기고, 순위를 그 동 안에서 다시 매긴다.
+  const areaHotspots = useMemo<RankedHotspot[]>(() => {
+    const inArea = selected ? hotspots.filter((hotspot) => geoContains(selected, [hotspot.lng, hotspot.lat])) : hotspots
+    let position = 0
+    return inArea.map((hotspot) => ({ ...hotspot, areaRank: hotspot.districtRank === null ? null : ++position }))
+  }, [hotspots, selected])
+  const areaName = selected ? selected.properties.name : district.nameKo
+  // 자료가 둘이므로 목록도 둘로 나눈다. 순위 탭은 중심 관광지 순위, 콘텐츠 탭은 순위 자료가 없는 관광 콘텐츠.
+  const rankedHotspots = areaHotspots.filter((item) => item.areaRank !== null)
+  const contentHotspots = areaHotspots.filter((item) => item.areaRank === null)
+  const tabHotspots = hotspotTab === 'rank' ? rankedHotspots : contentHotspots
+  const visibleHotspots = showAllHotspots ? tabHotspots : tabHotspots.slice(0, HOTSPOT_PREVIEW)
+
   useEffect(() => {
     setZoomIndex(0)
     setActiveAttraction(districtAttractions[0] ?? null)
   }, [district.code, districtAttractions])
+
+  useEffect(() => {
+    setShowAllHotspots(false)
+  }, [selected, district.code, hotspotTab])
 
   // 자치구가 바뀌거나 경계 출처(VWorld ↔ 정적)가 바뀌면 동 코드 체계가 달라지므로 선택을 비운다.
   useEffect(() => {
@@ -161,10 +216,28 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
         </div>
 
         <div className="mt-5 border-t border-slate-100 pt-4">
-          <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
-          {districtAttractions.length > 0 ? (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{areaName} {areaHotspots.length}곳</span>
+          </div>
+          <div role="tablist" aria-label="관광지 목록 구분" className="mt-2 flex gap-1.5">
+            {([['rank', '중심 관광지 순위', rankedHotspots.length], ['content', '관광 콘텐츠', contentHotspots.length]] as const).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={hotspotTab === value}
+                onClick={() => setHotspotTab(value)}
+                className={`min-h-11 flex-1 rounded-xl border text-[11px] font-bold transition ${hotspotTab === value ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200'}`}
+              >
+                {label} {count}
+              </button>
+            ))}
+          </div>
+          {selected && <button type="button" onClick={() => setSelected(null)} className="mt-2 min-h-11 w-full rounded-xl border border-blue-200 bg-blue-50 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100">{district.nameKo} 전체 보기</button>}
+          {tabHotspots.length > 0 ? (
             <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
-              {districtAttractions.map((attraction) => (
+              {visibleHotspots.map((attraction) => (
                 <button
                   key={attraction.id ?? attraction.name}
                   type="button"
@@ -173,17 +246,28 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
                   onClick={() => setActiveAttraction(attraction)}
                   className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${activeAttraction?.name === attraction.name ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-transparent bg-slate-50 hover:border-slate-200'}`}
                 >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
+                  {attraction.areaRank === null
+                    ? <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
+                    : <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[10px] font-bold text-white ${attraction.fromHub ? 'bg-violet-600' : 'bg-blue-600'}`} title={`${areaName} 중심 관광지 순위`}>{attraction.areaRank}</span>}
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-xs text-slate-700">{attraction.name}</b>
-                    <span className="text-[10px] text-slate-400">{attraction.category}</span>
+                    <span className="text-[10px] text-slate-400">{attraction.category}{selected && attraction.districtRank !== null && ` · ${district.nameKo} ${attraction.districtRank}위`}{attraction.fromHub && ' · 순위 목록'}</span>
                   </span>
                 </button>
               ))}
+              {tabHotspots.length > HOTSPOT_PREVIEW && (
+                <button type="button" onClick={() => setShowAllHotspots((value) => !value)} className="min-h-11 w-full rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 transition hover:border-blue-200 hover:text-blue-600">
+                  {showAllHotspots ? '접기' : `더 보기 (${tabHotspots.length - HOTSPOT_PREVIEW}곳)`}
+                </button>
+              )}
             </div>
           ) : (
-            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{district.nameKo}에 표시할 관광지 좌표가 없습니다.</p>
+            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{hotspotTab === 'rank' ? `${areaName}에 중심 관광지 순위 자료가 없습니다.` : `${areaName}에 표시할 관광 콘텐츠가 없습니다.`}</p>
           )}
+          <p className="mt-2 text-[10px] leading-4 text-slate-400">{hotspotTab === 'rank'
+            ? `한국관광공사 중심 관광지 순위 · 기준월 ${hubState.data?.baseYm.slice(0, 4)}.${hubState.data?.baseYm.slice(4)} · 숫자는 ${areaName} 안에서의 순번이며, 다른 관광지와의 연결 건수 기준입니다. 방문객 수나 인기 순위가 아닙니다.`
+            : `한국관광공사 관광 콘텐츠 중 순위 자료가 없는 곳입니다. 순위가 있는 ${rankedHotspots.length}곳은 왼쪽 탭에 있습니다.`}</p>
+          {hubState.status === 'error' && <p className="mt-2 text-[10px] leading-4 text-amber-700">중심 관광지 순위 자료를 불러오지 못했습니다.</p>}
           <DataNotice state={contentState}/>
           {contentState.data && <SourceNote data={contentState.data}/>}
         </div>
@@ -286,7 +370,7 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
               })}
             </g>
 
-            {districtAttractions.map((attraction) => {
+            {tabHotspots.map((attraction) => {
               const point = projection([attraction.lng, attraction.lat])
               if (!point) return null
               const active = activeAttraction?.name === attraction.name
@@ -337,7 +421,7 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
               <div>
                 <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: activeAttraction.accent }}>{activeAttraction.category}</span>
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{activeAttraction.name}</h4>
-                <p className="mt-1 text-[10px] text-slate-400">한국관광공사 콘텐츠 좌표</p>
+                <p className="mt-1 text-[10px] text-slate-400">{(activeAttraction as Hotspot).fromHub ? '한국관광공사 중심 관광지 좌표' : '한국관광공사 콘텐츠 좌표'}</p>
               </div>
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><MapPin size={14} /></span>
             </div>

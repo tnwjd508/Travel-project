@@ -111,7 +111,7 @@ def create_app(settings=None, transport=None):
             headers['Retry-After'] = '30'
         return JSONResponse(result['body'], status_code=result['status'], headers=headers)
 
-    @app.get('/api/district/{resource}', tags=['자치구'], description='summary, visitors, indices, contents, festivals, related, rank, diagnosis. district는 /api/regions의 시군구 ID 또는 기존 광주 영문 별칭. summary의 all은 광주 5개 구만 의미합니다.')
+    @app.get('/api/district/{resource}', tags=['자치구'], description='summary, visitors, indices, contents, festivals, related, rank, diagnosis, hubs. district는 /api/regions의 시군구 ID 또는 기존 광주 영문 별칭. summary의 all은 광주 5개 구만 의미합니다.')
     async def district_api(request: Request, resource: str, district: str = 'donggu', baseYm: str | None = None,
         visitorYm: str | None = None, months: int | None = None, metric: str | None = None,
         contentTypeId: str | None = None, from_date: str | None = Query(None, alias='from'), regionId: str | None = None):
