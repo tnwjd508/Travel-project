@@ -15,7 +15,7 @@ export function StrategyPage() {
   const scenario = simulationResult?.district === district.slug ? simulationResult : null
   const evidence = scenario ? context.evidence(scenario.policy) : null
   return <DashboardPageFrame eyebrow="Strategy Compare" title="진단 결과와 연결해 전략을 비교합니다" description="각 정책이 겨냥하는 지표가 현재 진단에서 어떤 상태인지 나란히 확인합니다." icon={GitCompareArrows}>
-    {scenario && <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-5 py-3 text-xs text-blue-800"><span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-600 text-white"><ClipboardList size={15}/></span><b>현재 시나리오</b><span>{policyLabels[scenario.policy]} · {scenario.budget}억 원 · {scenario.duration}</span>{evidence && <span className={`ml-auto rounded-full border px-2.5 py-1 text-[12px] font-bold ${evidenceStatusClass[evidence.status]}`}>{evidenceStatusLabels[evidence.status]}</span>}</div>}
+    {scenario && <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-5 py-3 text-xs text-blue-800"><span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-600 text-white"><ClipboardList size={15}/></span><b>현재 시나리오</b><span>{policyLabels[scenario.policy]} · {scenario.duration}</span>{evidence && <span className={`ml-auto rounded-full border px-2.5 py-1 text-[12px] font-bold ${evidenceStatusClass[evidence.status]}`}>{evidenceStatusLabels[evidence.status]}</span>}</div>}
     <div className="space-y-5"><StrategyTable currentPolicy={scenario?.policy} context={context}/><ImpactTimeline policy={scenario?.policy ?? selectedPolicy} duration={scenario?.duration ?? duration}/></div>
   </DashboardPageFrame>
 }
