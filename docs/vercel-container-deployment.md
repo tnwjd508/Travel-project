@@ -18,7 +18,7 @@
 - `.vercelignore`: CLI 업로드에서도 같은 범위만 허용한다. Dockerfile만 추가하고 로컬 비밀 파일 전체를 업로드하는 상황을 방지한다.
 - `backend/container.py`: `PORT`를 읽고 FastAPI를 `0.0.0.0`에 실행한다. 로컬 `.env`와 바탕화면 파일은 읽지 않는다. 기존 Node 워커는 FastAPI lifespan에서 함께 정리한다.
 
-기존 `server/briefing/` 구현, 사용자 JWT·기관 권한 검증, Supabase 테이블·데이터는 변경하지 않는다. 개발용 수집 상태 패널은 프로덕션 빌드에서 계속 숨긴다.
+기존 `server/briefing/` 구현과 Supabase 테이블·데이터는 변경하지 않는다. 공모전 화면은 로그인을 사용하지 않고, 지도에서 선택한 정규 지자체 ID로 브리핑을 조회한다. 개발용 수집 상태 패널은 프로덕션 빌드에서 계속 숨긴다.
 
 ## 실행 전 설정
 
@@ -28,14 +28,14 @@
 |---|---|
 | PORT | **8000**. Vercel 프로젝트에도 명시적으로 등록한다. |
 | SUPABASE_URL | 현재 사용하는 Supabase 프로젝트 URL |
-| SUPABASE_PUBLISHABLE_KEY | 공개 로그인 키 |
+| SUPABASE_PUBLISHABLE_KEY | 향후 Auth API 및 현재 readiness 호환용 공개 키. 공모전 화면은 로그인에 사용하지 않음 |
 | SUPABASE_SECRET_KEY | 서버 전용 키. 기존 JWT 방식이면 SUPABASE_SERVICE_ROLE_KEY 사용 |
 | TOUR_API_SERVICE_KEY | 실제 관광 API 키 값 |
 | GEMINI_API_KEY, GEMINI_MODEL | 월간 AI 브리핑 설정 |
 | TOUR_API_INDEX_BASE_YM, TOUR_API_VISITOR_BASE_YM | 확인한 지표 기준월. 현재 기본값 202608 / 202607 |
 | VWORLD_API_KEY, VWORLD_DOMAIN | VWorld 사용 시 실제 키·등록 도메인 |
 
-**FASTAPI_BASE_URL과 FASTAPI_PROXY_TOKEN은 이 구성에 등록하지 않는다.** 브라우저와 API가 같은 서비스에 있으므로 별도 서버 프록시가 없다. 기존 Vercel 프로젝트에 토큰이 남아 있으면 브라우저 요청이 전부 401이 되는 대신, 새 진입점이 명확한 설정 오류로 시작을 중단한다. 토큰 값을 로그에 출력하거나 조용히 무시하지 않는다. 사용자 로그인과 기관별 권한 검사는 그대로 작동한다.
+**FASTAPI_BASE_URL과 FASTAPI_PROXY_TOKEN은 이 구성에 등록하지 않는다.** 브라우저와 API가 같은 서비스에 있으므로 별도 서버 프록시가 없다. 기존 Vercel 프로젝트에 토큰이 남아 있으면 브라우저 요청이 전부 401이 되는 대신, 새 진입점이 명확한 설정 오류로 시작을 중단한다. 토큰 값을 로그에 출력하거나 조용히 무시하지 않는다.
 
 Vercel의 기본 컨테이너 접속 포트는 80이므로 프로젝트에 **PORT=8000**을 반드시 설정한다. 이미지의 `EXPOSE 8000`만으로 플랫폼 설정을 대신하지 않는다.
 
@@ -56,17 +56,18 @@ docker run --rm --name ongil-travel-local -p 127.0.0.1:18000:8000 -e PORT=8000 -
 
 - `http://127.0.0.1:18000/api/health`: 프로세스 응답
 - `http://127.0.0.1:18000/api/ready`: DB/RPC·분석 자료 등록·런타임 준비 여부
-- `http://127.0.0.1:18000/dashboard/gwangju/donggu/overview`: React 화면
-- `http://127.0.0.1:18000/api/policy-evidence?district=donggu&policy=festival`: 기존 등록 자료 조회
+- `http://127.0.0.1:18000/dashboard/gwangju/12210/overview`: 정규 지자체 ID 기반 React 화면
+- `http://127.0.0.1:18000/api/monthly-briefing?regionId=gwangju&district=12210&month=2026-08`: 해당 지자체·월 브리핑 조회. 서버가 DB 지역 ID를 `jeonnam-gwangju`로 정규화한다.
+- `http://127.0.0.1:18000/api/policy-evidence?regionId=jeonnam-gwangju&district=12210&policy=festival`: 해당 지자체 등록 자료 조회
 
-`ready` 응답만으로 실제 Gemini 생성이나 로그인·저장이 검증되지는 않는다. 등록한 계정으로 검토 저장·재조회까지 확인한 뒤 배포를 진행한다.
+`ready` 응답만으로 실제 Gemini 생성이나 지역별 저장·재조회가 검증되지는 않는다. 서로 다른 지자체 ID로 요청해 각 브리핑 응답과 저장 행이 분리되는지 확인한 뒤 배포를 진행한다.
 
 ## Vercel 적용 시
 
 1. 검증한 소스·배포 파일을 GitHub에 반영한다. 프로젝트 Root Directory는 저장소 루트다.
 2. 기존 프로젝트의 Vite 전용 Install/Build/Output Directory override를 정리하고, 저장소의 Services/Container 설정이 적용되는지 빌드 로그에서 확인한다. Node 설치와 React 빌드는 Dockerfile에서 수행한다.
 3. 위 환경변수를 Preview/Production 각각의 필요한 환경에 등록한다. 로컬 PowerShell 값은 자동 전달되지 않는다.
-4. Preview에서 컨테이너 빌드·기동·라우팅·JWT 권한·저장·재조회·월간 브리핑을 확인한 뒤 운영 배포로 진행한다.
+4. Preview에서 컨테이너 빌드·기동·정규 지자체 ID 라우팅·지역별 저장·재조회·월간 브리핑을 확인한 뒤 운영 배포로 진행한다.
 
 컨테이너 함수의 최대 실행 시간은 `services.app.functions["Dockerfile.vercel"].maxDuration = 300`이다. 기존 Python 브리핑 대기는 최대 285초다. 배포 환경의 기동 지연과 실제 요청 시간을 확인해야 한다.
 

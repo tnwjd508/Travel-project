@@ -71,7 +71,7 @@ export function LandingPage() {
     if (isTransitioning) return
     const active = resolveDashboardRegion(selectedRegion.id, district)
     if (!active) return
-    setSelectedDistrict(district)
+    setSelectedDistrict(active.slug)
     setIsTransitioning(true)
     navigationTimer.current = window.setTimeout(() => navigate(active.dashboardPath), 520)
   }

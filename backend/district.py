@@ -5,6 +5,7 @@ import os
 import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from statistics import fmean, median
 from urllib.parse import urlparse
 
 from .core import ApiError, Cache, meta, numeric
@@ -307,10 +308,18 @@ class DistrictService:
         complete = not missing_areas and not missing_districts and target in values
         rank = 1 + sum(v > values[target] for v in values.values()) if complete else None
         total = len(values)
+        # 순위와 같은 유효 시군구 집합으로 비교 통계를 계산합니다.
+        # 불완전한 전국 자료는 정상적인 평균처럼 표시하지 않습니다.
+        comparison_values = list(values.values()) if complete else []
+        target_value = values.get(target)
         warnings = ['전국 관측 시군구 내 순위이며 행정구역 모집단 전체와 대조하지 않았습니다.']
         if not complete:
             warnings.append('전국 비교 데이터가 부족하여 순위를 표시하지 않습니다.')
         return dict(meta(ym, warnings), district=district, metric=code, rank=rank, total=total,
+            value=target_value,
+            mean=fmean(comparison_values) if complete else None,
+            median=median(comparison_values) if complete else None,
+            tieCount=sum(v == target_value for v in comparison_values) if complete else None,
             percentile=(100 if total == 1 else (total - rank) / (total - 1) * 100) if complete else None,
             topPct=rank / total * 100 if complete else None, complete=complete,
             missingAreas=missing_areas, missingDistricts=sorted(missing_districts), scope='observed_nationwide_districts', populationVerified=False)

@@ -1,5 +1,7 @@
 # FastAPI 구현 현황과 서비스 연결 안내
 
+공모전 제출 모드(2026-09-20 후속): 사용자 로그인 UI를 노출하지 않는다. 지도에서 선택한 정규 지자체 ID를 대시보드 경로와 월간 브리핑 조회 컨텍스트로 사용한다. 브리핑 DB 키는 `region_id + district_id + analysis_month`이며, 다른 지자체의 저장 결과를 같은 행으로 재사용하지 않는다. 기관 Auth·시나리오 공동 저장 API는 향후 운영 확장용 코드로 유지하지만 현재 화면에서는 호출하지 않는다. 지자체 ID는 공개 선택값이므로 사용자 인증이나 악의적인 접근 통제 수단으로 해석하지 않는다.
+
 후속 배포 준비: 현재 `vercel.json`은 React·FastAPI·Node를 한 컨테이너에 담는 구성으로 바뀌었다. 실제 이미지 빌드와 배포는 아직 검증하지 않았다. 최신 배포 파일과 환경변수는 [통합 컨테이너 안내](vercel-container-deployment.md)를 우선 참조한다. 아래 외부 FastAPI + Vercel 프록시 설명은 이전 배포 방식의 기록이다.
 
 2026-09-20. 최신 master·SJbranch 통합에 이어 분석 근거 등록/조회, 기관별 검토 저장/조회, React 연동을 구현했다. 원격 push, Vercel/FastAPI 배포, 실제 Supabase 변경은 수행하지 않았다. 현재 로컬에 Supabase 연결 환경변수가 없어 실계정 저장 검증은 남아 있다.
@@ -145,18 +147,18 @@ npm run dev
 
 CLI는 작업 파일의 JSON이 지정 커밋과 같은지 확인한 뒤 **커밋에 보관된 원본 바이트의 SHA**를 등록한다. Windows CRLF 체크아웃은 새 통계 버전으로 취급하지 않는다. 현재 분석 실행 manifest가 없으므로 provenance는 `partial`이다. `--provenance-status complete`는 manifest의 원본 Storage 객체를 실제로 읽어 SHA까지 일치할 때만 등록한다. 기본 dry-run은 Storage 바이트를 확인하지 않고 `storageVerified:false`를 반환한다.
 
-4. Supabase Auth에 실제 사용할 계정이 있어야 한다. 운영자가 해당 UUID를 `organizations`/`organization_members`의 기관에 `editor` 또는 `viewer`로 등록한다. 계정을 만들거나 초대 메일을 발송하는 작업은 이번 구현에서 수행하지 않았다.
-5. `npm run dev` 또는 배포한 FastAPI를 실행하고 `/api/ready`를 확인한다. 브리핑 모델 키가 없으면 전체 readiness는 실패하지만, 기관 검토 저장에는 Gemini를 사용하지 않는다. 판별은 응답의 각 항목으로 한다.
-6. 정책 시뮬레이션 → 로그인 → **현재 조건을 기관에 저장** → 저장 조건 선택 → **현재 자료로 검토 저장**을 실행한다. 이 순서는 조건 저장과 당시 지표 수집을 구분한다. viewer는 조회만 가능하다.
+4. `npm run dev` 또는 배포한 FastAPI를 실행하고 `/api/ready`를 확인한다. 브리핑 모델 키가 없으면 전체 readiness는 실패하므로 응답의 각 항목으로 원인을 판별한다.
+5. 첫 지도에서 시군구를 선택하고 주소가 `/dashboard/{region_id}/{district_id}/...` 형식인지 확인한다. 과거 별칭 주소는 같은 지자체의 정규 ID 주소로 자동 이동한다.
+6. 월간 브리핑 요청이 `/api/monthly-briefing?regionId={region_id}&district={district_id}&month={YYYY-MM}`로 전달되고, 응답의 `district`와 `month`가 요청값과 같은지 확인한다.
 
-저장 주소의 `organization`, `scenario`, `review`가 세 화면에서 유지된다. 재접속·새로고침·보고서 인쇄는 해당 검토를 다시 읽는다. summary/diagnosis가 NULL이면 최신 지표로 채우지 않는다. 상단 KPI도 같은 스냅샷이다. **저장된 검토의 전략 비교는 저장된 기준선을 사용하며, 과거 통계는 검토한 정책 한 개만 표시**한다. 다른 정책을 현재 규칙으로 재평가해 과거 기록에 섞지 않는다. 새 정책의 근거를 확인하려면 별도 검토를 저장한다.
+공모전 화면은 계정과 기관 선택을 요구하지 않는다. 선택한 정규 지자체 ID가 데이터 컨텍스트이며, 브리핑은 Supabase의 `(region_id, district_id, analysis_month)` 키로 저장·조회된다. 표시용 광주 경로 ID `gwangju`와 정규 지자체 ID `12210`이 들어오면 서버가 DB 지역 ID `jeonnam-gwangju`와 `12210`으로 정규화한다. 따라서 서로 다른 지역의 브리핑이 같은 행을 공유하지 않는다. 이 ID는 공개 선택값이므로 사용자 인증이나 비밀 접근 제어 수단은 아니다.
 
-검토 POST는 `organizationId`가 필수이며 `releaseId`, `baseYm`, `visitorYm`은 선택이다. 기준월은 `YYYYMM`이고 서버 허용 범위 내여야 한다. 요청 키와 본문이 같으면 최초 저장 기록을 반환한다. 응답 유실 후 재시도 버튼도 같은 키를 유지한다. 서로 다른 요청을 동시에 실행하는 경우 서버 수집은 중복될 수 있지만, DB의 기관·요청 키 제약과 트랜잭션 잠금이 최종 기록의 중복을 막는다. 수집은 최대 24초, 전체 저장 처리 55초, Vite/Vercel 전달 65초이며 Vercel 함수 제한은 90초로 설정했다. 실제 호스팅 ingress도 이를 수용해야 한다.
+기존 `organizations`, `organization_members`, 시나리오·검토 API는 향후 운영 확장용으로 유지한다. 현재 React 화면은 해당 API와 `organization`, `scenario`, `review` URL 파라미터를 사용하지 않는다.
 
 ## 7. 로컬 검증과 남은 범위
 
 - Node 테스트 86건, LangGraph 테스트 17건, Python/API/축제 분석 테스트 84건으로 총 187건 통과. PostgreSQL 엔진(PGlite)의 권한·불변성·멱등성 검사와 HTTP 계약 검사를 포함한다.
 - 타입 검사와 프로덕션 빌드 통과. 기존 번들 크기·의존성 주석 경고는 남아 있다.
-- 격리된 Edge에서 로그인, 조건 저장, 검토 저장 응답 유실/재시도, 새로고침, 전략·보고서 이동, NULL 기준선, 기관 변경·로그아웃·viewer, 모바일, 전국 지역 범위와 테마를 확인했다. 브라우저의 외부 API는 테스트 응답을 사용한다.
+- 격리된 Edge에서 지도 선택이 정규 지자체 ID 주소로 이동하는지, 과거 별칭 주소가 정규 주소로 바뀌는지, 로그인 UI가 노출되지 않는지 확인했다.
 - SQL 원본과 생성된 통합/후속 SQL 일치, Git 원본 분석 바이트 해시 일치 확인. teammate LangGraph 구현은 변경하지 않았다.
-- 실제 Supabase 등록·기관 계정 검증·FastAPI 호스트 배포·Vercel 연결·GitHub push는 남아 있다. 이번 작업에서 원본 축제 통계를 재분석하거나 외부 관광 API/Gemini를 유료 호출하지 않았다.
+- 실제 Supabase 데이터와 배포 환경의 지역별 브리핑 조회는 운영 URL에서 별도로 확인해야 한다. 이번 작업에서 원본 축제 통계를 재분석하거나 외부 관광 API/Gemini를 유료 호출하지 않았다.
