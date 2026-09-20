@@ -36,7 +36,8 @@ function loadDistrictBoundaries(slug: string) {
 function getFriendlyError(error: unknown) {
   if (error instanceof VWorldApiError) {
     if (error.code === 'MISSING_KEY') return 'VWorld 인증키가 서버에 설정되지 않았습니다.'
-    if (error.code === 'INCORRECT_KEY') return 'VWorld 인증키 또는 등록 URL이 올바르지 않습니다.'
+    if (error.code === 'INVALID_KEY' || error.code === 'INCORRECT_KEY') return 'VWorld 인증키가 올바르지 않습니다.'
+    if (error.code === 'INVALID_DOMAIN' || error.code === 'INCORRECT_DOMAIN') return 'VWorld 인증키에 등록한 서비스 URL이 올바르지 않습니다.'
     if (error.code === 'OVER_REQUEST_LIMIT') return 'VWorld 일일 호출 한도를 초과했습니다.'
     return '지도 경계를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
   }

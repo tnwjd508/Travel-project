@@ -13,6 +13,23 @@ BOUNDS = {
     'gwangsangu': ('24050', [35.0602, 126.6347, 35.2687, 126.8704]),
 }
 
+VWORLD_ERRORS = {
+    'INCORRECT_KEY': ('INVALID_KEY', 'VWorld 인증키를 확인하세요.'),
+    'INVALID_KEY': ('INVALID_KEY', 'VWorld 인증키를 확인하세요.'),
+    'INCORRECT_DOMAIN': ('INVALID_DOMAIN', 'VWorld 인증키에 등록한 서비스 URL을 확인하세요.'),
+    'INVALID_DOMAIN': ('INVALID_DOMAIN', 'VWorld 인증키에 등록한 서비스 URL을 확인하세요.'),
+    'OVER_REQUEST_LIMIT': ('OVER_REQUEST_LIMIT', 'VWorld 일일 요청 한도를 초과했습니다.'),
+}
+
+
+def wfs_error(text):
+    """Parse VWorld OWS/legacy XML without returning upstream text."""
+    if not isinstance(text, str) or not text.lstrip().startswith('<'):
+        return None
+    match = re.search(r'\b(?:exceptionCode|code)=["\']([A-Za-z0-9_-]{1,32})["\']', text, re.IGNORECASE)
+    upstream_code = match[1].upper() if match else ''
+    return VWORLD_ERRORS.get(upstream_code, ('VWORLD_ERROR', 'VWorld가 오류를 반환했습니다.'))
+
 
 def valid_ring(ring):
     return isinstance(ring, list) and len(ring) >= 4 and all(isinstance(p, list) and len(p) >= 2 and all(isinstance(v, (int, float)) and math.isfinite(v) for v in p[:2]) for p in ring) and ring[0][:2] == ring[-1][:2]
@@ -30,11 +47,9 @@ async def boundary(district, env, http, cache):
         try:
             result = await http.get('https://api.vworld.kr/req/wfs', params=dict(service='WFS', request='GetFeature', version='1.1.0', typename='lt_c_ademd_info',
                 bbox=','.join(map(str, box)), srsname='EPSG:4326', output='application/json', maxfeatures='500', key=env['VWORLD_API_KEY'], domain=env['VWORLD_DOMAIN']), timeout=20)
-            if result.text.lstrip().startswith('<'):
-                code = re.search(r'exceptionCode=[\"\']([A-Z_]+)[\"\']', result.text)
-                messages = {'INCORRECT_KEY': 'VWorld 인증키 또는 등록 도메인을 확인하세요.', 'OVER_REQUEST_LIMIT': 'VWorld 일일 요청 한도를 초과했습니다.'}
-                if code and code[1] in messages:
-                    raise ApiError(502, code[1], messages[code[1]])
+            error = wfs_error(result.text)
+            if error:
+                raise ApiError(502, error[0], error[1])
             result.raise_for_status()
             payload = result.json()
         except (httpx.HTTPError, ValueError):
