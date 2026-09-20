@@ -39,8 +39,11 @@ const HUB_ACCENT = '#7C3AED'
 
 // 지도 옆 목록 항목. 관광 콘텐츠 목록과 중심 관광지 순위를 한 목록으로 합친다.
 interface Hotspot extends Attraction {
-  rank: number | null
+  districtRank: number | null
   fromHub: boolean
+}
+interface RankedHotspot extends Hotspot {
+  areaRank: number | null
 }
 
 export function TourismMap() {
@@ -105,20 +108,22 @@ export function TourismMap() {
       ranks.set(keyOf(match), hub.rank)
       matchedHubs.add(hub.rank)
     }
-    const fromContents: Hotspot[] = districtAttractions.map((attraction) => ({ ...attraction, rank: ranks.get(keyOf(attraction)) ?? null, fromHub: false }))
+    const fromContents: Hotspot[] = districtAttractions.map((attraction) => ({ ...attraction, districtRank: ranks.get(keyOf(attraction)) ?? null, fromHub: false }))
     const hubOnly: Hotspot[] = hubs.filter((hub) => !matchedHubs.has(hub.rank)).map((hub) => ({
       id: `hub-${hub.rank}`, name: hub.name, category: hub.category ?? '중심 관광지', lng: hub.lng!, lat: hub.lat!,
-      visitors: '', accent: HUB_ACCENT, rank: hub.rank, fromHub: true,
+      visitors: '', accent: HUB_ACCENT, districtRank: hub.rank, fromHub: true,
     }))
-    return [...fromContents, ...hubOnly].sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity))
+    return [...fromContents, ...hubOnly].sort((a, b) => (a.districtRank ?? Infinity) - (b.districtRank ?? Infinity))
   }, [districtAttractions, districtFeature, hubState.data])
 
-  // 동을 클릭해 고정하면 그 동 안의 장소만 남긴다.
-  const areaHotspots = useMemo(
-    () => (selected ? hotspots.filter((hotspot) => geoContains(selected, [hotspot.lng, hotspot.lat])) : hotspots),
-    [hotspots, selected],
-  )
-  const rankedCount = areaHotspots.filter((item) => item.rank !== null).length
+  // 동을 클릭해 고정하면 그 동 안의 장소만 남기고, 순위를 그 동 안에서 다시 매긴다.
+  const areaHotspots = useMemo<RankedHotspot[]>(() => {
+    const inArea = selected ? hotspots.filter((hotspot) => geoContains(selected, [hotspot.lng, hotspot.lat])) : hotspots
+    let position = 0
+    return inArea.map((hotspot) => ({ ...hotspot, areaRank: hotspot.districtRank === null ? null : ++position }))
+  }, [hotspots, selected])
+  const rankedCount = areaHotspots.filter((item) => item.areaRank !== null).length
+  const areaName = selected ? selected.properties.name : district.nameKo
   const visibleHotspots = showAllHotspots ? areaHotspots : areaHotspots.slice(0, HOTSPOT_PREVIEW)
 
   useEffect(() => {
@@ -202,7 +207,7 @@ export function TourismMap() {
         <div className="mt-5 border-t border-slate-100 pt-4">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
-            <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{selected ? selected.properties.name : district.nameKo} {areaHotspots.length}곳</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{areaName} {areaHotspots.length}곳</span>
           </div>
           {selected && <button type="button" onClick={() => setSelected(null)} className="mt-2 min-h-11 w-full rounded-xl border border-blue-200 bg-blue-50 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100">{district.nameKo} 전체 보기</button>}
           {areaHotspots.length > 0 ? (
@@ -216,12 +221,12 @@ export function TourismMap() {
                   onClick={() => setActiveAttraction(attraction)}
                   className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${activeAttraction?.name === attraction.name ? 'border-blue-200 bg-blue-50 shadow-sm' : 'border-transparent bg-slate-50 hover:border-slate-200'}`}
                 >
-                  {attraction.rank === null
+                  {attraction.areaRank === null
                     ? <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: attraction.accent, boxShadow: `0 0 0 4px ${attraction.accent}18` }} />
-                    : <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[10px] font-bold text-white ${attraction.fromHub ? 'bg-violet-600' : 'bg-blue-600'}`} title="중심 관광지 순위">{attraction.rank}</span>}
+                    : <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[10px] font-bold text-white ${attraction.fromHub ? 'bg-violet-600' : 'bg-blue-600'}`} title={`${areaName} 중심 관광지 순위`}>{attraction.areaRank}</span>}
                   <span className="min-w-0 flex-1">
                     <b className="block truncate text-xs text-slate-700">{attraction.name}</b>
-                    <span className="text-[10px] text-slate-400">{attraction.category}{attraction.fromHub && ' · 순위 목록'}</span>
+                    <span className="text-[10px] text-slate-400">{attraction.category}{selected && attraction.districtRank !== null && ` · ${district.nameKo} ${attraction.districtRank}위`}{attraction.fromHub && ' · 순위 목록'}</span>
                   </span>
                 </button>
               ))}
@@ -234,7 +239,7 @@ export function TourismMap() {
           ) : (
             <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{selected ? `${selected.properties.name}에 등록된 관광지가 없습니다.` : `${district.nameKo}에 표시할 관광지 좌표가 없습니다.`}</p>
           )}
-          {rankedCount > 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">숫자는 한국관광공사 중심 관광지 순위(기준월 {hubState.data?.baseYm.slice(0, 4)}.{hubState.data?.baseYm.slice(4)})입니다. 다른 관광지와의 연결 건수 기준이며 방문객 수 순위가 아닙니다. 보라색은 순위 목록에만 있고 관광 콘텐츠 목록에는 없는 장소입니다.</p>}
+          {rankedCount > 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">숫자는 {areaName} 안에서의 중심 관광지 순위 {rankedCount}곳입니다{selected && `. 각 항목의 '${district.nameKo} N위'는 자치구 전체 순위입니다`}. 한국관광공사 기준월 {hubState.data?.baseYm.slice(0, 4)}.{hubState.data?.baseYm.slice(4)} · 다른 관광지와의 연결 건수 기준이며 방문객 수나 인기 순위가 아닙니다. 보라색은 순위 목록에만 있고 관광 콘텐츠 목록에는 없는 장소입니다.</p>}
           {hubState.status === 'live' && rankedCount === 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">중심 관광지 순위 자료를 불러오지 못해 순위 없이 표시합니다.</p>}
           <DataNotice state={contentState}/>
           {contentState.data && <SourceNote data={contentState.data}/>}
