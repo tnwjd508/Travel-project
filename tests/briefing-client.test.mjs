@@ -52,3 +52,12 @@ test('다른 지역의 저장 응답은 표시하지 않는다', async () => {
   const { result } = invoke([{ status: 200, body: { ...data, district: '26110' } }])
   await assert.rejects(result, /응답을 확인/)
 })
+
+test('저장소 미설정 응답도 이번 조회 결과로 표시한다', async () => {
+  const { storage: _stored, ...withoutStorage } = data
+  const { result, methods } = invoke([{ status: 200, body: withoutStorage }])
+  assert.equal((await result).data.storage, undefined)
+  assert.deepEqual(methods, ['GET'])
+  const wrongMonth = invoke([{ status: 200, body: { ...withoutStorage, month: '2026-07' } }])
+  await assert.rejects(wrongMonth.result, /브리핑 응답을 확인할 수 없습니다/)
+})
