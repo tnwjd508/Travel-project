@@ -1,6 +1,6 @@
-import { CircleHelp, MapPin, RotateCcw, Settings } from 'lucide-react'
+import { MapPin, RotateCcw, Settings } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { getDashboardMenuItems } from '@/components/dashboard/DashboardNavigation'
+import { getDashboardMenuItems, reviewSearch } from '@/components/dashboard/DashboardNavigation'
 import { cn } from '@/utils/cn'
 import { useDashboardRegion } from '@/hooks/useDashboardRegion'
 
@@ -18,7 +18,7 @@ export function DashboardSidebar({ onOpenSettings }: { onOpenSettings: () => voi
         {dashboardMenuItems.map(({ label, path, icon: Icon }) => (
           <NavLink
             key={path}
-            to={path}
+            to={path + reviewSearch(location.search)}
             aria-current={isItemActive(path) ? 'page' : undefined}
             className={() => cn(
               'flex min-h-11 items-center gap-3 rounded-xl px-3 text-[13px] font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500',
@@ -39,7 +39,7 @@ export function DashboardSidebar({ onOpenSettings }: { onOpenSettings: () => voi
 
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={onOpenSettings} aria-haspopup="dialog" className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[11px] font-medium text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="설정"><Settings size={14} />설정</button>
-          <button type="button" className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[11px] font-medium text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="도움말"><CircleHelp size={14} />도움말</button>
+
         </div>
 
         <div className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 text-white">

@@ -2,14 +2,15 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { PolicyDuration, PolicyId } from '@/data/policies'
 import type { DistrictSlug } from '@/data/gwangjuDistricts'
+import type { DistrictId } from '@/data/tourismRegions'
 
-export interface SimulationResult {
-  visitorChange: number
-  spendingChange: number
-  stayChange: number
-  congestionChange: number
-  economicImpact: '높음' | '매우 높음'
-  analyzedAt: string
+// 입력 조건만 저장한다. 분석 근거와 저장된 검토는 서버에서 조회한다.
+export interface SimulationScenario {
+  district: DistrictId
+  policy: PolicyId
+  budget: number
+  duration: PolicyDuration
+  createdAt: string
 }
 
 interface TourismStrategyState {
@@ -19,8 +20,7 @@ interface TourismStrategyState {
   selectedPolicy: PolicyId
   budget: number
   duration: PolicyDuration
-  simulationResult: SimulationResult | null
-  recommendedStrategy: PolicyId
+  simulationResult: SimulationScenario | null
   setSelectedProvince: (province: 'gwangju') => void
   setSelectedDistrict: (district: DistrictSlug | null) => void
   clearSelectedRegion: () => void
@@ -28,7 +28,7 @@ interface TourismStrategyState {
   setBudget: (budget: number) => void
   setDuration: (duration: PolicyDuration) => void
   clearSimulationResult: () => void
-  completeSimulation: () => void
+  completeSimulation: (district: DistrictId) => void
 }
 
 export const useTourismStrategyStore = create<TourismStrategyState>()(
@@ -41,7 +41,6 @@ export const useTourismStrategyStore = create<TourismStrategyState>()(
       budget: 15,
       duration: '6개월',
       simulationResult: null,
-      recommendedStrategy: 'night',
       setSelectedProvince: (selectedProvince) => set({ selectedProvince }),
       setSelectedDistrict: (selectedDistrict) => set({ selectedDistrict }),
       clearSelectedRegion: () => set({ selectedProvince: 'gwangju', selectedDistrict: null }),
@@ -49,21 +48,28 @@ export const useTourismStrategyStore = create<TourismStrategyState>()(
       setBudget: (budget) => set({ budget }),
       setDuration: (duration) => set({ duration }),
       clearSimulationResult: () => set({ simulationResult: null }),
-      completeSimulation: () => set({
+      completeSimulation: (district) => set((state) => ({
         simulationResult: {
-          visitorChange: 15,
-          spendingChange: 18,
-          stayChange: 11,
-          congestionChange: -8,
-          economicImpact: '매우 높음',
-          analyzedAt: new Date().toISOString(),
+          district,
+          policy: state.selectedPolicy,
+          budget: state.budget,
+          duration: state.duration,
+          createdAt: new Date().toISOString(),
         },
-        recommendedStrategy: 'night',
-      }),
+      })),
     }),
     {
       name: 'ongil-tourism-strategy',
-      version: 2,
+      version: 5,
+      // Persist only input preferences. Saved records are retrieved by server ID.
+      partialize: (state) => ({ selectedRegion: state.selectedRegion, selectedProvince: state.selectedProvince,
+        selectedDistrict: state.selectedDistrict, selectedPolicy: state.selectedPolicy, budget: state.budget, duration: state.duration }),
+      // 이전 버전에 저장된 결과(고정 예측값·모델 상태)는 버린다.
+      migrate: (persisted) => {
+        const next: Record<string, unknown> = { ...(persisted as Record<string, unknown> | undefined), simulationResult: null }
+        delete next.recommendedStrategy
+        return next as unknown as TourismStrategyState
+      },
     },
   ),
 )

@@ -1,19 +1,34 @@
-import { ArrowRight, BadgeCheck, CircleDollarSign, Gauge, Star } from 'lucide-react'
+import { BadgeCheck } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
-import type { Policy } from '@/types/tourism'
-import { useActiveDistrict } from '@/hooks/useActiveDistrict'
+import { DataNotice, SourceNote } from '@/components/dashboard/DataNotice'
+import { policyOptions, policyTargets, type PolicyId } from '@/data/policies'
+import { issueStatusLabels } from '@/data/tourismMetrics'
+import { evidenceStatusLabels, formatPct, formatRange } from '@/data/festivalEffect'
+import type { PolicyEvidence } from '@/lib/reviewClient'
+import type { useReviewData } from '@/hooks/useReviewData'
 
-const policies: Policy[] = [
-  {id:'01',name:'야간관광 확대',effect:92,budget:'15억',difficulty:'보통',score:5,recommended:true},
-  {id:'02',name:'문화축제 개최',effect:84,budget:'22억',difficulty:'높음',score:4},
-  {id:'03',name:'관광 셔틀 운영',effect:71,budget:'12억',difficulty:'낮음',score:4},
-  {id:'04',name:'로컬마켓 연계',effect:79,budget:'8억',difficulty:'보통',score:4},
-  {id:'05',name:'문화예술 프로그램',effect:76,budget:'10억',difficulty:'보통',score:3},
-]
+export function StrategyTable({ currentPolicy, context }: { currentPolicy?: PolicyId; context: ReturnType<typeof useReviewData> }) {
+  const state = context.diagnosisState
+  const issues = state.data?.issues ?? []
+  // 진단에서 '검토 필요'로 나온 목표 지표가 많은 정책을 위에 둔다. 효과 크기 순위가 아니다.
+  const rows = policyOptions.map((policy, order) => {
+    const targets = policyTargets[policy.value].issueIds.map(id => ({ id, issue: issues.find(issue => issue.id === id) }))
+    const attention = targets.filter(target => target.issue?.status === 'attention').length
+    return { ...policy, order, targets, attention }
+  }).sort((a, b) => b.attention - a.attention || a.order - b.order)
 
-export function StrategyTable() {
-  const district = useActiveDistrict()
-  return <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-6 sm:px-7"><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-blue-600">Strategy Ranking</p><h3 className="mt-1 text-lg font-bold">AI 정책 우선순위</h3></div><div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold text-blue-600"><BadgeCheck size={14}/>효과·예산·실행 가능성 종합 분석</div></div>
-    <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left"><thead><tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400"><th className="px-7 py-4">정책</th><th className="px-4 py-4">예상 효과</th><th className="px-4 py-4">예산</th><th className="px-4 py-4">실행 난이도</th><th className="px-4 py-4">추천도</th><th className="px-7 py-4 text-right">상세</th></tr></thead><tbody>{policies.map((p, index)=><tr key={p.id} className={`group border-b border-slate-50 text-sm transition last:border-0 ${p.recommended?'bg-gradient-to-r from-blue-50/90 to-transparent':'hover:bg-slate-50/70'}`}><td className="px-7 py-4"><div className="flex items-center gap-3"><span className={`grid h-8 w-8 place-items-center rounded-lg text-[10px] font-bold ${p.recommended?'bg-blue-600 text-white':'bg-slate-100 text-slate-400'}`}>{index + 1}</span><div><div className="flex items-center gap-2 font-bold text-slate-800">{p.name}{p.recommended&&<span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9px] text-blue-600">BEST</span>}</div>{p.recommended&&<p className="mt-0.5 text-[10px] text-blue-500">{district.nameKo}에 가장 적합한 전략</p>}</div></div></td><td className="px-4 py-4"><div className="flex items-center gap-2"><div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-blue-500" style={{width:`${p.effect}%`}}/></div><b className="text-xs">{p.effect}</b></div></td><td className="px-4 py-4"><span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><CircleDollarSign size={14} className="text-slate-400"/>{p.budget}</span></td><td className="px-4 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${p.difficulty==='낮음'?'bg-emerald-50 text-emerald-600':p.difficulty==='높음'?'bg-red-50 text-red-500':'bg-amber-50 text-amber-600'}`}><Gauge size={12}/>{p.difficulty}</span></td><td className="px-4 py-4"><div className="flex gap-0.5">{[1,2,3,4,5].map(x=><Star key={x} size={13} className={x<=p.score?'fill-amber-400 text-amber-400':'fill-slate-100 text-slate-100'}/>)}</div></td><td className="px-7 py-4 text-right"><button className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 text-slate-400 transition group-hover:border-blue-200 group-hover:text-blue-600"><ArrowRight size={14}/></button></td></tr>)}</tbody></table></div>
+  return <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-6 sm:px-7"><div><p className="text-[11px] font-bold uppercase tracking-[.15em] text-blue-600">Strategy Compare</p><h3 className="mt-1 text-lg font-bold">진단 연관도로 본 정책 비교</h3></div><div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold text-blue-600"><BadgeCheck size={14}/>규칙 기반 진단 결과 기준</div></div>
+    {context.evidenceState.status === 'error' && <div className="p-6"><DataNotice state={context.evidenceState}/></div>}
+    {state.status !== 'live' && <div className="p-6"><DataNotice state={state}/></div>}
+    {state.data && <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left"><thead><tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400"><th className="px-7 py-4">정책</th><th className="px-4 py-4">겨냥 지표 · 현재 진단</th><th className="px-4 py-4">진단 연관</th><th className="px-7 py-4">과거 사례 변화</th></tr></thead><tbody>{rows.map((row, index) => <tr key={row.value} className={`border-b border-slate-50 text-sm last:border-0 ${row.value === currentPolicy ? 'bg-blue-50/60' : ''}`}><td className="px-7 py-4"><div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 text-[10px] font-bold text-slate-500">{index + 1}</span><div><p className="font-bold text-slate-800">{row.label}</p>{row.value === currentPolicy && <p className="mt-0.5 text-[10px] text-blue-600">현재 검토 중인 시나리오</p>}</div></div></td><td className="px-4 py-4"><div className="flex flex-wrap gap-1.5">{row.targets.map(target => <span key={target.id} className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${target.issue?.status === 'attention' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{target.issue?.label ?? target.id} · {issueStatusLabels[target.issue?.status ?? 'unknown']}</span>)}</div></td><td className="px-4 py-4 text-xs font-semibold text-slate-700">{row.targets.length}개 중 {row.attention}개 검토 필요</td><td className="px-7 py-4 text-xs"><EffectCell evidence={context.evidence(row.value)} frozen={context.saved.requested}/></td></tr>)}</tbody></table></div>}
+    <div className="border-t border-slate-100 px-7 py-4 text-[11px] leading-5 text-slate-500"><p>{context.saved.requested && '저장된 기준선을 정책별 목표 지표에 연결한 참고 비교입니다. 과거 사례 통계는 이 검토에 저장된 정책만 표시합니다. '}순서는 정책이 겨냥하는 지표 중 현재 '검토 필요'로 진단된 지표 수입니다. 정책 효과의 크기나 예산 대비 효율을 뜻하지 않으며, 정책–지표 연결은 기획 단계의 가정입니다.</p><p className="mt-1">과거 사례 변화는 과거 전국 축제 사례의 축제 기간 외지인 방문 변화(95% 구간)입니다. 구간이 0을 포함하면 '근거 부족'으로 표시합니다.</p>{state.data && <SourceNote data={state.data}/>}</div>
   </Card>
+}
+
+function EffectCell({ evidence, frozen }: { evidence: PolicyEvidence | null; frozen: boolean }) {
+  if (!evidence) return <span className="text-slate-400">{frozen ? '이 검토에 저장되지 않은 정책' : '조회 가능한 근거 없음'}</span>
+  if (evidence.status === 'out_of_scope') return <span className="text-slate-400">지역 근거 없음</span>
+  if (!evidence.stat) return <span className="text-slate-400">{evidenceStatusLabels[evidence.status]}</span>
+  if (evidence.status !== 'available') return <span className="font-semibold text-amber-700">근거 부족<span className="block text-[10px] font-normal text-slate-500">{formatRange(evidence.stat)} · {evidence.stat.n}건</span></span>
+  return <span className="font-bold text-emerald-700">외지인 {formatPct(evidence.stat.meanPct)}<span className="block text-[10px] font-normal text-slate-500">{formatRange(evidence.stat)} · {evidence.stat.n}건</span></span>
 }

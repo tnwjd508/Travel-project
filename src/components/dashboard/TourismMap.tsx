@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { ArrowUpRight, Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw } from 'lucide-react'
+import { Layers3, LoaderCircle, MapPin, Minus, Navigation, Plus, RefreshCw } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { geoContains, geoMercator, geoPath } from 'd3-geo'
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
@@ -331,7 +331,6 @@ function GwangjuTourismMap({ district }: { district: GwangjuDistrict }) {
                 <h4 className="mt-1 text-sm font-bold text-slate-800">{focusedArea.properties.districtName} · {focusedArea.properties.name}</h4>
 
               </div>
-              <button type="button" aria-label={`선택한 ${boundaryKind} 상세 보기`} className="grid h-8 w-8 place-items-center rounded-lg bg-slate-950 text-white"><ArrowUpRight size={14} /></button>
             </div>
           ) : activeAttraction ? (
             <div className="flex items-start justify-between gap-4">
