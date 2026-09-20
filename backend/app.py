@@ -26,9 +26,16 @@ def create_app(settings=None, transport=None):
     async def lifespan(app):
         from .district import DistrictService
         from .briefing import BriefingWorker
+        from .supabase import SupabaseDatabase
+        from .tourism_cache import TourismApiStore
+        from .visitor_store import VisitorMonthStore
         async with httpx.AsyncClient(transport=transport, follow_redirects=False, timeout=12) as http:
             app.state.http = http
-            app.state.service = DistrictService(KntoClient(env.get('TOUR_API_SERVICE_KEY', ''), http))
+            secret = (env.get('SUPABASE_SECRET_KEY') or env.get('SUPABASE_SERVICE_ROLE_KEY') or '').strip()
+            database = SupabaseDatabase(env, http) if env.get('SUPABASE_URL', '').strip() and secret else None
+            visitor_store = VisitorMonthStore(database) if database else None
+            tourism_store = TourismApiStore(database) if database else None
+            app.state.service = DistrictService(KntoClient(env.get('TOUR_API_SERVICE_KEY', ''), http, tourism_store), visitor_store)
             app.state.briefing = BriefingWorker(env)
             try:
                 yield

@@ -81,6 +81,22 @@ test('월간 브리핑 축제 수집은 세종의 전체 코드를 전달하고 
   assert.deepEqual(result.festivals.upcoming.map(item => item.title), ['세종 행사'])
 })
 
+test('월간 브리핑도 관광 API 장애 시 Supabase의 검증된 페이지를 재사용한다', async () => {
+  const context = parseContext('12210', '2026-08', '2026-09-17', 'gwangju')
+  let sourceCalls = 0
+  const cachedRows = [{ areaCd: '12', signguCd: '12210', baseYm: '202608', tarSvcDemIxCd: '11', tarSvcDemIxVal: '65' }]
+  const cache = {
+    get: async () => ({ rows: cachedRows, total: 1, fetchedAt: '2026-09-20T00:00:00Z', age: 999999 }),
+    store: async () => { throw new Error('stale fallback must not overwrite cache') },
+  }
+  const result = await collectSource(sourceSpecs[1], context, 'test-key', AbortSignal.timeout(5000), async () => {
+    sourceCalls++; throw new Error('upstream unavailable')
+  }, cache)
+  assert.equal(sourceCalls, 1)
+  assert.equal(result.evidence[0].value, '65')
+  assert.match(result.source.note, /저장된 응답/)
+})
+
 test('7월 자원 수요 수집은 개편 전 코드로 요청하고 동일 코드의 응답만 채택한다', async () => {
   const context = parseContext('12210', '2026-07', '2026-09-17')
   const result = await collectSource(sourceSpecs[1], context, 'test-key', AbortSignal.timeout(5000), async input => {

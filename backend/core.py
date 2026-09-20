@@ -54,6 +54,18 @@ def observe(fresh):
         parent.expires = min(parent.expires, fresh.expires)
 
 
+def observe_source(fetched_at, ttl=3600):
+    """Propagate persisted source freshness without treating a DB read as a fresh upstream fetch."""
+    try:
+        parsed = datetime.fromisoformat(fetched_at.replace('Z', '+00:00'))
+        if parsed.tzinfo is None:
+            raise ValueError()
+        timestamp = parsed.timestamp()
+    except (ValueError, TypeError, AttributeError, OverflowError):
+        raise ApiError(503, 'INVALID_STORED_VISITORS', '저장된 방문자 자료의 수집 시각을 확인하지 못했습니다.') from None
+    observe(Freshness(fetched=timestamp, expires=time.time() + max(0, min(ttl, 86400))))
+
+
 class Cache:
     def __init__(self, capacity=256):
         self.capacity, self.values, self.pending = capacity, OrderedDict(), {}
@@ -123,6 +135,14 @@ def parse_envelope(text):
     except (ValueError, TypeError):
         code = re.search(r'<(?:returnReasonCode|resultCode)>\s*([A-Za-z0-9_-]{1,16})\s*<', text)
         raise ApiError(502, 'UPSTREAM_ERROR', '관광 API가 정상 데이터를 반환하지 않았습니다.', code[1] if code else None) from None
+    gateway = payload.get('OpenAPI_ServiceResponse', {}).get('cmmMsgHeader', {}) if isinstance(payload, dict) else {}
+    gateway_code = str(gateway.get('returnReasonCode', '')) if isinstance(gateway, dict) else ''
+    if re.fullmatch(r'\d{2}', gateway_code):
+        if gateway_code in ('22', '23'):
+            raise ApiError(503, 'UPSTREAM_RATE_LIMIT', '관광 API 호출 한도에 도달했습니다.', gateway_code)
+        if gateway_code in ('20', '30', '31'):
+            raise ApiError(503, 'UPSTREAM_AUTH', '관광 API 이용 권한 또는 인증키를 확인하세요.', gateway_code)
+        raise ApiError(502, 'UPSTREAM_ERROR', '관광 API 요청이 실패했습니다.', gateway_code)
     response = payload.get('response', {}) if isinstance(payload, dict) else {}
     header = response.get('header', {}) if isinstance(response, dict) else {}
     code = str(header.get('resultCode', '')) if isinstance(header, dict) else ''
@@ -162,8 +182,8 @@ for operation in 'areaCode2 areaBasedList2 locationBasedList2 searchKeyword2 sea
 
 
 class KntoClient:
-    def __init__(self, key, http):
-        self.key, self.http = unquote(key.strip()), http
+    def __init__(self, key, http, store=None):
+        self.key, self.http, self.store = unquote(key.strip()), http, store
         self.cache = Cache(512)
         self.semaphore = asyncio.Semaphore(6)
         self.usage = {}
@@ -177,33 +197,59 @@ class KntoClient:
             raise ApiError(503, 'MISSING_KEY', 'TOUR_API_SERVICE_KEY 환경변수가 필요합니다.')
 
         async def load():
-            context = budget.get() or Budget()
-            remaining = context.deadline - time.monotonic()
-            if remaining <= 0:
-                raise ApiError(502, 'REQUEST_TIMEOUT', '데이터 수집 시간 한도를 초과했습니다.')
+            cached = None
+            if self.store:
+                try:
+                    cached = await self.store.get(operation, dict(sorted((key, str(value)) for key, value in params.items())))
+                except ApiError:
+                    cached = None
+            if cached and ttl and cached['age'] <= ttl:
+                observe_source(cached['fetchedAt'], max(0, ttl - cached['age']))
+                return cached['items'], cached['total']
+
+            async def upstream():
+                context = budget.get() or Budget()
+                remaining = context.deadline - time.monotonic()
+                if remaining <= 0:
+                    raise ApiError(502, 'REQUEST_TIMEOUT', '데이터 수집 시간 한도를 초과했습니다.')
+                try:
+                    async with asyncio.timeout(remaining):
+                        async with self.semaphore:
+                            if context.calls >= context.maximum:
+                                raise ApiError(503, 'REQUEST_BUDGET', '요청별 API 호출 한도에 도달했습니다.')
+                            day = datetime.now(timezone.utc).date().isoformat()
+                            used_day, count = self.usage.get(operation, (day, 0))
+                            count = count if day == used_day else 0
+                            if count >= 900:
+                                raise ApiError(503, 'DAILY_BUDGET', '외부 API 일일 호출 예산에 도달했습니다.')
+                            context.calls += 1
+                            self.usage[operation] = (day, count + 1)
+                            response = await self.http.get('https://apis.data.go.kr/B551011/' + operation,
+                                params=dict(serviceKey=self.key, MobileOS='ETC', MobileApp='ONGIL', _type='json', **params),
+                                timeout=12, follow_redirects=False)
+                            result = parse_envelope(response.text)
+                            if not response.is_success:
+                                raise ApiError(502, 'UPSTREAM_HTTP', '관광 API 서버 요청이 실패했습니다.')
+                            return result
+                except TimeoutError:
+                    raise ApiError(502, 'REQUEST_TIMEOUT', '데이터 수집 시간 한도를 초과했습니다.') from None
+                except httpx.HTTPError:
+                    raise ApiError(502, 'UPSTREAM_UNAVAILABLE', '관광 API 연결 실패 또는 응답 시간 초과입니다.') from None
+
             try:
-                async with asyncio.timeout(remaining):
-                    async with self.semaphore:
-                        if context.calls >= context.maximum:
-                            raise ApiError(503, 'REQUEST_BUDGET', '요청별 API 호출 한도에 도달했습니다.')
-                        day = datetime.now(timezone.utc).date().isoformat()
-                        used_day, count = self.usage.get(operation, (day, 0))
-                        count = count if day == used_day else 0
-                        if count >= 900:
-                            raise ApiError(503, 'DAILY_BUDGET', '외부 API 일일 호출 예산에 도달했습니다.')
-                        context.calls += 1
-                        self.usage[operation] = (day, count + 1)
-                        response = await self.http.get('https://apis.data.go.kr/B551011/' + operation,
-                            params=dict(serviceKey=self.key, MobileOS='ETC', MobileApp='ONGIL', _type='json', **params),
-                            timeout=12, follow_redirects=False)
-                        result = parse_envelope(response.text)
-                        if not response.is_success:
-                            raise ApiError(502, 'UPSTREAM_HTTP', '관광 API 서버 요청이 실패했습니다.')
-                        return result
-            except TimeoutError:
-                raise ApiError(502, 'REQUEST_TIMEOUT', '데이터 수집 시간 한도를 초과했습니다.') from None
-            except httpx.HTTPError:
-                raise ApiError(502, 'UPSTREAM_UNAVAILABLE', '관광 API 연결 실패 또는 응답 시간 초과입니다.') from None
+                result = await upstream()
+            except ApiError:
+                if not cached:
+                    raise
+                observe_source(cached['fetchedAt'], 300)
+                return cached['items'], cached['total']
+            if self.store:
+                try:
+                    await self.store.store(operation, dict(sorted((key, str(value)) for key, value in params.items())),
+                        result[0], result[1], stamp())
+                except ApiError:
+                    pass
+            return result
 
         return await self.cache.get((operation, tuple(sorted(params.items()))), ttl, load)
 
