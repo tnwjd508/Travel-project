@@ -8,7 +8,6 @@ import type { DistrictId } from '@/data/tourismRegions'
 export interface SimulationScenario {
   district: DistrictId
   policy: PolicyId
-  budget: number
   duration: PolicyDuration
   createdAt: string
 }
@@ -18,14 +17,12 @@ interface TourismStrategyState {
   selectedProvince: 'gwangju'
   selectedDistrict: DistrictSlug | null
   selectedPolicy: PolicyId
-  budget: number
   duration: PolicyDuration
   simulationResult: SimulationScenario | null
   setSelectedProvince: (province: 'gwangju') => void
   setSelectedDistrict: (district: DistrictSlug | null) => void
   clearSelectedRegion: () => void
   setSelectedPolicy: (policy: PolicyId) => void
-  setBudget: (budget: number) => void
   setDuration: (duration: PolicyDuration) => void
   clearSimulationResult: () => void
   completeSimulation: (district: DistrictId) => void
@@ -38,21 +35,18 @@ export const useTourismStrategyStore = create<TourismStrategyState>()(
       selectedProvince: 'gwangju',
       selectedDistrict: null,
       selectedPolicy: 'night',
-      budget: 15,
       duration: '6개월',
       simulationResult: null,
       setSelectedProvince: (selectedProvince) => set({ selectedProvince }),
       setSelectedDistrict: (selectedDistrict) => set({ selectedDistrict }),
       clearSelectedRegion: () => set({ selectedProvince: 'gwangju', selectedDistrict: null }),
       setSelectedPolicy: (selectedPolicy) => set({ selectedPolicy }),
-      setBudget: (budget) => set({ budget }),
       setDuration: (duration) => set({ duration }),
       clearSimulationResult: () => set({ simulationResult: null }),
       completeSimulation: (district) => set((state) => ({
         simulationResult: {
           district,
           policy: state.selectedPolicy,
-          budget: state.budget,
           duration: state.duration,
           createdAt: new Date().toISOString(),
         },
@@ -60,14 +54,15 @@ export const useTourismStrategyStore = create<TourismStrategyState>()(
     }),
     {
       name: 'ongil-tourism-strategy',
-      version: 5,
+      version: 6,
       // Persist only input preferences. Saved records are retrieved by server ID.
       partialize: (state) => ({ selectedRegion: state.selectedRegion, selectedProvince: state.selectedProvince,
-        selectedDistrict: state.selectedDistrict, selectedPolicy: state.selectedPolicy, budget: state.budget, duration: state.duration }),
+        selectedDistrict: state.selectedDistrict, selectedPolicy: state.selectedPolicy, duration: state.duration }),
       // 이전 버전에 저장된 결과(고정 예측값·모델 상태)는 버린다.
       migrate: (persisted) => {
         const next: Record<string, unknown> = { ...(persisted as Record<string, unknown> | undefined), simulationResult: null }
         delete next.recommendedStrategy
+        delete next.budget  // 효과 추정에 쓰이지 않아 입력에서 제거
         return next as unknown as TourismStrategyState
       },
     },
