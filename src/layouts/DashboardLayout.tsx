@@ -33,6 +33,15 @@ export function DashboardLayout() {
   }, [activeDistrict?.legacy, setSelectedDistrict])
 
   if (!activeDistrict) return <Navigate to={`/regions/${regionId}`} replace />
+  const currentBasePath = `/dashboard/${regionId}/${district}`
+  const canonicalPath = location.pathname.startsWith(currentBasePath)
+    ? location.pathname.replace(currentBasePath, activeDistrict.basePath)
+    : activeDistrict.dashboardPath
+  const legacyPrivateParams = new URLSearchParams(location.search)
+  const hasLegacyPrivateParams = ['organization', 'scenario', 'review'].some(key => legacyPrivateParams.has(key))
+  if (currentBasePath !== activeDistrict.basePath || hasLegacyPrivateParams) {
+    return <Navigate to={canonicalPath} replace />
+  }
 
   return (
     <div className="dashboard-shell min-h-screen bg-[#F7F9FC] text-slate-900">

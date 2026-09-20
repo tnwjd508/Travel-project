@@ -23,7 +23,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
 
         <div className="hidden items-center gap-2.5 border-l border-slate-200 pl-4 xl:flex">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-[10px] font-bold text-white">{district.nameKo}</div>
-          <div className="leading-tight"><p className="text-xs font-bold text-slate-800">정책 담당자</p><p className="mt-0.5 text-[10px] text-slate-400">{district.regionName}</p></div>
+          <div className="leading-tight"><p className="text-xs font-bold text-slate-800">지자체 대시보드</p><p className="mt-0.5 text-[10px] text-slate-400">{district.regionName} {district.nameKo}</p></div>
         </div>
       </div>
     </header>

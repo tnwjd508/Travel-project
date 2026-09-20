@@ -1,6 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
-import { useReviewData } from '@/hooks/useReviewData'
-import { SavedReviewNotice } from './SavedReviewNotice'
+import { useMunicipalityData } from '@/hooks/useMunicipalityData'
 import { KpiGrid } from './KpiGrid'
 import * as Slider from '@radix-ui/react-slider'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -14,7 +12,6 @@ import { diagnosisCriteria, issueStatusLabels } from '@/data/tourismMetrics'
 import { evidenceStatusClass, evidenceStatusLabels, formatPct, formatRange } from '@/data/festivalEffect'
 import { useTourismStrategyStore } from '@/stores/useTourismStrategyStore'
 import { useActiveDistrict } from '@/hooks/useActiveDistrict'
-import { ScenarioLibrary } from '@/components/dashboard/ScenarioLibrary'
 
 const durations: PolicyDuration[] = ['3개월', '6개월', '1년']
 
@@ -27,8 +24,7 @@ const outcomeMetrics = [
 
 export function Simulation() {
   const district = useActiveDistrict()
-  const [, setParams] = useSearchParams()
-  const { saved, diagnosisState, summaryState, evidenceState, evidence: getEvidence } = useReviewData(district.slug)
+  const { diagnosisState, summaryState, evidenceState, evidence: getEvidence } = useMunicipalityData(district.slug)
   const {
     selectedPolicy,
     budget,
@@ -38,12 +34,11 @@ export function Simulation() {
     setBudget,
     setDuration,
     completeSimulation,
-    clearSimulationResult,
   } = useTourismStrategyStore()
 
   // 다른 자치구에서 만든 시나리오는 이 화면에 표시하지 않는다.
-  const scenario = saved.requested ? (saved.data ? { policy: saved.data.scenario.policy_code, budget: saved.data.scenario.budget_krw / 100000000, duration: `${saved.data.scenario.duration_months}개월`, createdAt: saved.data.review.created_at } : null) : simulationResult?.district === district.slug ? simulationResult : null
-  const inputsChanged = !saved.requested && scenario != null && (scenario.policy !== selectedPolicy || scenario.budget !== budget || scenario.duration !== duration)
+  const scenario = simulationResult?.district === district.slug ? simulationResult : null
+  const inputsChanged = scenario != null && (scenario.policy !== selectedPolicy || scenario.budget !== budget || scenario.duration !== duration)
   const target = scenario ? policyTargets[scenario.policy] : null
   const targetIssues = target && diagnosisState.data
     ? target.issueIds.map(id => diagnosisState.data!.issues.find(issue => issue.id === id)).filter(issue => issue != null)
@@ -57,14 +52,13 @@ export function Simulation() {
     : null
 
   return <section>
-    <SavedReviewNotice state={saved}/>
     <div className="mb-5"><KpiGrid state={summaryState}/></div>
     <div className="grid gap-5 xl:grid-cols-[.92fr_1.08fr]">
       <Card className="relative overflow-hidden p-6 sm:p-8"><div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/50 blur-3xl"/><div className="relative"><div className="mb-6 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white"><FlaskConical size={22}/></div><div><p className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">Policy Lab</p><h3 className="text-xl font-bold tracking-tight">정책 조건을 설계하세요</h3></div></div>
         <label className="mb-2 block text-xs font-bold text-slate-600">정책 시나리오</label><SelectField value={selectedPolicy} onValueChange={(value) => setSelectedPolicy(value as PolicyId)} options={[...policyOptions]}/>
         <div className="mt-6"><div className="mb-3 flex items-end justify-between"><label className="text-xs font-bold text-slate-600">투입 예산</label><span className="text-xl font-bold tracking-tight text-blue-600">{budget}억 원</span></div><Slider.Root value={[budget]} min={5} max={50} step={1} onValueChange={(value) => setBudget(value[0])} className="relative flex h-5 touch-none select-none items-center"><Slider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-slate-100"><Slider.Range className="absolute h-full bg-gradient-to-r from-blue-500 to-indigo-500"/></Slider.Track><Slider.Thumb aria-label="투입 예산" className="block h-5 w-5 rounded-full border-4 border-white bg-blue-600 shadow-[0_2px_10px_rgba(37,99,235,.4)] outline-none ring-blue-100 focus:ring-4"/></Slider.Root><div className="mt-1 flex justify-between text-[10px] text-slate-400"><span>5억</span><span>50억</span></div></div>
         <div className="mt-6"><label className="mb-2.5 block text-xs font-bold text-slate-600">정책 기간</label><div className="grid grid-cols-3 gap-2">{durations.map((period) => <button key={period} onClick={() => setDuration(period)} className={`rounded-xl border py-2.5 text-xs font-bold transition ${duration === period ? 'border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-200' : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200'}`}>{duration === period && <Check size={12} className="mr-1 inline"/>}{period}</button>)}</div></div>
-        <Button onClick={() => { setParams(previous => { const next = new URLSearchParams(previous); next.delete('review'); return next }); completeSimulation(district.slug) }} className="mt-7 h-[52px] w-full bg-slate-950 text-white shadow-xl shadow-slate-200 hover:-translate-y-0.5 hover:bg-blue-600"><ClipboardList size={18}/>{scenario ? '이 조건으로 다시 검토' : '정책 시나리오 검토'}</Button>
+        <Button onClick={() => completeSimulation(district.slug)} className="mt-7 h-[52px] w-full bg-slate-950 text-white shadow-xl shadow-slate-200 hover:-translate-y-0.5 hover:bg-blue-600"><ClipboardList size={18}/>{scenario ? '이 조건으로 다시 검토' : '정책 시나리오 검토'}</Button>
         <p className="mt-3 text-[11px] leading-5 text-slate-500">문화축제는 등록된 과거 전국 축제 사례의 방문 변화를 참고합니다. 예산·기간에 따른 효과 차이는 근거 데이터가 없어 반영하지 않습니다.</p>
       </div></Card>
       <Card className={`relative overflow-hidden p-6 transition sm:p-8 ${scenario ? 'border-blue-200' : ''}`}>
@@ -73,9 +67,9 @@ export function Simulation() {
           {inputsChanged && <p role="status" className="mt-4 rounded-xl bg-blue-50 px-4 py-2.5 text-[11px] text-blue-800">조건이 바뀌었습니다. 새 조건을 반영하려면 다시 검토하세요.</p>}
           <p className="mt-5 text-[13px] leading-6 text-slate-600">{target.rationale}</p>
 
-          <h4 className="mt-6 text-xs font-bold text-slate-600">목표 지표의 {saved.requested ? '저장 당시 상태' : '현재 상태'} <span className="font-medium text-slate-400">(실데이터 기준선)</span></h4>
+          <h4 className="mt-6 text-xs font-bold text-slate-600">목표 지표의 현재 상태 <span className="font-medium text-slate-400">(실데이터 기준선)</span></h4>
           <div className="mt-2"><DataNotice state={diagnosisState}/></div>
-          <div className="mt-2 space-y-2">{targetIssues.map(issue => <div key={issue.id} className="rounded-xl border border-slate-100 bg-slate-50/70 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-bold text-slate-800">{issue.label}</p><span className={`shrink-0 text-[11px] font-semibold ${issue.status === 'attention' ? 'text-amber-700' : 'text-slate-500'}`}>{issueStatusLabels[issue.status]}</span></div><p className="mt-1 text-lg font-bold tracking-tight text-slate-950">{formatValue(issue.value, 2)}<span className="ml-1 text-[11px] font-medium text-slate-400">{issue.unit === 'percent' ? '%' : '지수'}</span></p><p className="mt-1 text-[11px] leading-5 text-slate-500">{saved.requested ? issue.evidence : diagnosisCriteria[issue.id]}</p></div>)}</div>
+          <div className="mt-2 space-y-2">{targetIssues.map(issue => <div key={issue.id} className="rounded-xl border border-slate-100 bg-slate-50/70 p-4"><div className="flex items-center justify-between gap-2"><p className="text-sm font-bold text-slate-800">{issue.label}</p><span className={`shrink-0 text-[11px] font-semibold ${issue.status === 'attention' ? 'text-amber-700' : 'text-slate-500'}`}>{issueStatusLabels[issue.status]}</span></div><p className="mt-1 text-lg font-bold tracking-tight text-slate-950">{formatValue(issue.value, 2)}<span className="ml-1 text-[11px] font-medium text-slate-400">{issue.unit === 'percent' ? '%' : '지수'}</span></p><p className="mt-1 text-[11px] leading-5 text-slate-500">{diagnosisCriteria[issue.id]}</p></div>)}</div>
           {diagnosisState.data && <SourceNote data={diagnosisState.data}/>}
 
           <h4 className="mt-6 text-xs font-bold text-slate-600">과거 사례의 방문 변화</h4>
@@ -100,13 +94,5 @@ export function Simulation() {
         </motion.div>}</AnimatePresence>
       </Card>
     </div>
-    <ScenarioLibrary district={district.slug} policy={selectedPolicy} budget={budget} duration={duration}
-      onClear={clearSimulationResult}
-      onLoad={saved => {
-        setSelectedPolicy(saved.policy_code)
-        setBudget(saved.budget_krw / 100000000)
-        setDuration(saved.duration_months === 12 ? '1년' : saved.duration_months === 6 ? '6개월' : '3개월')
-        completeSimulation(district.slug)
-      }}/>
   </section>
 }

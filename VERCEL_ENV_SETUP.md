@@ -5,7 +5,7 @@
 | 위치 | 환경변수 | 설명 |
 |---|---|---|
 | Vercel 컨테이너 | PORT | 8000. 플랫폼과 컨테이너의 포트를 맞춘다. |
-| Vercel 컨테이너 | SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY | 현재 프로젝트 URL·공개 로그인 키 |
+| Vercel 컨테이너 | SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY | 현재 프로젝트 URL·향후 Auth API/readiness 호환용 공개 키 |
 | Vercel 컨테이너 | SUPABASE_SECRET_KEY 또는 SUPABASE_SERVICE_ROLE_KEY | 서버 전용 DB 키 |
 | Vercel 컨테이너 | TOUR_API_SERVICE_KEY | 실제 관광공사 인증키 값 |
 | Vercel 컨테이너 | GEMINI_API_KEY, GEMINI_MODEL | 월간 AI 브리핑 |
@@ -14,7 +14,7 @@
 
 Vercel 프로젝트의 Environment Variables에서 적용할 Preview/Production 환경을 선택해 등록하고 새로 배포한다. 로컬 PowerShell의 값과 바탕화면 키 파일은 Vercel로 전달되지 않는다. 키에 `VITE_` 접두사를 붙이지 않는다.
 
-**현재 통합 구성에는 FASTAPI_BASE_URL / FASTAPI_PROXY_TOKEN을 등록하지 않는다.** API는 같은 컨테이너에서 직접 처리한다. 토큰이 남아 있으면 `backend.container`가 시작을 중단하므로, 이전 분리 배포용 설정을 제거해야 한다. 사용자 JWT·기관 권한 검사는 기존 그대로 적용한다.
+**현재 통합 구성에는 FASTAPI_BASE_URL / FASTAPI_PROXY_TOKEN을 등록하지 않는다.** API는 같은 컨테이너에서 직접 처리한다. 토큰이 남아 있으면 `backend.container`가 시작을 중단하므로, 이전 분리 배포용 설정을 제거해야 한다. 공모전 화면은 로그인 없이 지도에서 선택한 정규 지자체 ID를 브리핑 조회 컨텍스트로 사용한다.
 
 기존 `api/*.ts` 프록시 코드는 보존돼 있지만 이 컨테이너 배포에서는 실행하지 않는다. 이전처럼 Vercel 화면과 외부 FastAPI를 분리하는 구조를 다시 선택할 때만 FASTAPI_BASE_URL과 양쪽의 같은 FASTAPI_PROXY_TOKEN을 사용한다.
 

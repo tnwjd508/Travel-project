@@ -15,7 +15,7 @@ export function resolveDashboardRegion(regionId: string, value: string) {
   try {
     const district = requireTourismDistrict(value, regionId)
     const legacy = regionId === 'gwangju' ? getGwangjuDistrict(value) ?? getGwangjuDistrict(Object.entries(districtAliases).find(([, code]) => code === district.id)?.[0]) : null
-    const slug: DistrictId = legacy?.slug ?? district.id
-    return { regionId, regionName: region.nameKo, nameKo: district.name, slug, selectionPath: `/regions/${regionId}`, dashboardPath: `/dashboard/${regionId}/${slug}/overview`, basePath: `/dashboard/${regionId}/${slug}`, selection: { regionId, district: slug }, region, legacy }
+    const municipalityId: DistrictId = district.id
+    return { regionId, regionName: region.nameKo, nameKo: district.name, slug: municipalityId, selectionPath: `/regions/${regionId}`, dashboardPath: `/dashboard/${regionId}/${municipalityId}/overview`, basePath: `/dashboard/${regionId}/${municipalityId}`, selection: { regionId, district: municipalityId }, region, legacy }
   } catch { return null }
 }
