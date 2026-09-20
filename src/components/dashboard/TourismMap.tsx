@@ -59,6 +59,7 @@ export function TourismMap() {
   const [showBoundaries, setShowBoundaries] = useState(true)
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null)
   const [showAllHotspots, setShowAllHotspots] = useState(false)
+  const [hotspotTab, setHotspotTab] = useState<'rank' | 'content'>('rank')
   const hubState = useDistrictResource('hubs', { district: district.slug })
 
   const districtFeature = useMemo<DistrictFeature | null>(
@@ -122,9 +123,12 @@ export function TourismMap() {
     let position = 0
     return inArea.map((hotspot) => ({ ...hotspot, areaRank: hotspot.districtRank === null ? null : ++position }))
   }, [hotspots, selected])
-  const rankedCount = areaHotspots.filter((item) => item.areaRank !== null).length
   const areaName = selected ? selected.properties.name : district.nameKo
-  const visibleHotspots = showAllHotspots ? areaHotspots : areaHotspots.slice(0, HOTSPOT_PREVIEW)
+  // 자료가 둘이므로 목록도 둘로 나눈다. 순위 탭은 중심 관광지 순위, 콘텐츠 탭은 순위 자료가 없는 관광 콘텐츠.
+  const rankedHotspots = areaHotspots.filter((item) => item.areaRank !== null)
+  const contentHotspots = areaHotspots.filter((item) => item.areaRank === null)
+  const tabHotspots = hotspotTab === 'rank' ? rankedHotspots : contentHotspots
+  const visibleHotspots = showAllHotspots ? tabHotspots : tabHotspots.slice(0, HOTSPOT_PREVIEW)
 
   useEffect(() => {
     setZoomIndex(0)
@@ -133,7 +137,7 @@ export function TourismMap() {
 
   useEffect(() => {
     setShowAllHotspots(false)
-  }, [selected, district.code])
+  }, [selected, district.code, hotspotTab])
 
   // 자치구가 바뀌거나 경계 출처(VWorld ↔ 정적)가 바뀌면 동 코드 체계가 달라지므로 선택을 비운다.
   useEffect(() => {
@@ -209,8 +213,22 @@ export function TourismMap() {
             <span className="text-[10px] font-extrabold uppercase tracking-[.12em] text-slate-400">Tourism hotspots</span>
             <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500">{areaName} {areaHotspots.length}곳</span>
           </div>
+          <div role="tablist" aria-label="관광지 목록 구분" className="mt-2 flex gap-1.5">
+            {([['rank', '중심 관광지 순위', rankedHotspots.length], ['content', '관광 콘텐츠', contentHotspots.length]] as const).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={hotspotTab === value}
+                onClick={() => setHotspotTab(value)}
+                className={`min-h-11 flex-1 rounded-xl border text-[11px] font-bold transition ${hotspotTab === value ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-blue-200'}`}
+              >
+                {label} {count}
+              </button>
+            ))}
+          </div>
           {selected && <button type="button" onClick={() => setSelected(null)} className="mt-2 min-h-11 w-full rounded-xl border border-blue-200 bg-blue-50 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100">{district.nameKo} 전체 보기</button>}
-          {areaHotspots.length > 0 ? (
+          {tabHotspots.length > 0 ? (
             <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
               {visibleHotspots.map((attraction) => (
                 <button
@@ -230,22 +248,19 @@ export function TourismMap() {
                   </span>
                 </button>
               ))}
-              {areaHotspots.length > HOTSPOT_PREVIEW && (
+              {tabHotspots.length > HOTSPOT_PREVIEW && (
                 <button type="button" onClick={() => setShowAllHotspots((value) => !value)} className="min-h-11 w-full rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 transition hover:border-blue-200 hover:text-blue-600">
-                  {showAllHotspots ? '접기' : `더 보기 (${areaHotspots.length - HOTSPOT_PREVIEW}곳)`}
+                  {showAllHotspots ? '접기' : `더 보기 (${tabHotspots.length - HOTSPOT_PREVIEW}곳)`}
                 </button>
               )}
             </div>
           ) : (
-            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{selected ? `${selected.properties.name}에 등록된 관광지가 없습니다.` : `${district.nameKo}에 표시할 관광지 좌표가 없습니다.`}</p>
+            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-400">{hotspotTab === 'rank' ? `${areaName}에 중심 관광지 순위 자료가 없습니다.` : `${areaName}에 표시할 관광 콘텐츠가 없습니다.`}</p>
           )}
-          <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 rounded-xl bg-slate-50 px-3 py-2 text-[10px] text-slate-500">
-            <li className="flex items-center gap-1.5"><span className="grid h-4 w-4 place-items-center rounded bg-blue-600 text-[8px] font-bold text-white">1</span>순위 · 관광 콘텐츠</li>
-            <li className="flex items-center gap-1.5"><span className="grid h-4 w-4 place-items-center rounded bg-violet-600 text-[8px] font-bold text-white">1</span>순위 목록에만 있음</li>
-            <li className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: '#2563EB' }} />순위 자료 없음</li>
-          </ul>
-          {rankedCount > 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">숫자는 {areaName} 안에서의 중심 관광지 순위 {rankedCount}곳입니다{selected && `. 각 항목의 '${district.nameKo} N위'는 자치구 전체 순위입니다`}. 한국관광공사 기준월 {hubState.data?.baseYm.slice(0, 4)}.{hubState.data?.baseYm.slice(4)} · 다른 관광지와의 연결 건수 기준이며 방문객 수나 인기 순위가 아닙니다.</p>}
-          {hubState.status === 'live' && rankedCount === 0 && <p className="mt-2 text-[10px] leading-4 text-slate-400">중심 관광지 순위 자료를 불러오지 못해 순위 없이 표시합니다.</p>}
+          <p className="mt-2 text-[10px] leading-4 text-slate-400">{hotspotTab === 'rank'
+            ? `한국관광공사 중심 관광지 순위 · 기준월 ${hubState.data?.baseYm.slice(0, 4)}.${hubState.data?.baseYm.slice(4)} · 숫자는 ${areaName} 안에서의 순번이며, 다른 관광지와의 연결 건수 기준입니다. 방문객 수나 인기 순위가 아닙니다.`
+            : `한국관광공사 관광 콘텐츠 중 순위 자료가 없는 곳입니다. 순위가 있는 ${rankedHotspots.length}곳은 왼쪽 탭에 있습니다.`}</p>
+          {hubState.status === 'error' && <p className="mt-2 text-[10px] leading-4 text-amber-700">중심 관광지 순위 자료를 불러오지 못했습니다.</p>}
           <DataNotice state={contentState}/>
           {contentState.data && <SourceNote data={contentState.data}/>}
         </div>
@@ -348,7 +363,7 @@ export function TourismMap() {
               })}
             </g>
 
-            {areaHotspots.map((attraction) => {
+            {tabHotspots.map((attraction) => {
               const point = projection([attraction.lng, attraction.lat])
               if (!point) return null
               const active = activeAttraction?.name === attraction.name
