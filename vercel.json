@@ -1,17 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "vite",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "functions": {
-    "api/monthly-briefing.ts": { "maxDuration": 300 },
-    "api/scenarios/[id]/reviews.ts": { "maxDuration": 90 }
+  "services": {
+    "app": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel",
+      "functions": {
+        "Dockerfile.vercel": { "maxDuration": 300 }
+      }
+    }
   },
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": { "service": "app" }
     }
   ]
 }
