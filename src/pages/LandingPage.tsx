@@ -102,7 +102,7 @@ export function LandingPage() {
               <h2 id="region-map-title" className="mt-1 whitespace-nowrap text-sm font-semibold tracking-[-.02em] text-[#FFF9EE] sm:text-base">{mapMode === 'korea' ? '지역을 선택해 주세요' : `${selectedRegion.nameKo}의 시군구를 선택해 주세요`}</h2>
               <p className="mt-1 text-[12px] text-[#78849A] sm:text-[12px]">{mapMode === 'korea' ? '빛나는 길이 시작됩니다.' : '구를 선택하면 지역 현황으로 이동합니다.'}</p>
             </div>
-            {mapMode === 'korea' ? <div className="flex shrink-0 items-center gap-2"><label className="flex items-center gap-2 whitespace-nowrap text-[12px] text-[#78849A]">다른 시도<select aria-label="다른 시도 선택" value={regions.some(region => region.id === selectedId) ? '' : selectedId} onChange={event => { if (event.target.value) setSelectedId(event.target.value) }} className="min-h-9 max-w-[150px] rounded-lg border border-white/10 bg-[#0B1528] px-2 text-slate-200"><option value="">전체 시도 목록</option>{tourismProvinces.filter(region => !regions.some(item => item.id === region.id)).map(region => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label><div className="hidden items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 py-1.5 text-[12px] font-semibold text-[#AAB4C5] xl:flex"><MapPin size={11} className="text-[#F4C57A]" />6개 지역 탐색 가능</div></div> : <button type="button" onClick={showKoreaMap} className="flex min-h-10 items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 text-[12px] font-semibold text-[#AAB4C5] outline-none transition hover:border-[#F4C57A]/30 hover:text-[#FFF9EE] focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70"><ArrowLeft size={12} />대한민국 지도</button>}
+            {mapMode === 'korea' ? <div className="hidden items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 py-1.5 text-[12px] font-semibold text-[#AAB4C5] sm:flex"><MapPin size={11} className="text-[#F4C57A]" />6개 지역 탐색 가능</div> : <button type="button" onClick={showKoreaMap} className="flex min-h-10 items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 text-[12px] font-semibold text-[#AAB4C5] outline-none transition hover:border-[#F4C57A]/30 hover:text-[#FFF9EE] focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70"><ArrowLeft size={12} />대한민국 지도</button>}
           </motion.div>
 
           <div className="relative w-full max-w-[650px]">
@@ -122,8 +122,11 @@ export function LandingPage() {
 
           <AnimatePresence mode="wait" initial={false}>
             {mapMode === 'korea' ? (
-              <motion.div key="region-controls" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: .4 }} className="relative z-30 -mt-3 w-full max-w-[610px] space-y-2.5 lg:-mt-10">
-                <RegionSelector regions={regions} selectedId={selectedId} onSelect={selectRegion} />
+              <motion.div key="region-controls" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: .4 }} className="relative z-30 mt-2 w-full max-w-[650px] space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  <RegionSelector regions={regions} selectedId={selectedId} onSelect={selectRegion} />
+                  <label className="flex shrink-0 items-center gap-2 text-[12px] text-[#78849A]"><span className="sr-only">다른 시도 선택</span><select aria-label="다른 시도 선택" value={regions.some(region => region.id === selectedId) ? '' : selectedId} onChange={event => { if (event.target.value) setSelectedId(event.target.value) }} className="min-h-9 max-w-[150px] rounded-lg border border-white/10 bg-[#0B1528] px-2 text-slate-200"><option value="">전체 시도 목록</option>{tourismProvinces.filter(region => !regions.some(item => item.id === region.id)).map(region => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label>
+                </div>
                 <SelectedRegionCard region={selectedRegion} onEnter={enterRegion} onUnavailable={showUnavailableNotice} />
               </motion.div>
             ) : (
