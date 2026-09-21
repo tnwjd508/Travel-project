@@ -1,18 +1,45 @@
 import { motion } from 'framer-motion'
 
+// 콘셉트 이미지의 "굽이치며 지평선으로 모이는 길".
+// 좌표계(viewBox 1600x360)와 컨테이너 높이는 AmbientBackground의 능선 SVG와 같아야 두 그림이 어긋나지 않는다.
+// 중심선 M900 392C800 352 700 354 620 330C520 302 562 282 500 262C462 246 448 226 432 204C424 188 414 176 405 164 을
+// 폭 32 -> 1.0으로 좁혀(원근) 만든 띠이고, CORE는 그 30% 폭의 밝은 심지다. 직접 고치지 말 것.
+const ROAD = 'M905.9 377.1 L891.5 372.6 L877.2 368.5 L863 364.9 L848.9 361.6 L834.9 358.8 L821.1 356.2 L807.3 353.9 L793.7 351.9 L780.3 350.1 L767 348.4 L753.8 346.8 L740.8 345.3 L727.9 343.9 L715.3 342.4 L702.8 341 L690.5 339.4 L678.4 337.7 L666.5 335.9 L654.8 333.9 L643.3 331.7 L632.1 329.2 L621 326.4 L608.2 322.9 L597.1 319.6 L587.5 316.2 L579.2 313 L572.1 309.8 L566.1 306.6 L561.1 303.5 L556.8 300.5 L553.2 297.5 L550 294.6 L547.2 291.7 L544.7 288.8 L542.1 285.9 L539.6 283 L536.8 280.1 L533.6 277.3 L530 274.4 L525.8 271.6 L520.9 268.9 L515.1 266.2 L508.3 263.5 L500.5 260.9 L495.4 258.8 L490.7 256.6 L486.2 254.3 L482 252 L478 249.7 L474.2 247.3 L470.7 244.9 L467.3 242.4 L464.2 239.9 L461.1 237.3 L458.3 234.7 L455.5 232.1 L452.9 229.4 L450.4 226.6 L448 223.9 L445.7 221.1 L443.4 218.3 L441.2 215.4 L439 212.5 L436.8 209.6 L434.6 206.6 L432.5 203.7 L431.4 201.6 L430.3 199.5 L429.1 197.4 L427.9 195.4 L426.7 193.4 L425.5 191.4 L424.3 189.5 L423.1 187.6 L421.8 185.8 L420.6 184 L419.3 182.2 L418 180.4 L416.8 178.7 L415.5 177 L414.2 175.3 L412.9 173.6 L411.7 171.9 L410.4 170.3 L409.1 168.6 L407.9 167 L406.6 165.3 L405.4 163.7 L404.6 164.3 L405.8 165.9 L407.1 167.6 L408.3 169.2 L409.6 170.9 L410.9 172.5 L412.1 174.2 L413.4 175.9 L414.7 177.6 L415.9 179.3 L417.2 181 L418.5 182.8 L419.7 184.6 L421 186.4 L422.2 188.2 L423.4 190.1 L424.6 192 L425.8 193.9 L427 195.9 L428.1 197.9 L429.3 200 L430.4 202.1 L431.5 204.3 L433.7 207.3 L435.9 210.3 L438 213.2 L440.2 216.2 L442.4 219.1 L444.7 221.9 L447 224.8 L449.4 227.6 L451.9 230.3 L454.5 233.1 L457.2 235.8 L460.1 238.5 L463.1 241.1 L466.3 243.7 L469.7 246.3 L473.2 248.8 L477 251.3 L481 253.8 L485.2 256.2 L489.7 258.5 L494.5 260.8 L499.5 263.1 L507.4 265.9 L514 268.7 L519.5 271.5 L524.2 274.3 L528.1 277 L531.4 279.8 L534.3 282.6 L536.9 285.4 L539.3 288.3 L541.7 291.3 L544.3 294.3 L547.1 297.5 L550.3 300.7 L554 304 L558.4 307.4 L563.6 310.8 L569.8 314.3 L576.9 318 L585.3 321.7 L595 325.5 L606.2 329.5 L619 333.6 L630 337.1 L641.3 340.2 L652.8 343.2 L664.5 345.9 L676.4 348.5 L688.5 351 L700.8 353.4 L713.2 355.8 L725.8 358.2 L738.4 360.7 L751.2 363.2 L764.1 365.8 L777 368.6 L790 371.6 L803 374.8 L816.1 378.3 L829.2 382.1 L842.2 386.2 L855.3 390.8 L868.3 395.7 L881.2 401 L894.1 406.9Z'
+const CORE = 'M901.8 387.5 L887.9 382.5 L874.1 378 L860.3 373.9 L846.6 370.2 L832.9 366.9 L819.3 363.9 L805.8 361.2 L792.4 358.8 L779.1 356.6 L765.9 354.5 L752.9 352.5 L740 350.7 L727.2 348.9 L714.6 347.1 L702.1 345.3 L689.8 343.5 L677.7 341.5 L665.8 339.4 L654.1 337.1 L642.6 334.7 L631.3 331.9 L620.3 328.9 L607.5 325.2 L596.4 321.7 L586.7 318.2 L578.4 314.7 L571.3 311.4 L565.3 308.1 L560.1 304.9 L555.8 301.7 L552.2 298.6 L549 295.6 L546.2 292.6 L543.6 289.7 L541.1 286.7 L538.6 283.8 L535.9 281 L532.8 278.1 L529.3 275.3 L525.2 272.6 L520.4 269.8 L514.7 267.1 L508 264.4 L500.1 261.7 L495.1 259.5 L490.4 257.2 L485.9 255 L481.6 252.6 L477.7 250.3 L473.9 247.8 L470.3 245.4 L467 242.9 L463.8 240.3 L460.8 237.7 L457.9 235.1 L455.2 232.4 L452.6 229.7 L450.1 227 L447.7 224.2 L445.3 221.4 L443.1 218.5 L440.8 215.7 L438.6 212.8 L436.5 209.8 L434.3 206.9 L432.2 203.9 L431 201.8 L429.9 199.7 L428.8 197.6 L427.6 195.6 L426.4 193.6 L425.2 191.6 L424 189.7 L422.8 187.9 L421.5 186 L420.3 184.2 L419 182.4 L417.7 180.6 L416.5 178.9 L415.2 177.2 L413.9 175.5 L412.6 173.8 L411.4 172.1 L410.1 170.5 L408.8 168.8 L407.6 167.2 L406.4 165.5 L405.1 163.9 L404.9 164.1 L406.1 165.7 L407.4 167.4 L408.6 169 L409.9 170.7 L411.1 172.3 L412.4 174 L413.7 175.7 L414.9 177.4 L416.2 179.1 L417.5 180.8 L418.7 182.6 L420 184.4 L421.3 186.2 L422.5 188 L423.7 189.9 L424.9 191.8 L426.1 193.7 L427.3 195.7 L428.5 197.7 L429.6 199.8 L430.7 201.9 L431.8 204.1 L434 207.1 L436.2 210.1 L438.4 213 L440.5 215.9 L442.8 218.8 L445 221.6 L447.3 224.5 L449.8 227.2 L452.3 230 L454.9 232.7 L457.6 235.4 L460.5 238.1 L463.5 240.7 L466.7 243.3 L470 245.8 L473.6 248.3 L477.4 250.7 L481.3 253.1 L485.6 255.5 L490.1 257.8 L494.8 260.1 L499.9 262.3 L507.7 265.1 L514.3 267.8 L520 270.6 L524.7 273.4 L528.8 276.1 L532.2 278.9 L535.1 281.7 L537.8 284.6 L540.3 287.5 L542.7 290.4 L545.3 293.4 L548.1 296.5 L551.3 299.6 L555 302.8 L559.4 306 L564.5 309.3 L570.6 312.7 L577.7 316.2 L586.1 319.8 L595.8 323.5 L606.9 327.2 L619.7 331.1 L630.7 334.3 L642 337.2 L653.5 339.9 L665.2 342.4 L677.1 344.8 L689.2 347 L701.5 349.1 L713.9 351.1 L726.5 353.2 L739.3 355.3 L752.1 357.5 L765.1 359.7 L778.2 362.1 L791.3 364.7 L804.5 367.5 L817.8 370.6 L831.2 373.9 L844.6 377.6 L858 381.7 L871.4 386.2 L884.8 391.1 L898.2 396.5Z'
+// 맨 뒤 능선. AmbientBackground의 ridgeBack과 같은 좌표여야 한다.
+// 길이 하늘로 솟아 보이지 않도록 이 능선 아래에서만 그린다. 길은 앞 능선을 넘어 여기서 사라진다.
+const BACK_RIDGE = 'M0 184C120 132 189 190 286 161C387 130 435 205 554 169C672 133 734 187 846 157C967 125 1044 196 1160 163C1288 126 1402 168 1600 112V360H0Z'
+
 export function GlowingPath() {
-  const particles = [[13, 84], [20, 79], [27, 86], [35, 76], [45, 82], [55, 71], [65, 75]]
+  // 길 위를 흐르는 불빛. [가로 %, 세로 %]
+  const particles = [[45.4, 97.5], [40.9, 94], [36.6, 88.6], [33.1, 76.6], [29.2, 67.5], [26.9, 55.5]]
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[35%] overflow-hidden" aria-hidden="true">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[36%] min-h-[220px] overflow-hidden" aria-hidden="true">
       <svg viewBox="0 0 1600 360" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
         <defs>
-          <filter id="roadGlow" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="8" /></filter>
-          <linearGradient id="roadColor" x1="0" y1="1" x2="1" y2="0"><stop stopColor="#FFB65C" stopOpacity="0" /><stop offset=".22" stopColor="#FFD89A" /><stop offset=".72" stopColor="#F4C57A" /><stop offset="1" stopColor="#60A5FA" stopOpacity=".1" /></linearGradient>
+          <clipPath id="roadClip"><path d={BACK_RIDGE} /></clipPath>
+          <filter id="roadHalo" x="-45%" y="-120%" width="190%" height="340%"><feGaussianBlur stdDeviation="11" /></filter>
+          <filter id="roadSoft" x="-25%" y="-60%" width="150%" height="220%"><feGaussianBlur stdDeviation="1.6" /></filter>
+          <linearGradient id="roadColor" gradientUnits="userSpaceOnUse" x1="900" y1="392" x2="405" y2="164">
+            <stop stopColor="#FFB65C" stopOpacity=".32" /><stop offset=".42" stopColor="#FFD89A" stopOpacity=".72" /><stop offset=".8" stopColor="#FFF1D2" stopOpacity=".95" /><stop offset="1" stopColor="#FFF9EE" />
+          </linearGradient>
+          <linearGradient id="roadCore" gradientUnits="userSpaceOnUse" x1="900" y1="392" x2="405" y2="164">
+            <stop stopColor="#FFD89A" stopOpacity=".18" /><stop offset=".5" stopColor="#FFF1D2" stopOpacity=".55" /><stop offset="1" stopColor="#FFFDF6" stopOpacity=".95" />
+          </linearGradient>
+          <radialGradient id="roadHorizon"><stop stopColor="#FFD89A" stopOpacity=".45" /><stop offset="1" stopColor="#FFB65C" stopOpacity="0" /></radialGradient>
+          <radialGradient id="roadPass"><stop stopColor="#FFD89A" stopOpacity=".26" /><stop offset="1" stopColor="#FFB65C" stopOpacity="0" /></radialGradient>
         </defs>
-        <motion.path d="M90 350C300 300 210 244 456 230C708 216 588 145 846 154C1036 161 1058 94 1220 69" fill="none" stroke="#FFB65C" strokeOpacity=".27" strokeWidth="16" filter="url(#roadGlow)" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2.3, delay: .75, ease: [0.16, 1, 0.3, 1] }} />
-        <motion.path d="M90 350C300 300 210 244 456 230C708 216 588 145 846 154C1036 161 1058 94 1220 69" fill="none" stroke="url(#roadColor)" strokeWidth="2" strokeLinecap="round" initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 2.2, delay: .72, ease: [0.16, 1, 0.3, 1] }} />
+        <motion.g clipPath="url(#roadClip)" initial={{ opacity: 0, x: 26 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.7, delay: .7, ease: [0.16, 1, 0.3, 1] }}>
+          {/* 앞 능선을 넘는 지점의 옅은 안개 */}
+          <ellipse cx="437" cy="216" rx="96" ry="20" fill="url(#roadPass)" />
+          {/* 길이 사라지는 맨 뒤 능선의 빛 */}
+          <ellipse cx="405" cy="166" rx="96" ry="19" fill="url(#roadHorizon)" />
+          <path d={ROAD} fill="#FFB65C" fillOpacity=".34" filter="url(#roadHalo)" />
+          <path d={ROAD} fill="url(#roadColor)" filter="url(#roadSoft)" />
+          <path d={CORE} fill="url(#roadCore)" />
+        </motion.g>
       </svg>
-      {particles.map(([left, top], index) => <motion.span key={`${left}-${top}`} className="absolute h-1 w-1 rounded-full bg-[#FFD89A] shadow-[0_0_10px_#FFB65C]" style={{ left: `${left}%`, top: `${top}%` }} animate={{ opacity: [.1, 1, .1], y: [2, -4, 2] }} transition={{ duration: 2.5, repeat: Infinity, delay: 1 + index * .22 }} />)}
+      {particles.map(([left, top], index) => <motion.span key={`${left}-${top}`} className="absolute h-1 w-1 rounded-full bg-[#FFF1D2] shadow-[0_0_10px_#FFB65C]" style={{ left: `${left}%`, top: `${top}%` }} animate={{ opacity: [.1, 1, .1], y: [2, -4, 2] }} transition={{ duration: 2.5, repeat: Infinity, delay: 1 + index * .22 }} />)}
     </div>
   )
 }

@@ -20,7 +20,8 @@ export function RegionSelector({ regions, selectedId, onSelect }: RegionSelector
             aria-pressed={selected}
             className={`group inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-[12px] font-semibold tracking-[-.01em] outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70 sm:text-[12px] ${selected ? 'border-[#F4C57A]/60 bg-[#F4C57A]/10 text-[#FFF9EE] shadow-[0_0_22px_rgba(244,197,122,.12)]' : 'border-white/[.09] bg-white/[.025] text-[#78849A] hover:border-white/[.18] hover:text-[#D6DCE7]'}`}
           >
-            <MapPin size={11} className={selected ? 'text-[#F4C57A]' : 'text-[#64748B]'} />
+            {/* 1024~1279px 구간에서는 칩 줄과 시도 선택이 한 줄에 들어가도록 아이콘을 접는다 */}
+            <MapPin size={11} className={`shrink-0 lg:hidden xl:block ${selected ? 'text-[#F4C57A]' : 'text-[#64748B]'}`} />
             {region.nameKo.replace('광역시', '').replace('특별시', '').replace('특별자치도', '')}
             {region.status === 'coming-soon' && <span className="sr-only">서비스 준비 중</span>}
           </button>

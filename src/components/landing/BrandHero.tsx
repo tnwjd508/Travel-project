@@ -8,7 +8,7 @@ const fadeUp = {
 
 export function BrandHero() {
   return (
-    <motion.section initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: .13, delayChildren: .18 } } }} className="relative z-10 flex max-w-[700px] flex-col justify-center pt-8 lg:min-h-[720px] lg:pt-0">
+    <motion.section initial="hidden" animate="visible" variants={{ visible: { transition: { staggerChildren: .13, delayChildren: .18 } } }} className="relative z-10 flex max-w-[700px] flex-col justify-center pt-4 lg:min-h-[560px] lg:pt-0">
       <motion.div variants={fadeUp} transition={{ duration: .65 }} className="mb-6 flex items-center gap-3 text-[12px] font-semibold uppercase tracking-[.28em] text-[#AAB4C5] sm:mb-8">
         <span className="h-px w-9 bg-gradient-to-r from-[#F4C57A] to-transparent" />
         AI Regional Tourism Strategy
@@ -38,7 +38,7 @@ export function BrandHero() {
         </div>
       </motion.div>
 
-      <motion.p variants={fadeUp} transition={{ duration: .7 }} className="mt-12 text-[12px] font-light tracking-[.07em] text-[#78849A] sm:mt-14">
+      <motion.p variants={fadeUp} transition={{ duration: .7 }} className="mt-5 text-[12px] font-light tracking-[.07em] text-[#78849A] sm:mt-6">
         길을 열면, 지역이 빛납니다.
       </motion.p>
     </motion.section>
