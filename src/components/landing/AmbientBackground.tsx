@@ -9,12 +9,12 @@ const stars = [
 export function AmbientBackground() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.1 }} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_76%,rgba(255,182,92,.17),transparent_33%),radial-gradient(circle_at_73%_39%,rgba(59,130,246,.14),transparent_39%),linear-gradient(135deg,#050A18_0%,#071020_55%,#0A1426_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_84%,rgba(255,182,92,.2),transparent_30%),radial-gradient(circle_at_73%_39%,rgba(59,130,246,.14),transparent_39%),linear-gradient(135deg,#050A18_0%,#071020_55%,#0A1426_100%)]" />
       <div className="absolute inset-0 opacity-[.055] [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
       {stars.map(([left, top, size], index) => (
         <motion.span key={`${left}-${top}`} className="absolute rounded-full bg-[#FFD89A]" style={{ left: `${left}%`, top: `${top}%`, width: size, height: size }} animate={{ opacity: [.15, .8, .15] }} transition={{ duration: 2.6 + (index % 4), repeat: Infinity, delay: index * .18 }} />
       ))}
-      <div className="absolute -bottom-32 left-[5%] h-72 w-[44%] rounded-full bg-[#FFB65C]/10 blur-[90px]" />
+      <div className="absolute bottom-[4%] left-[13%] h-52 w-[30%] rounded-full bg-[#FFB65C]/[.12] blur-[90px]" />
       <div className="absolute right-[7%] top-[16%] h-96 w-96 rounded-full bg-blue-500/[.07] blur-[100px]" />
 
       <svg className="absolute inset-x-0 bottom-0 h-[36%] min-h-[220px] w-full" viewBox="0 0 1600 360" preserveAspectRatio="none">
