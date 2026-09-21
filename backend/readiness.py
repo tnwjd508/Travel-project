@@ -33,6 +33,13 @@ def readiness_router(env):
                 # Briefing tables intentionally deny even service-role SELECT; use their read RPC.
                 await db.call('POST', '/rest/v1/rpc/briefing_get', payload={
                     'p_region_id': 'jeonnam-gwangju', 'p_district_id': '12210', 'p_month': '2000-01-01'}, service=True)
+                await db.call('POST', '/rest/v1/rpc/visitor_months_get', payload={
+                    'p_region_id': 'jeonnam-gwangju', 'p_district_id': '12210', 'p_months': ['2000-01-01']}, service=True)
+                await db.call('POST', '/rest/v1/rpc/visitor_collection_get', payload={
+                    'p_months': ['2000-01-01']}, service=True)
+                await db.call('POST', '/rest/v1/rpc/tourism_cache_get', payload={
+                    'p_request_sha256': '0' * 64, 'p_operation': 'KorService2/areaCode2',
+                    'p_request_params': {}, 'p_schema_version': 1}, service=True)
                 checks['analysisImported'] = await EvidenceService(db).release() is not None
                 checks['database'] = True
         except (ApiError, TimeoutError):

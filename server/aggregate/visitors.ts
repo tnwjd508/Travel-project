@@ -37,7 +37,7 @@ export async function visitorMonth(client: KntoClient, district: DistrictSlug, y
   const code = regionCodes(district, ym, 'DataLabService').district
   const all = await monthCache.get(`${client.scope}:${ym}`, 86400, async () => {
     // 전국 원본은 코드별로 묶어 한 번만 합산하고, 작은 월별 집계만 캐시합니다.
-    const rows = await client.all('DataLabService/locgoRegnVisitrDDList', { startYmd: `${ym}01`, endYmd: `${ym}${monthDays(ym)}` }, 0, 30000)
+    const rows = await client.all('DataLabService/locgoRegnVisitrDDList', { startYmd: `${ym}01`, endYmd: `${ym}${monthDays(ym)}` }, 0, 1000)
     const grouped = new Map<string, Row[]>()
     for (const row of rows) {
       const key = String(row.signguCode)

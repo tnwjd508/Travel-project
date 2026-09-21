@@ -9,6 +9,15 @@ export class DistrictApiError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message) }
 }
 const cache = new Map<string, { until: number; data: DistrictResources[DistrictResource] }>()
+
+export async function collectVisitorMonth(query: string, signal: AbortSignal) {
+  const response = await fetch(`/api/district/visitors/collect?${query}`, {
+    method: 'POST', signal, headers: { Accept: 'application/json' },
+  })
+  const body = await response.json() as { state?: string; code?: string; month?: string; message?: string }
+  if (!response.ok && response.status !== 202) throw new DistrictApiError(response.status, body.code ?? body.state ?? 'COLLECTION_ERROR', body.message ?? '방문객 자료를 불러오지 못했습니다.')
+  return { ...body, retryAfter: Number(response.headers.get('Retry-After') || 5) }
+}
 export async function districtRequest<R extends DistrictResource>(resource: R, query: string, signal: AbortSignal, refresh = false): Promise<DistrictResources[R]> {
   const key = `${resource}?${query}`
   const cached = cache.get(key)

@@ -1,6 +1,8 @@
 import type { BriefingEvidence, BriefingFestival, BriefingSource } from '../../src/types/briefing.js'
 import { requireTourismDistrict } from '../../src/data/tourismRegions.js'
 import { DISTRICTS, regionCodes, type DistrictSlug } from '../regionCodes.js'
+import { createTourismApiCache, type TourismPageCache } from '../tourismCache.js'
+import { createVisitorMonthCache, type VisitorMonthCache } from '../visitorMonthCache.js'
 
 // 지도에서 사용하는 통계청 코드(24010 등)와 관광 API의 법정동 코드는 다릅니다.
 export const districts = Object.fromEntries(Object.entries(DISTRICTS).map(([id, d]) => [id, { name: d.name, code: d.legacy, currentCode: d.current }]))
@@ -39,6 +41,8 @@ export const sourceSpecs: SourceSpec[] = [
   { id: 'hubs', label: '중심 관광지', service: 'LocgoHubTarService1', operation: 'areaBasedList1', kind: 'hubs' },
   { id: 'festivals', label: '최근·예정 축제', service: 'KorService2', operation: 'searchFestival2', kind: 'festivals' },
 ]
+const sharedCache = createTourismApiCache(process.env)
+const visitorMonthCache = createVisitorMonthCache(process.env)
 
 export function koreaDate(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
@@ -116,11 +120,28 @@ function parameters(spec: SourceSpec, context: BriefingContext) {
   return { baseYm: compact(context.month), areaCd: codes.area, signguCd: codes.district, ...(spec.index ? { [`${spec.index}Cd`]: spec.code! } : {}) }
 }
 
-export async function collectSource(spec: SourceSpec, context: BriefingContext, serviceKey: string, signal: AbortSignal, fetcher: typeof fetch = fetch): Promise<CollectedSource> {
+export async function collectSource(spec: SourceSpec, context: BriefingContext, serviceKey: string, signal: AbortSignal,
+  fetcher: typeof fetch = fetch, cache: TourismPageCache | null = sharedCache,
+  visitorCache: VisitorMonthCache | null = visitorMonthCache): Promise<CollectedSource> {
   const source: BriefingSource = { id: spec.id, label: spec.label, endpoint: `${spec.service}/${spec.operation}`, status: 'empty', count: 0, note: '' }
   let codes: { area: string; district: string }
   try { codes = regionCodes(context.district, compact(context.month), spec.service) } catch (error) {
     return { source: { ...source, status: 'error', note: error instanceof Error ? error.message : '지역 코드 적용 기간을 확인해 주세요.' }, evidence: [] }
+  }
+  if (spec.kind === 'visitors' && visitorCache) {
+    const district = requireTourismDistrict(context.district)
+    const stored = await visitorCache.get(district.regionId, district.id, compact(context.month))
+    if (stored) {
+      const note = `${stored.observedDays}/${stored.expectedDays}일 수집. 같은 사람의 다른 날짜 방문이 중복됩니다. 월간 순방문자 수가 아니며 현지인·외지인을 합치지 않습니다.`
+      return {
+        source: { ...source, status: 'ready', count: stored.observedDays * 3, note: '저장된 완전 월 방문자 집계를 사용했습니다.' },
+        evidence: [
+          { id: 'visitors:1', sourceId: 'visitors', label: '현지인(a) 일별 방문 수 합계', value: String(stored.local), period: context.month, note },
+          { id: 'visitors:2', sourceId: 'visitors', label: '외지인(b) 일별 방문 수 합계', value: String(stored.outside), period: context.month, note },
+          { id: 'visitors:3', sourceId: 'visitors', label: '외국인(c) 일별 방문 수 합계', value: String(stored.foreign), period: context.month, note },
+        ],
+      }
+    }
   }
   const rows: Row[] = []
   let complete = false
@@ -131,12 +152,29 @@ export async function collectSource(spec: SourceSpec, context: BriefingContext, 
     const maxPages = spec.kind === 'visitors' ? 30 : 5
     let received = 0
     for (let page = 1; page <= maxPages; page++) {
-      const url = new URL(`https://apis.data.go.kr/B551011/${spec.service}/${spec.operation}`)
-      const params = { ...parameters(spec, context), serviceKey: key, MobileOS: 'ETC', MobileApp: 'ONGIL', _type: 'json', numOfRows: '1000', pageNo: String(page) }
-      for (const [name, value] of Object.entries(params)) if (value) url.searchParams.set(name, value)
-      const result = await fetcher(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]), headers: { Accept: 'application/json' } })
-      if (!result.ok) throw new Error('관광 API 요청 실패')
-      const data = decodePage(await result.json())
+      const requestParams = Object.fromEntries(Object.entries({ ...parameters(spec, context), numOfRows: '1000', pageNo: String(page) })
+        .filter((entry): entry is [string, string] => Boolean(entry[1])).map(([name, value]) => [name, String(value)]))
+      const operation = `${spec.service}/${spec.operation}`
+      const ttl = spec.kind === 'festivals' ? 3600 : spec.kind === 'visitors' ? 2592000 : 86400
+      const cached = await cache?.get(operation, requestParams)
+      let data: { rows: Row[]; total: number }
+      if (cached && cached.age <= ttl) {
+        data = cached
+      } else {
+        try {
+          const url = new URL(`https://apis.data.go.kr/B551011/${spec.service}/${spec.operation}`)
+          const params = { ...requestParams, serviceKey: key, MobileOS: 'ETC', MobileApp: 'ONGIL', _type: 'json' }
+          for (const [name, value] of Object.entries(params)) if (value) url.searchParams.set(name, value)
+          const result = await fetcher(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]), headers: { Accept: 'application/json' } })
+          if (!result.ok) throw new Error('관광 API 요청 실패')
+          data = decodePage(await result.json())
+          await cache?.store(operation, requestParams, data)
+        } catch (error) {
+          if (!cached) throw error
+          data = cached
+          source.note = '실시간 API를 사용할 수 없어 저장된 응답을 사용했습니다.'
+        }
+      }
       rows.push(...data.rows)
       received += data.rows.length
       if (received >= data.total) { complete = true; break }
@@ -200,11 +238,12 @@ export async function collectSource(spec: SourceSpec, context: BriefingContext, 
   return { source, evidence }
 }
 
-export async function collectAll(context: BriefingContext, key: string, signal: AbortSignal, fetcher: typeof fetch = fetch) {
+export async function collectAll(context: BriefingContext, key: string, signal: AbortSignal, fetcher: typeof fetch = fetch,
+  cache: TourismPageCache | null = sharedCache, visitorCache: VisitorMonthCache | null = visitorMonthCache) {
   const result: CollectedSource[] = []
   // 호출 폭주를 줄이면서 독립된 API 세 개씩 함께 수집합니다.
   for (let offset = 0; offset < sourceSpecs.length; offset += 3) {
-    result.push(...await Promise.all(sourceSpecs.slice(offset, offset + 3).map((spec) => collectSource(spec, context, key, signal, fetcher))))
+    result.push(...await Promise.all(sourceSpecs.slice(offset, offset + 3).map((spec) => collectSource(spec, context, key, signal, fetcher, cache, visitorCache))))
   }
   return result
 }

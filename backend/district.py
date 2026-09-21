@@ -3,12 +3,13 @@ import asyncio
 import calendar
 import os
 import re
+from uuid import uuid4
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from statistics import fmean, median
 from urllib.parse import urlparse
 
-from .core import ApiError, Cache, meta, numeric
+from .core import ApiError, Cache, meta, numeric, observe_source, stamp
 from .regions import BY_ID, require_district, region_codes
 
 DISTRICTS = {
@@ -135,6 +136,11 @@ def sum_visitors(rows, district, ym):
         complete=complete, observedDays=len(days), expectedDays=expected, through=max(days) if days else None)
 
 
+def empty_visitors(ym):
+    return dict(ym=ym, total=None, local=None, outside=None, foreign=None, complete=False,
+        observedDays=0, expectedDays=month_days(ym), through=None)
+
+
 def distribution(categories):
     return [dict(category=k, count=v, pct=v / len(categories) * 100) for k, v in sorted(Counter(categories).items(), key=lambda item: (-item[1], item[0]))]
 
@@ -173,33 +179,118 @@ def related_rows(rows):
 
 
 class DistrictService:
-    def __init__(self, client):
-        self.client, self.cache, self.month_cache = client, Cache(), Cache(60)
+    def __init__(self, client, visitor_store=None):
+        self.client, self.visitor_store = client, visitor_store
+        self.cache, self.month_cache = Cache(), Cache(60)
 
     async def close(self):
         await self.cache.close()
         await self.month_cache.close()
         await self.client.cache.close()
 
+    async def collect_visitor_month(self, ym, persist=True):
+        rows = await self.client.all('DataLabService/locgoRegnVisitrDDList',
+            dict(startYmd=ym + '01', endYmd=ym + str(month_days(ym))), 2592000, 1000)
+        grouped = {}
+        for row in rows:
+            grouped.setdefault(str(row.get('signguCode')), []).append(row)
+        result = {}
+        for code in BY_ID:
+            try:
+                source_code = region_codes(code, ym, 'DataLabService')[1]
+            except ApiError as error:
+                if error.code == 'UNSUPPORTED_REGION_PERIOD':
+                    continue
+                raise
+            result[code] = sum_visitors(grouped.get(source_code, []), code, ym)
+        if self.visitor_store and persist:
+            await self.visitor_store.store_month(ym, result, stamp())
+        return result
+
+    async def source_visitor_month(self, ym, persist=True):
+        return await self.month_cache.get(ym, 86400, lambda: self.collect_visitor_month(ym, persist), 240)
+
     async def visitor_month(self, district, ym):
         canonical = require_district(district)['id']
         region_codes(district, ym, 'DataLabService')  # Reject incomparable pre-split periods before fetching.
-        async def load():
-            rows = await self.client.all('DataLabService/locgoRegnVisitrDDList', dict(startYmd=ym + '01', endYmd=ym + str(month_days(ym))), 0, 30000)
-            grouped = {}
-            for row in rows:
-                grouped.setdefault(str(row.get('signguCode')), []).append(row)
-            result = {}
-            for code in BY_ID:
-                try:
-                    source_code = region_codes(code, ym, 'DataLabService')[1]
-                except ApiError as error:
-                    if error.code == 'UNSUPPORTED_REGION_PERIOD':
-                        continue
-                    raise
-                result[code] = sum_visitors(grouped.get(source_code, []), code, ym)
-            return result
-        return (await self.month_cache.get(ym, 86400, load))[canonical]
+        if self.visitor_store:
+            try:
+                stored = await self.visitor_store.get_many(canonical, [ym])
+                if ym in stored:
+                    return stored[ym]
+            except ApiError:
+                return empty_visitors(ym)
+            return empty_visitors(ym)
+        return (await self.source_visitor_month(ym))[canonical]
+
+    async def visitors(self, district, ym, count):
+        canonical = require_district(district)['id']
+        months = [shift_month(ym, i - count + 1) for i in range(count)]
+        previous_months = [shift_month(value, -12) for value in months]
+        wanted = months + previous_months
+        if not self.visitor_store:
+            for value in wanted:
+                region_codes(district, value, 'DataLabService')
+            loaded = await asyncio.gather(*(self.source_visitor_month(value, persist=False) for value in wanted))
+            values = {value: result[canonical] for value, result in zip(wanted, loaded)}
+            return ([values[value] for value in months], [values[value] for value in previous_months], [],
+                dict(status='ready', missingMonths=[], activeMonth=None, failedMonths=[]))
+        stored = await self.visitor_store.get_many(canonical, wanted)
+        unresolved = [value for value in wanted if value not in stored]
+        states = await self.visitor_store.collection_status(wanted)
+        active = [value for value in unresolved if states[value]['state'] == 'generating']
+        failed = [value for value in unresolved if states[value]['state'] == 'failed']
+        collection = dict(status='ready' if not unresolved else 'collecting' if active else 'missing',
+            missingMonths=unresolved, activeMonth=active[0] if active else None,
+            failedMonths=failed)
+        warnings = []
+        if unresolved:
+            warnings.append(f'방문자 자료 {len(unresolved)}개월을 추가로 불러와야 합니다.')
+            observe_source(stamp(), 300)
+        return ([stored.get(value, empty_visitors(value)) for value in months],
+            [stored.get(value, empty_visitors(value)) for value in previous_months], warnings, collection)
+
+    async def collect_next_visitor_month(self, district, ym, count):
+        if not self.visitor_store:
+            raise ApiError(503, 'DB_NOT_CONFIGURED', '방문자 저장소가 설정되지 않았습니다.')
+        canonical = require_district(district)['id']
+        months = [shift_month(ym, i - count + 1) for i in range(count)]
+        previous = [shift_month(value, -12) for value in months]
+        wanted = months + previous
+        stored = await self.visitor_store.get_many(canonical, wanted)
+        missing = [value for value in reversed(months) if value not in stored]
+        missing += [value for value in reversed(previous) if value not in stored]
+        if not missing:
+            return dict(state='ready')
+        states = await self.visitor_store.collection_status(wanted)
+        generating = next((value for value in missing if states[value]['state'] == 'generating'), None)
+        if generating:
+            return dict(state='generating', month=generating)
+        target = missing[0]
+        owner = str(uuid4())
+        claim = await self.visitor_store.claim(target, owner)
+        if claim.get('state') != 'claimed':
+            return claim
+        try:
+            values = await self.source_visitor_month(target, persist=False)
+            return await self.visitor_store.finish(target, owner, values, stamp())
+        except ApiError as error:
+            mapping = {
+                'UPSTREAM_RATE_LIMIT': ('UPSTREAM_RATE_LIMIT', 3600),
+                'UPSTREAM_AUTH': ('UPSTREAM_AUTH', 86400),
+                'REQUEST_TIMEOUT': ('REQUEST_TIMEOUT', 300),
+                'INVALID_VISITOR_DATE': ('INVALID_DATA', 3600),
+                'DUPLICATE_DATA': ('INVALID_DATA', 3600),
+                'DB_UNAVAILABLE': ('STORE_FAILED', 300),
+                'DB_SCHEMA_NOT_READY': ('STORE_FAILED', 300),
+                'INVALID_STORED_VISITORS': ('STORE_FAILED', 300),
+            }
+            code, retry = mapping.get(error.code, ('UPSTREAM_UNAVAILABLE', 300))
+            try:
+                await self.visitor_store.fail(target, owner, code, retry)
+            except ApiError:
+                pass
+            raise
 
     async def index(self, district, ym, code):
         operation, field, _ = definition(code)
@@ -219,14 +310,26 @@ class DistrictService:
         return dict(meta(ym, warnings), district=district, unit='index', groups=dict(zip(GROUPS, values)))
 
     async def summary(self, district, ym, visitor_ym):
+        visitor_unavailable = False
+        async def visitor_or_empty(month):
+            nonlocal visitor_unavailable
+            try:
+                return await self.visitor_month(district, month)
+            except ApiError as error:
+                if error.status < 500:
+                    raise
+                visitor_unavailable = True
+                return empty_visitors(month)
         current, previous, values, old_age = await asyncio.gather(
-            self.visitor_month(district, visitor_ym), self.visitor_month(district, shift_month(visitor_ym, -1)),
+            visitor_or_empty(visitor_ym), visitor_or_empty(shift_month(visitor_ym, -1)),
             asyncio.gather(*(self.index(district, ym, c) for c in ('21', '2102', '22', '2201', '11', '3102', '3103'))),
             asyncio.gather(*(self.index(district, shift_month(ym, -1), c) for c in ('3102', '3103'))))
         stay, lodging, spend, outside, demand, age20, age30 = values
         age_sum = None if age20 is None or age30 is None else age20 + age30
         old_sum = None if None in old_age else sum(old_age)
         warnings = ['방문자는 일별 추정 방문자 합계이며 월간 순방문자 수가 아닙니다.']
+        if visitor_unavailable:
+            warnings.append('실시간 방문자 API를 사용할 수 없어 저장된 자료만 표시합니다.')
         if not current['complete'] or not previous['complete']:
             warnings.append('방문자 완월 데이터가 부족하여 전월 대비를 계산하지 않았습니다.')
         if None in values or old_sum is None:
@@ -345,17 +448,16 @@ class DistrictService:
             if resource == 'rank':
                 return await self.rank(district, ym, query['metric'])
             if resource == 'visitors':
-                months = [shift_month(ym, i - query['months'] + 1) for i in range(query['months'])]
-                series, previous = await asyncio.gather(
-                    asyncio.gather(*(self.visitor_month(district, m) for m in months)),
-                    asyncio.gather(*(self.visitor_month(district, shift_month(m, -12)) for m in months)))
-                warnings = ['방문자는 일별 추정치 합계입니다.']
+                series, previous, fallback_warnings, collection = await self.visitors(district, ym, query['months'])
+                warnings = ['방문자는 일별 추정치 합계입니다.', *fallback_warnings]
                 if any(not m['complete'] for m in series + previous):
                     warnings.append('일부 월은 데이터가 부족합니다. complete 필드를 확인하세요.')
-                return dict(meta(ym, warnings), district=district, metric='sum_of_daily_estimated_visitors', series=series, previousYear=previous)
+                return dict(meta(ym, warnings), district=district, metric='sum_of_daily_estimated_visitors',
+                    series=series, previousYear=previous, collection=collection)
             if resource == 'diagnosis':
                 from .diagnosis import diagnose
                 summary, indices, related = await asyncio.gather(self.summary(district, ym, query['visitorYm']), self.indices(district, ym, DIAGNOSTIC_CODES), self.related(district, ym))
                 return diagnose(summary, indices, related)
             raise ApiError(404, 'UNKNOWN_RESOURCE', '지원하지 않는 리소스입니다.')
-        return await self.cache.get(tuple(sorted(query.items())), TTL[query['resource']], load)
+        cache_ttl = 0 if query['resource'] == 'visitors' else TTL[query['resource']]
+        return await self.cache.get(tuple(sorted(query.items())), cache_ttl, load)

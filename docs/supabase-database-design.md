@@ -24,7 +24,7 @@
 
 ## 2. 핵심 결정
 
-**하나의 Supabase 프로젝트에 8개 서비스 테이블을 사용한다.** 이미 있는 월간 브리핑 2개, 로컬 기관·시나리오 3개를 유지하고 분석 근거·검토 기록 3개를 추가한다. 별도 users/passwords 테이블은 만들지 않는다.
+**하나의 Supabase 프로젝트에 11개 서비스 테이블을 사용한다.** 기존 10개 테이블에 전국 방문자 월 수집의 선점·재시도를 관리하는 작업 테이블 1개를 추가한다. 별도 users/passwords 테이블은 만들지 않는다.
 
 이전의 `simulation_model_versions / simulation_runs / simulation_run_attempts / simulation_input_snapshots / simulation_results / simulation_result_metrics` 6개는 미래 예측 엔진과 영속 워커를 전제로 한다. 현재 SJbranch는 미리 계산한 JSON 통계를 조회하므로 이 구조를 지금 요구하지 않는다. 향후 예산·기간·지역에 따라 새 예측을 실제 계산하는 엔진이 생기면 별도 확장한다.
 
@@ -48,6 +48,21 @@ erDiagram
     AUTH_USERS o|--o{ SCENARIO_REVIEWS : creates
     POLICY_EVIDENCE_RELEASES ||--|{ POLICY_EVIDENCE_STATISTICS : projects
     POLICY_EVIDENCE_STATISTICS o|--o{ SCENARIO_REVIEWS : referenced_by
+    TOURISM_VISITOR_MONTHS {
+        text region_id PK
+        text district_id PK
+        date base_month PK
+    }
+    TOURISM_API_CACHE {
+        text request_sha256 PK
+        text operation
+        jsonb request_params
+    }
+    TOURISM_VISITOR_COLLECTION_JOBS {
+        date base_month PK
+        text status
+        timestamptz retry_after
+    }
 ```
 
 `monthly_briefing_jobs`는 브리핑 생성 잠금·실패 이력이다. 완료 결과와 동일한 지역·월 키를 쓰지만, 실패한 작업에는 브리핑 행이 없으므로 결과 존재를 강제하는 FK를 두지 않는다.
@@ -62,6 +77,9 @@ erDiagram
 | policy_evidence_releases **신규** | 분석 결과 파일 한 버전. id, artifact_schema_version, artifact_sha256, repository_commit, generated_at, artifact_payload, provenance_status, provenance | 서버/운영자 |
 | policy_evidence_statistics **신규** | 한 버전·대상 집단·분석군의 통계. release_id, outcome, segment, sample_count, mean_pct, median_pct, CI, share_positive | 서버 조회 |
 | scenario_reviews **신규** | 한 시나리오를 한 번 검토한 고정 기록. organization_id, scenario_id, evidence_statistic_id, reference_status, baseline_snapshot, selection_rule_version, idempotency_key | 기관 공동 조회, editor/admin 저장 |
+| tourism_visitor_months **신규** | 지역·월별 일별 추정 방문자 합계와 완전성. region_id, district_id, base_month, local/outside/foreign/total, observed_days, expected_days, complete | 서버 RPC 전용 |
+| tourism_api_cache **신규** | 모든 한국관광공사 API 페이지. 비밀키를 제외한 operation+params 해시, 검증된 공개 응답, 원천 수집 시각 | 서버 RPC 전용 |
+| tourism_visitor_collection_jobs **신규** | 전국 방문자 월별 수집 선점·완료·실패·재시도 시각. base_month, status, owner_token, deadline_at, retry_after | 서버 RPC 전용 |
 
 ### 공통 지역·단위
 
@@ -162,18 +180,21 @@ summary/diagnosis가 있으면 실제 API 응답 전체를 저장한다. 각 응
 | supabase/migrations/001_monthly_briefings.sql | master와 동일. 브리핑 2테이블 |
 | supabase/migrations/002_monthly_briefing_jobs.sql | master와 동일. 기존 RPC |
 | supabase/migrations/20260919115012_organization_scenarios.sql | 로컬 구현. 기관/회원/시나리오 3테이블와 저장 RPC |
+| supabase/migrations/20260920104513_tourism_visitor_month_cache.sql | 관광객 월별 영속 캐시와 서버 전용 get/store RPC |
+| supabase/migrations/20260920110556_tourism_api_response_cache.sql | 전체 관광 API 페이지 공유 캐시와 서버 전용 get/store RPC |
+| supabase/migrations/20260920163732_tourism_visitor_collection_jobs.sql | 방문자 월별 수집 작업과 중복 방지·원자적 저장 RPC |
 | docs/supabase-evidence-extension.proposed.sql | 이번 신규 설계. 근거 릴리스·통계·검토 3테이블와 import/save RPC. 로컬 API 연결 완료 |
-| docs/supabase-current-design.proposed.sql | 위 네 파일을 하나의 트랜잭션으로 묶은 **빈 DB용 검증 설계안**. DELETE/DROP 없음 |
+| docs/supabase-current-design.proposed.sql | 위 여섯 파일을 하나의 트랜잭션으로 묶은 **빈 DB용 검증 설계안**. DELETE/DROP 없음 |
 | docs/supabase-simulation-schema.proposed.sql | 미래 예측 실행용 이전 확장안. 이번 설치에 포함하지 않음 |
 | docs/supabase-empty-legacy-reset.sql | 이전에 요청한 구형 8테이블 제거용 별도 파일. 이번 작업에서 실행하지 않음 |
 
-빈 DB에서는 새 통합 설계안 한 파일의 구조를 검토할 수 있다. 이미 테이블이 있는 DB에서 이 CREATE 스크립트를 그대로 실행하면 중복 오류가 난다. 기존 5테이블이 현재 마이그레이션과 일치하면 근거 확장만 추가한다. 구형 8테이블이 있는 사용자 DB는 공유 기관 2개와 구형 예측 테이블 6개로, 새 8테이블과 구성이 다르다. 삭제가 필요하면 당시 0행 조회 결과만 믿고 즉시 실행하지 않고 현재 상태·참조·적용 이력을 다시 확인한다.
+빈 DB에서는 새 통합 설계안 한 파일의 구조를 검토할 수 있다. 이미 테이블이 있는 DB에서 이 CREATE 스크립트를 그대로 실행하면 중복 오류가 난다. 현재 8개 테이블이 적용된 DB에는 관광객 월별 캐시와 전체 관광 API 공유 캐시 후속 마이그레이션 두 개만 추가한다. 구형 8테이블이 있는 사용자 DB는 공유 기관 2개와 구형 예측 테이블 6개로, 현재 10테이블과 구성이 다르다. 삭제가 필요하면 당시 0행 조회 결과만 믿고 즉시 실행하지 않고 현재 상태·참조·적용 이력을 다시 확인한다.
 
 최신 요청은 재설계이므로 중단됐던 전체 초기화 작업을 재개하지 않았다. 원격 프로젝트에 접속할 권한이 없어 실제 스키마·migration history를 직접 검증하지 못했다. 현재 SQL은 코드 기반 로컬 검증안이며 실제 적용 시 Supabase CLI로 정식 후속 마이그레이션을 생성하고 대상 DB와 이력을 대조한다. 기존 001/002를 덮어 수정하거나 auth/storage/internal 스키마를 초기화하지 않는다.
 
 ## 9. 검증과 남은 작업
 
-2026-09-20 검증 결과: `npm test` 78건 통과(신규 근거 설계 12건 포함). 생성 SQL과 4개 원본 SQL의 일치 검사 통과. 단일 설계 SQL을 빈 PostgreSQL 엔진에 적용해 정확히 8개 서비스 테이블과 전체 RLS 활성화를 확인했다. 같은 SQL의 중복 적용은 오류로 중단되고 기존 구조가 보존됨을 확인했다. 원격 Supabase와 최신 master의 실제 배포를 테스트한 결과는 아니다.
+2026-09-20 관광 API 캐시 확장에서는 후속 SQL을 PostgreSQL 엔진에 적용해 서버 전용 RPC, RLS, 요청 해시 충돌 차단, 잘못된 응답 거부와 완전 방문자 자료를 부분 자료로 덮어쓰지 않는 규칙을 검증한다. 원격 Supabase 적용과 운영 백필은 별도 단계다.
 
 `tests/evidence-schema-design.test.mjs`는 SJbranch의 실제 결과 JSON을 테스트 fixture로 읽는다. 원격 DB나 실제 사용자 데이터는 사용하지 않는다. PGlite의 PostgreSQL 엔진에서 기본 5테이블 + 신규 3테이블, 실제 12개 통계 매핑, 멱등 import/save, 잘못된 통계의 전체 롤백, 기관 격리, viewer 차단, 불변성, 탈퇴 후 기록 보존을 검증한다.
 

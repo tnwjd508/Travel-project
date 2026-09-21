@@ -2,6 +2,8 @@
 
 공모전 제출 모드(2026-09-20 후속): 사용자 로그인 UI를 노출하지 않는다. 지도에서 선택한 정규 지자체 ID를 대시보드 경로와 월간 브리핑 조회 컨텍스트로 사용한다. 브리핑 DB 키는 `region_id + district_id + analysis_month`이며, 다른 지자체의 저장 결과를 같은 행으로 재사용하지 않는다. 기관 Auth·시나리오 공동 저장 API는 향후 운영 확장용 코드로 유지하지만 현재 화면에서는 호출하지 않는다. 지자체 ID는 공개 선택값이므로 사용자 인증이나 악의적인 접근 통제 수단으로 해석하지 않는다.
 
+관광 API 영속 캐시(2026-09-20 후속): 모든 한국관광공사 API 페이지를 `tourism_api_cache`에 저장하고, 관광객 추이는 `tourism_visitor_months`에 월별 지자체 집계도 보관한다. FastAPI와 Node 월간 브리핑이 같은 요청 해시를 사용한다. 누락된 전국 방문자 월은 `tourism_visitor_collection_jobs`가 한 번만 선점하며 프런트가 월별 수집 POST와 재조회를 자동 반복한다. 상류 API가 실패해도 저장 응답을 사용하고 DB와 API가 모두 없을 때만 오류를 표시한다. 적용·백필 절차는 [관광 API DB 캐시 운영](관광_API_DB_캐시_운영.md)을 따른다.
+
 후속 배포 준비: 현재 `vercel.json`은 React·FastAPI·Node를 한 컨테이너에 담는 구성으로 바뀌었다. 실제 이미지 빌드와 배포는 아직 검증하지 않았다. 최신 배포 파일과 환경변수는 [통합 컨테이너 안내](vercel-container-deployment.md)를 우선 참조한다. 아래 외부 FastAPI + Vercel 프록시 설명은 이전 배포 방식의 기록이다.
 
 2026-09-20. 최신 master·SJbranch 통합에 이어 분석 근거 등록/조회, 기관별 검토 저장/조회, React 연동을 구현했다. 원격 push, Vercel/FastAPI 배포, 실제 Supabase 변경은 수행하지 않았다. 현재 로컬에 Supabase 연결 환경변수가 없어 실계정 저장 검증은 남아 있다.

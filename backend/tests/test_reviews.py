@@ -1,4 +1,5 @@
 import copy
+import calendar
 import json
 from uuid import uuid4
 
@@ -54,6 +55,22 @@ class DatabaseFixture:
         if path.endswith('policy_evidence_statistics'):
             identifier=params.get('release_id','eq.'+RELEASE).removeprefix('eq.')
             return httpx.Response(200,json=[stat_row(release=identifier)])
+        if path.endswith('rpc/visitor_months_get'):
+            args=json.loads(request.content)
+            rows=[]
+            for value in args['p_months']:
+                ym=value[:7].replace('-','')
+                days=calendar.monthrange(int(ym[:4]),int(ym[4:]))[1]
+                rows.append(dict(ym=ym,total=days*30,local=days*10,outside=days*10,foreign=days*10,
+                    complete=True,observedDays=days,expectedDays=days,through=f'{ym}{days:02}',sourceFetchedAt='2026-09-20T00:00:00Z'))
+            return httpx.Response(200,json=rows)
+        if path.endswith('rpc/visitor_months_store'):
+            return httpx.Response(200,json=len(json.loads(request.content)['p_rows']))
+        if path.endswith('rpc/tourism_cache_get'):
+            return httpx.Response(200,json={'state':'missing'})
+        if path.endswith('rpc/tourism_cache_store'):
+            args=json.loads(request.content)
+            return httpx.Response(200,json={'state':'stored','payload':args['p_response_payload'],'fetchedAt':args['p_source_fetched_at']})
         if path.endswith('rpc/save_scenario_review'):
             assert request.headers['apikey']=='sb_secret_test' and 'authorization' not in request.headers
             args=json.loads(request.content)

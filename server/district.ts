@@ -114,7 +114,9 @@ export class DistrictService {
         case 'visitors': {
           const months = Array.from({ length: query.months }, (_, i) => shiftMonth(ym, i - query.months + 1))
           const [series, previousYear] = await Promise.all([Promise.all(months.map(m => visitorMonth(this.client, district, m))), Promise.all(months.map(m => visitorMonth(this.client, district, shiftMonth(m, -12))))])
-          return { ...this.meta(ym, ['방문자는 일별 추정치 합계입니다.', ...([...series, ...previousYear].some(m => !m.complete) ? ['일부 월은 데이터가 부족합니다. complete 필드를 확인하세요.'] : [])]), district, metric: 'sum_of_daily_estimated_visitors', series, previousYear } satisfies VisitorsResponse
+          return { ...this.meta(ym, ['방문자는 일별 추정치 합계입니다.', ...([...series, ...previousYear].some(m => !m.complete) ? ['일부 월은 데이터가 부족합니다. complete 필드를 확인하세요.'] : [])]),
+            district, metric: 'sum_of_daily_estimated_visitors', series, previousYear,
+            collection: { status: 'ready', missingMonths: [], activeMonth: null, failedMonths: [] } } satisfies VisitorsResponse
         }
         case 'diagnosis': {
           const [summary, indices, related] = await Promise.all([this.summary(district, ym, visitorYm), this.indices(district, ym, DIAGNOSTIC_CODES), this.related(district, ym)])

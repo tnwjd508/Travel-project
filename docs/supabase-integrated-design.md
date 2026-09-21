@@ -12,6 +12,7 @@
 | 사용자·소속 | auth.users + organizations + organization_members 한 벌만 사용 |
 | 지역 | 관광 카탈로그의 region_id/district_id. 광주 동구는 jeonnam-gwangju / 12210. URL 별칭 gwangju/donggu는 저장 전에 정규화 |
 | 월간 브리핑 | 기존 monthly_briefings / monthly_briefing_jobs 및 briefing_* RPC 유지 |
+| 관광 API 캐시 | tourism_api_cache에 모든 관광공사 API 페이지를 공유하고 tourism_visitor_months에 방문자 월별 집계를 보관 |
 | 현재 시나리오 | simulation_scenarios에 입력 조건을 실제 저장. 같은 기관 구성원이 공동 조회 |
 | 브리핑 재사용 | 시나리오의 region_id/district_id/briefing_month 복합 FK로 이미 저장된 원본 참조. 전체 payload 중복 저장 없음 |
 | 미래 모델 실행 | 기존 시뮬레이션 SQL을 공통 테이블에 의존하는 6개 테이블 확장으로 변경. 아직 마이그레이션에 넣지 않음 |
