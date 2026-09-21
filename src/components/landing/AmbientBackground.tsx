@@ -21,9 +21,17 @@ export function AmbientBackground() {
         <defs>
           <linearGradient id="ridgeBack" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#17243A" stopOpacity=".62" /><stop offset="1" stopColor="#071020" stopOpacity=".96" /></linearGradient>
           <linearGradient id="ridgeFront" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#101B2D" /><stop offset="1" stopColor="#030713" /></linearGradient>
+          {/* 해가 능선 뒤에 있는 장면. 빛 테두리는 해에 가까운 구간만 밝다 */}
+          <radialGradient id="ridgeSun"><stop stopColor="#FFB65C" stopOpacity=".22" /><stop offset="1" stopColor="#FFB65C" stopOpacity="0" /></radialGradient>
+          <radialGradient id="ridgeWarm" gradientUnits="userSpaceOnUse" cx="400" cy="235" r="430"><stop stopColor="#FFB65C" stopOpacity=".14" /><stop offset="1" stopColor="#FFB65C" stopOpacity="0" /></radialGradient>
+          <linearGradient id="ridgeRim" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="980" y2="0"><stop stopColor="#FFD89A" stopOpacity="0" /><stop offset=".38" stopColor="#FFEBCA" stopOpacity=".6" /><stop offset="1" stopColor="#FFD89A" stopOpacity="0" /></linearGradient>
         </defs>
+        <ellipse cx="400" cy="205" rx="560" ry="160" fill="url(#ridgeSun)" />
         <path d="M0 184C120 132 189 190 286 161C387 130 435 205 554 169C672 133 734 187 846 157C967 125 1044 196 1160 163C1288 126 1402 168 1600 112V360H0Z" fill="url(#ridgeBack)" />
+        <path d="M0 184C120 132 189 190 286 161C387 130 435 205 554 169C672 133 734 187 846 157C967 125 1044 196 1160 163C1288 126 1402 168 1600 112" fill="none" stroke="url(#ridgeRim)" strokeWidth="2" opacity=".75" />
         <path d="M0 247C154 191 258 268 391 226C519 186 598 269 744 225C891 181 1018 271 1173 222C1325 174 1437 231 1600 188V360H0Z" fill="url(#ridgeFront)" />
+        <path d="M0 247C154 191 258 268 391 226C519 186 598 269 744 225C891 181 1018 271 1173 222C1325 174 1437 231 1600 188V360H0Z" fill="url(#ridgeWarm)" />
+        <path d="M0 247C154 191 258 268 391 226C519 186 598 269 744 225C891 181 1018 271 1173 222C1325 174 1437 231 1600 188" fill="none" stroke="url(#ridgeRim)" strokeWidth="2.4" />
       </svg>
       <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#030713] via-[#030713]/65 to-transparent" />
     </motion.div>

@@ -38,7 +38,7 @@ export function BrandHero() {
         </div>
       </motion.div>
 
-      <motion.p variants={fadeUp} transition={{ duration: .7 }} className="mt-12 text-[12px] font-light tracking-[.07em] text-[#78849A] sm:mt-14">
+      <motion.p variants={fadeUp} transition={{ duration: .7 }} className="mt-5 text-[12px] font-light tracking-[.07em] text-[#78849A] sm:mt-6">
         길을 열면, 지역이 빛납니다.
       </motion.p>
     </motion.section>
