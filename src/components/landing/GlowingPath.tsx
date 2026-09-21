@@ -1,30 +1,39 @@
 import { motion } from 'framer-motion'
 
-// 콘셉트 이미지의 "굽이치며 지평선으로 모이는 길"을 그린다.
+// 콘셉트 이미지의 "굽이치며 지평선으로 모이는 길".
 // 좌표계(viewBox 1600x360)와 컨테이너 높이는 AmbientBackground의 능선 SVG와 같아야 두 그림이 어긋나지 않는다.
-// 중심선 M800 360C720 330 600 326 560 300C520 274 600 262 520 242C470 228 430 222 398 214 를
-// 폭 28 → 1.5로 좁혀 만든 띠다. 멀어질수록 가늘어져 원근이 생긴다.
-const ROAD = 'M800 346C720 318 600 317 560 292C520 268 600 257 520 238C470 225 430 220 398 213'
-  + 'L398 215C430 224 470 231 520 246C600 267 520 280 560 308C600 342 720 342 800 374Z'
+// 아래 두 경로는 scripts 없이 손으로 고치지 말 것. 중심선
+//   M900 392C800 352 700 354 620 330C520 302 562 282 500 262C452 244 430 230 398 213
+// 을 따라 폭 32 -> 1.4로 좁혀(원근) 만든 띠이고, CORE는 그 30% 폭의 밝은 심지다.
+const ROAD = 'M905.9 377.1 L893.7 373.3 L881.6 369.7 L869.5 366.5 L857.6 363.7 L845.7 361 L833.8 358.7 L822.1 356.5 L810.5 354.6 L798.9 352.8 L787.5 351.2 L776.1 349.7 L764.9 348.3 L753.8 347 L742.7 345.8 L731.8 344.5 L721.1 343.3 L710.4 342.1 L699.9 340.8 L689.5 339.5 L679.3 338.1 L669.2 336.5 L659.2 334.9 L649.4 333.1 L639.8 331.1 L630.3 329 L621 326.5 L610 323.6 L600.3 320.8 L591.7 317.9 L584.1 315.1 L577.4 312.4 L571.6 309.6 L566.5 307 L562.1 304.3 L558.3 301.8 L555 299.2 L552.1 296.7 L549.5 294.2 L547.2 291.7 L545 289.3 L542.8 286.8 L540.7 284.4 L538.4 281.9 L536 279.5 L533.3 277.1 L530.3 274.7 L526.8 272.3 L522.8 270 L518.3 267.7 L513.1 265.4 L507.1 263.1 L500.4 260.9 L495 258.9 L489.8 256.9 L484.8 254.9 L479.9 253 L475.3 251.1 L470.9 249.2 L466.6 247.4 L462.4 245.5 L458.4 243.7 L454.5 241.9 L450.7 240 L447 238.2 L443.4 236.4 L439.8 234.6 L436.3 232.8 L432.9 231 L429.5 229.2 L426.1 227.4 L422.7 225.6 L419.3 223.7 L415.9 221.9 L412.5 220 L409.1 218.2 L405.6 216.3 L402 214.3 L398.3 212.4 L397.7 213.6 L401.3 215.6 L404.9 217.5 L408.4 219.4 L411.9 221.3 L415.3 223.1 L418.7 225 L422 226.8 L425.4 228.7 L428.8 230.5 L432.2 232.3 L435.6 234.2 L439.1 236 L442.6 237.8 L446.3 239.7 L450 241.5 L453.7 243.4 L457.6 245.2 L461.7 247.1 L465.8 249 L470.1 251 L474.6 252.9 L479.2 254.9 L484 256.9 L489 258.9 L494.2 261 L499.6 263.1 L506.3 265.5 L512.1 267.8 L517.1 270.2 L521.4 272.5 L525.2 274.9 L528.4 277.2 L531.2 279.5 L533.7 281.9 L536 284.3 L538.1 286.7 L540.1 289.1 L542.2 291.7 L544.3 294.3 L546.7 296.9 L549.3 299.6 L552.3 302.4 L555.7 305.2 L559.6 308 L564.1 311 L569.3 314 L575.2 317 L582 320.1 L589.7 323.3 L598.3 326.6 L608.1 330 L619 333.5 L628.3 336.4 L637.8 339.1 L647.5 341.6 L657.3 344.1 L667.3 346.3 L677.4 348.5 L687.6 350.6 L698 352.7 L708.5 354.7 L719 356.7 L729.7 358.8 L740.4 360.8 L751.2 363 L762.1 365.2 L773.1 367.6 L784 370 L795 372.7 L806.1 375.5 L817.1 378.5 L828.2 381.7 L839.2 385.2 L850.3 388.9 L861.3 392.9 L872.3 397.2 L883.2 401.9 L894.1 406.9Z'
+const CORE = 'M901.8 387.5 L890 383.3 L878.3 379.4 L866.7 375.8 L855 372.5 L843.4 369.5 L831.9 366.7 L820.4 364.2 L808.9 361.9 L797.6 359.8 L786.3 357.8 L775.1 356 L763.9 354.2 L752.9 352.6 L741.9 351 L731.1 349.5 L720.4 348 L709.7 346.5 L699.2 345 L688.9 343.4 L678.6 341.7 L668.5 340 L658.6 338.1 L648.7 336.1 L639.1 333.9 L629.6 331.5 L620.3 329 L609.4 325.9 L599.6 322.8 L591 319.8 L583.3 316.9 L576.6 314 L570.8 311.1 L565.7 308.4 L561.2 305.6 L557.4 303 L554 300.3 L551.1 297.7 L548.5 295.2 L546.2 292.6 L544 290.1 L541.9 287.6 L539.8 285.2 L537.6 282.8 L535.2 280.3 L532.6 277.9 L529.6 275.6 L526.2 273.2 L522.3 270.9 L517.9 268.6 L512.7 266.3 L506.8 264 L500.1 261.7 L494.7 259.6 L489.5 257.6 L484.5 255.6 L479.7 253.7 L475.1 251.7 L470.6 249.8 L466.3 247.9 L462.1 246.1 L458.1 244.2 L454.2 242.4 L450.4 240.6 L446.7 238.7 L443.1 236.9 L439.6 235.1 L436.1 233.3 L432.6 231.5 L429.2 229.7 L425.9 227.9 L422.5 226 L419.1 224.2 L415.7 222.3 L412.3 220.5 L408.8 218.6 L405.3 216.7 L401.7 214.8 L398.1 212.8 L397.9 213.2 L401.6 215.1 L405.1 217.1 L408.6 219 L412.1 220.8 L415.5 222.7 L418.9 224.6 L422.3 226.4 L425.6 228.2 L429 230.1 L432.4 231.9 L435.9 233.7 L439.4 235.5 L442.9 237.3 L446.5 239.2 L450.2 241 L454 242.8 L457.9 244.7 L461.9 246.6 L466.1 248.4 L470.4 250.3 L474.8 252.3 L479.4 254.2 L484.3 256.2 L489.2 258.2 L494.5 260.3 L499.9 262.3 L506.6 264.7 L512.4 267 L517.5 269.3 L521.9 271.6 L525.7 274 L529 276.3 L531.9 278.7 L534.5 281 L536.8 283.4 L539 285.9 L541.1 288.3 L543.1 290.8 L545.3 293.4 L547.7 296 L550.3 298.6 L553.2 301.3 L556.6 304 L560.5 306.7 L565 309.6 L570.1 312.4 L576 315.4 L582.7 318.4 L590.4 321.4 L599 324.6 L608.8 327.8 L619.7 331 L629 333.8 L638.5 336.3 L648.2 338.7 L658 340.9 L668 342.9 L678.1 344.9 L688.3 346.7 L698.7 348.5 L709.1 350.3 L719.7 352 L730.4 353.8 L741.2 355.6 L752.1 357.4 L763.1 359.3 L774.1 361.3 L785.2 363.4 L796.4 365.7 L807.6 368.2 L818.9 370.8 L830.2 373.6 L841.5 376.7 L852.8 380.1 L864.2 383.7 L875.5 387.6 L886.9 391.9 L898.2 396.5Z'
 
 export function GlowingPath() {
-  // 길 위에 얹히는 불빛. [가로 %, 세로 %]
-  const particles = [[45, 94], [41, 90], [36, 85], [34, 70], [30, 64], [26, 61]]
+  // 길 위를 흐르는 불빛. [가로 %, 세로 %]
+  const particles = [[48.2, 99.6], [45.7, 97.7], [40.5, 93.7], [36.4, 88.2], [33.1, 76.7], [29.1, 68.9]]
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[36%] min-h-[220px] overflow-hidden" aria-hidden="true">
       <svg viewBox="0 0 1600 360" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
         <defs>
-          <filter id="roadGlow" x="-40%" y="-90%" width="180%" height="280%"><feGaussianBlur stdDeviation="9" /></filter>
-          <linearGradient id="roadColor" x1="1" y1="1" x2="0" y2="0">
-            <stop stopColor="#FFB65C" stopOpacity=".45" /><stop offset=".3" stopColor="#FFD89A" stopOpacity=".88" /><stop offset=".72" stopColor="#FFF1D2" /><stop offset="1" stopColor="#FFF9EE" />
+          <filter id="roadHalo" x="-45%" y="-120%" width="190%" height="340%"><feGaussianBlur stdDeviation="11" /></filter>
+          <filter id="roadSoft" x="-25%" y="-60%" width="150%" height="220%"><feGaussianBlur stdDeviation="1.6" /></filter>
+          <linearGradient id="roadColor" gradientUnits="userSpaceOnUse" x1="900" y1="392" x2="398" y2="213">
+            <stop stopColor="#FFB65C" stopOpacity=".32" /><stop offset=".42" stopColor="#FFD89A" stopOpacity=".72" /><stop offset=".8" stopColor="#FFF1D2" stopOpacity=".95" /><stop offset="1" stopColor="#FFF9EE" />
           </linearGradient>
+          <linearGradient id="roadCore" gradientUnits="userSpaceOnUse" x1="900" y1="392" x2="398" y2="213">
+            <stop stopColor="#FFD89A" stopOpacity=".18" /><stop offset=".5" stopColor="#FFF1D2" stopOpacity=".55" /><stop offset="1" stopColor="#FFFDF6" stopOpacity=".95" />
+          </linearGradient>
+          <radialGradient id="roadHorizon"><stop stopColor="#FFD89A" stopOpacity=".5" /><stop offset="1" stopColor="#FFB65C" stopOpacity="0" /></radialGradient>
         </defs>
-        <motion.g initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.7, delay: .7, ease: [0.16, 1, 0.3, 1] }}>
-          <path d={ROAD} fill="#FFB65C" fillOpacity=".4" filter="url(#roadGlow)" />
-          <path d={ROAD} fill="url(#roadColor)" />
+        <motion.g initial={{ opacity: 0, x: 26 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1.7, delay: .7, ease: [0.16, 1, 0.3, 1] }}>
+          {/* 길이 사라지는 지평선의 옅은 빛 */}
+          <ellipse cx="398" cy="213" rx="150" ry="30" fill="url(#roadHorizon)" />
+          <path d={ROAD} fill="#FFB65C" fillOpacity=".34" filter="url(#roadHalo)" />
+          <path d={ROAD} fill="url(#roadColor)" filter="url(#roadSoft)" />
+          <path d={CORE} fill="url(#roadCore)" />
         </motion.g>
       </svg>
-      {particles.map(([left, top], index) => <motion.span key={`${left}-${top}`} className="absolute h-1 w-1 rounded-full bg-[#FFD89A] shadow-[0_0_10px_#FFB65C]" style={{ left: `${left}%`, top: `${top}%` }} animate={{ opacity: [.1, 1, .1], y: [2, -4, 2] }} transition={{ duration: 2.5, repeat: Infinity, delay: 1 + index * .22 }} />)}
+      {particles.map(([left, top], index) => <motion.span key={`${left}-${top}`} className="absolute h-1 w-1 rounded-full bg-[#FFF1D2] shadow-[0_0_10px_#FFB65C]" style={{ left: `${left}%`, top: `${top}%` }} animate={{ opacity: [.1, 1, .1], y: [2, -4, 2] }} transition={{ duration: 2.5, repeat: Infinity, delay: 1 + index * .22 }} />)}
     </div>
   )
 }

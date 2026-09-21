@@ -8,7 +8,7 @@ export const regions: Region[] = [
     description: '문화와 예술이 이어지는 관광 거점',
     dashboardPath: '/regions/gwangju',
     status: 'available',
-    mapPosition: { x: 141, y: 407 },
+    mapPosition: { x: 139, y: 410 },
     accentColor: '#F4C57A',
     heroImage: '/images/gwangju-hero.jpg',
     heroAlt: '무등산을 배경으로 펼쳐진 광주광역시 도심 야경',
@@ -20,7 +20,7 @@ export const regions: Region[] = [
     description: '전통과 미래가 공존하는 글로벌 관광도시',
     dashboardPath: '/regions/seoul',
     status: 'available',
-    mapPosition: { x: 132, y: 149 },
+    mapPosition: { x: 150, y: 131 },
     accentColor: '#60A5FA',
     heroImage: '/images/seoul-gyeongbokgung-hero.jpg',
     heroAlt: '북악산을 배경으로 한 서울 경복궁의 저녁 풍경',
@@ -34,7 +34,7 @@ export const regions: Region[] = [
     description: '바다와 도시가 만나는 해양관광 중심지',
     dashboardPath: '/regions/busan',
     status: 'available',
-    mapPosition: { x: 354, y: 404 },
+    mapPosition: { x: 349, y: 403 },
     accentColor: '#60A5FA',
   },
   {
@@ -44,7 +44,7 @@ export const regions: Region[] = [
     description: '도심 문화와 미식이 살아있는 관광도시',
     dashboardPath: '/regions/daegu',
     status: 'available',
-    mapPosition: { x: 298, y: 342 },
+    mapPosition: { x: 302, y: 334 },
     accentColor: '#60A5FA',
   },
   {
@@ -54,7 +54,7 @@ export const regions: Region[] = [
     description: '세계와 대한민국을 잇는 관문도시',
     dashboardPath: '/regions/incheon',
     status: 'available',
-    mapPosition: { x: 108, y: 145 },
+    mapPosition: { x: 124, y: 131 },
     accentColor: '#60A5FA',
   },
   {
@@ -64,7 +64,7 @@ export const regions: Region[] = [
     description: '자연과 쉼이 머무는 대한민국 대표 관광지',
     dashboardPath: '/regions/jeju',
     status: 'available',
-    mapPosition: { x: 110, y: 614 },
+    mapPosition: { x: 105, y: 610 },
     accentColor: '#60A5FA',
   },
 ]
