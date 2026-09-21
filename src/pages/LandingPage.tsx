@@ -92,17 +92,17 @@ export function LandingPage() {
       <AmbientBackground />
       <GlowingPath />
 
-      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1580px] gap-6 px-5 pb-24 pt-6 sm:px-9 sm:pb-20 sm:pt-8 lg:grid-cols-[46%_54%] lg:items-center lg:gap-0 lg:px-12 lg:py-8 xl:px-16">
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1580px] gap-4 px-5 pb-10 pt-5 sm:px-9 sm:pb-12 sm:pt-6 lg:grid-cols-[46%_54%] lg:items-center lg:gap-0 lg:px-12 lg:py-5 xl:px-16">
         <BrandHero />
 
         <section className="relative z-20 flex min-w-0 flex-col items-center lg:pl-4" aria-labelledby="region-map-title">
-          <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .6, delay: .58 }} className="mb-2 flex w-full max-w-[600px] items-center justify-between gap-4 px-2">
+          <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: .6, delay: .58 }} className="mb-2 flex w-full max-w-[600px] items-center justify-between gap-3 px-2">
             <div>
               <p className="text-[12px] font-semibold uppercase tracking-[.22em] text-[#78849A]">{mapMode === 'korea' ? 'Select your region' : 'Select your district'}</p>
-              <h2 id="region-map-title" className="mt-1 text-sm font-semibold tracking-[-.02em] text-[#FFF9EE] sm:text-base">{mapMode === 'korea' ? '지역을 선택해 주세요' : `${selectedRegion.nameKo}의 시군구를 선택해 주세요`}</h2>
+              <h2 id="region-map-title" className="mt-1 whitespace-nowrap text-sm font-semibold tracking-[-.02em] text-[#FFF9EE] sm:text-base">{mapMode === 'korea' ? '지역을 선택해 주세요' : `${selectedRegion.nameKo}의 시군구를 선택해 주세요`}</h2>
               <p className="mt-1 text-[12px] text-[#78849A] sm:text-[12px]">{mapMode === 'korea' ? '빛나는 길이 시작됩니다.' : '구를 선택하면 지역 현황으로 이동합니다.'}</p>
             </div>
-            {mapMode === 'korea' ? <div className="hidden items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 py-1.5 text-[12px] font-semibold text-[#AAB4C5] sm:flex"><MapPin size={11} className="text-[#F4C57A]" />6개 지역 탐색 가능</div> : <button type="button" onClick={showKoreaMap} className="flex min-h-10 items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 text-[12px] font-semibold text-[#AAB4C5] outline-none transition hover:border-[#F4C57A]/30 hover:text-[#FFF9EE] focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70"><ArrowLeft size={12} />대한민국 지도</button>}
+            {mapMode === 'korea' ? <div className="flex shrink-0 items-center gap-2"><label className="flex items-center gap-2 whitespace-nowrap text-[12px] text-[#78849A]">다른 시도<select aria-label="다른 시도 선택" value={regions.some(region => region.id === selectedId) ? '' : selectedId} onChange={event => { if (event.target.value) setSelectedId(event.target.value) }} className="min-h-9 max-w-[150px] rounded-lg border border-white/10 bg-[#0B1528] px-2 text-slate-200"><option value="">전체 시도 목록</option>{tourismProvinces.filter(region => !regions.some(item => item.id === region.id)).map(region => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label><div className="hidden items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 py-1.5 text-[12px] font-semibold text-[#AAB4C5] xl:flex"><MapPin size={11} className="text-[#F4C57A]" />6개 지역 탐색 가능</div></div> : <button type="button" onClick={showKoreaMap} className="flex min-h-10 items-center gap-2 rounded-full border border-white/[.08] bg-white/[.025] px-3 text-[12px] font-semibold text-[#AAB4C5] outline-none transition hover:border-[#F4C57A]/30 hover:text-[#FFF9EE] focus-visible:ring-2 focus-visible:ring-[#F4C57A]/70"><ArrowLeft size={12} />대한민국 지도</button>}
           </motion.div>
 
           <div className="relative w-full max-w-[650px]">
@@ -122,9 +122,8 @@ export function LandingPage() {
 
           <AnimatePresence mode="wait" initial={false}>
             {mapMode === 'korea' ? (
-              <motion.div key="region-controls" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: .4 }} className="relative z-30 -mt-2 w-full max-w-[610px] space-y-3 lg:-mt-7">
+              <motion.div key="region-controls" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: .4 }} className="relative z-30 -mt-3 w-full max-w-[610px] space-y-2.5 lg:-mt-10">
                 <RegionSelector regions={regions} selectedId={selectedId} onSelect={selectRegion} />
-                <label className="flex items-center justify-end gap-2 text-[12px] text-slate-400">다른 시도 선택<select aria-label="다른 시도 선택" value={regions.some(region => region.id === selectedId) ? '' : selectedId} onChange={event => { if (event.target.value) setSelectedId(event.target.value) }} className="min-h-10 max-w-[190px] rounded-lg border border-white/10 bg-[#0B1528] px-2 text-slate-200"><option value="">전체 시도 목록</option>{tourismProvinces.filter(region => !regions.some(item => item.id === region.id)).map(region => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label>
                 <SelectedRegionCard region={selectedRegion} onEnter={enterRegion} onUnavailable={showUnavailableNotice} />
               </motion.div>
             ) : (

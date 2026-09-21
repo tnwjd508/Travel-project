@@ -22,7 +22,7 @@ export function KoreaRegionMap({ regions, selectedId, onSelect }: KoreaRegionMap
   const regionById = new Map(regions.map((region) => [region.id, region]))
 
   return (
-    <motion.div id="region-map" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .85, delay: .35, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto aspect-[524/631] h-[430px] max-h-[58vh] min-h-[370px] w-auto max-w-full sm:h-[510px] lg:h-[600px] lg:max-h-[67vh]" aria-label="대한민국 지역 선택 지도">
+    <motion.div id="region-map" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .85, delay: .35, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto aspect-[524/631] h-[min(400px,48vh)] min-h-[300px] w-auto max-w-full sm:h-[min(460px,52vh)] lg:h-[min(560px,calc(100vh_-_330px))] lg:min-h-[340px]" aria-label="대한민국 지역 선택 지도">
       {[96, 76, 56].map((size, index) => <div key={size} className={`absolute left-1/2 top-1/2 rounded-full border ${index === 1 ? 'border-dashed' : ''} border-blue-300/[.09]`} style={{ width: `${size}%`, height: `${size * 524 / 631}%`, transform: 'translate(-50%, -50%)' }} />)}
       <div className="absolute left-1/2 top-1/2 h-[76%] w-[94%] -translate-x-1/2 -translate-y-1/2">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 45, repeat: Infinity, ease: 'linear' }} className="h-full w-full rounded-full border border-dashed border-white/[.045]">
